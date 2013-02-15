@@ -32,7 +32,9 @@ of standard Oracle functions like: INSTR(), ROUND() etc.
 2. vim 7.3
 3. install vorax.gem
 
-   '''gem install vorax --no-rdoc --no-ri'''
+```
+gem install vorax --no-rdoc --no-ri
+```
 
 4. ensure you have a valid Oracle client with sqlplus available
 5. install Vorax vim plugin: manually, pathogen, vundle... it's up
