@@ -86,7 +86,12 @@ function! vorax#utils#ClearUserInputStream() abort"{{{
   endwhile
 endfunction"}}}
 
-function! vorax#utils#BufferContent() abort"{{{
+function! vorax#utils#BufferContent(...) abort"{{{
+  if exists('a:1')
+  	let start_with = a:1
+  else
+  	let start_with = 1
+  endif
   if &ff == 'dos'
     let separator = "\r\n"
   elseif &ff == 'unix'
@@ -94,7 +99,7 @@ function! vorax#utils#BufferContent() abort"{{{
   elseif &ff == 'mac'
     let separator = "\r"
   endif
-  let content = join(getline(1, '$'), separator)
+  let content = join(getline(start_with, '$'), separator)
   return content
 endfunction"}}}
 
