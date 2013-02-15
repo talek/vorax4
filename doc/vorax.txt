@@ -1,0 +1,200 @@
+*vorax.txt*   An Oracle IDE for geeks.
+              For vim version 7.3
+
+                               By Alexandru Tică
+                     alexandru.tica email-at-sign gmail.com
+
+                                                        *vorax* *vorax-plugin*
+
+	Contents:
+	   What is VoraX .......................... |vorax-whatis|
+	   Features ............................... |vorax-features|
+	   Architecture ........................... |vorax-architecture|
+	   Installation Guide ..................... |vorax-install|
+	   Connecting to a database ............... |vorax-connect|
+	   Executing statements ................... |vorax-exec|
+	   The output window  ..................... |vorax-output|
+	   The code completion system ............. |vorax-omni|
+	   The database explorer .................. |vorax-expolorer|
+	   Describing objects ..................... |vorax-describe|
+	   Working with Explain Plans ............. |vorax-explainplan|
+	   The Oracle HTML Documentation .......... |vorax-oradoc|
+	   VoraX Options .......................... |vorax-options|
+
+
+==============================================================================
+WHAT IS VORAX                                                   *vorax-whatis*
+
+VoraX is a minimalist Oracle IDE based on the well known Vim editor. 
+The main reasons which motivate us to develop this plugin are:
+
+	- the power of Vim editor. When applied to Oracle development or 
+	  database administration it brings a lot of efficiency and fun.
+
+	- the need for a cross platform tool. Vim is available on many
+	  platforms which means you're free to use any OS you like.
+
+	- availability as a console IDE. Having a shiny IDE on a slow SSH
+	  connection doesn't sound so good, does it? A geek DBA will enjoy
+	  using VoraX because of his "addiction" for console applications.
+	  With VoraX in place he doesn't need to leave his beloved terminal 
+	  anymore.
+
+	- having an IDE with a very small footprint. VoraX is nothing but a 
+	  collection of VimL and Ruby scripts provided as a Vim plugin. We 
+	  hope VoraX will consume as less resources as possible.
+
+	- the dream of an improved SqlPLUS environment. I know a lot of guys
+	  (including me) who intensively use SqlPLUS, even for complex tasks. 
+	  On the other hand its limitations are quite annoying: we want good 
+	  code completion, pretty print output and so on. We cannot get rid of 
+	  SqlPLUS because we still think it is a great tool but we can make it 
+	  better. This is another goal of VoraX.
+
+VoraX stands for Vim ORAcle eXtension. It acts like a wrapper on the SqlPLUS
+environment. Every call to the database is made through SqlPLUS but in a
+hidden way so that the user is not aware of that. This approach has pros and
+cons. From one hand it inherits all those nice SqlPLUS features like explain
+plans, column computations and so on, but on the other hand it has to deal
+with all the limitations of the SqlPLUS (formatting output, syntax highlight,
+code completion etc.) To fill this gap is the whole idea of VoraX.
+
+==============================================================================
+FEATURES                                                      *vorax-features*
+
+VoraX comes with the following features:
+
+	- Advanced code completion for database object names, columns, aliases
+	  and procedure/function parameters;
+
+	- Folding PL/SQL code;
+
+	- A database objects browser. You may browse tables, views, packages
+	  and so on. The options available for every type of object may be
+	  extended through custom plugins; ** IN WORK **
+
+	- Connection profiles. VoraX allows to store various connection
+	  strings, including the corresponding passwords. All these passwords
+	  are protected using a master password. ** IN WORK **
+	
+	- Support for editing and compiling PL/SQL modules like packages,
+	  types, procedures and functions. ** IN WORK **
+
+	- Convenient key mappings for: describe object under cursor, execute
+	  current statement, etc. ** IN WORK **
+	
+	- Pretty print output. You may switch to a vertical columns output or
+	  to a compressed format. In a compressed output all columns width are
+	  resized according to the length of the contained data.
+
+	- Built-in HTML Oracle documentation search. ** IN WORK **
+
+==============================================================================
+ARCHITECTURE                                              *vorax-architecture*
+
+VoraX is based on SqlPLUS to interact with the database. Every statement you
+execute using VoraX is actually run by SqlPLUS behind. When VoraX is
+initialized a SqlPLUS process is started in background. Then VoraX
+communicates with this process by sending commands and grabbing the
+corresponding output.
+
+In order to be able to implement this kind of interaction, VoraX uses Ruby
+language. Even we'd like to have a pure VimL implementation, that isn't yet
+possible. However, we tried to limit the development of VoraX features in Ruby 
+as much as possible and use VimL instead. Nevertheless, parsing html output, 
+writing and parsing Oracle grammars for code completion and other complex 
+tasks are still written in Ruby.
+
+==============================================================================
+INSTALLATION GUIDE                                             *vorax-install* 
+
+VoraX follows the standard procedure of installing a Vim plugin: uncompress
+the vorax archive into $HOME/.vim if you are on a *NIX platform or into
+$HOME/vimfiles if you are on Windows. If you want VoraX to be available for
+all users then you may consider installing VoraX in your Vim HOME location. 
+
+You may also use Pathogen, vim-addon-manager or other similar addons management
+plugins if you want. It's completely up to you!
+
+However, you need to take care of some dependencies VoraX relies on: 
+
+   1. Vim 7.3 or above is required. The 501 patch is mandatory. You may check to
+      see if you have this patch using:
+
+      :echo has('patch501')
+
+   2. Your Vim must have ruby support enabled. In order to check this you may 
+      execute :version and look for +ruby. The supported Ruby is 1.9.X. To 
+      check this you may run the following command within your Vim editor:
+      
+      :ruby puts RUBY_VERSION
+      
+      CREAM configurations are not supported therefore a plain Vim should be 
+      used.
+
+   3. Ruby 1.9.X
+
+   4. Rubygems. On Debian systems is as simple as: 
+   
+      sudo apt-get install rubygems
+
+   5. The ruby-vorax gem:
+
+      gem install vorax
+
+   6. A working Oracle client with SqlPLUS, which has to be available in the 
+      environment $PATH variable. The instant client with SqlPLUS should be 
+      just fine.
+
+   7. Optionally, if you want to securely store passwords for your Oracle 
+      connections then the openssl ruby extension must be available. 
+      On Ubuntu/Debian systems you may use the following command to install it: 
+      
+      sudo apt-get install libopenssl-ruby1.9 
+
+==============================================================================
+CONNECTING TO A DATABASE                                       *vorax-connect* 
+
+TODO: add documentation
+
+==============================================================================
+EXECUTING STATEMENTS                                              *vorax-exec* 
+
+TODO: add documentation
+
+==============================================================================
+THE OUTPUT WINDOW                                               *vorax-output* 
+
+TODO: add documentation
+
+==============================================================================
+THE CODE COMPLETION SYSTEM                                        *vorax-omni* 
+
+TODO: add documentation
+
+==============================================================================
+THE DATABASE EXPLORER                                         *vorax-explorer* 
+
+TODO: add documentation
+
+==============================================================================
+DESCRIBING OBJECTS                                            *vorax-describe* 
+
+TODO: add documentation
+
+==============================================================================
+WORKING WITH EXPLAIN PLANS                                 *vorax-explainplan* 
+
+TODO: add documentation
+
+==============================================================================
+THE ORACLE HTML DOCUMENTATION                                   *vorax-oradoc* 
+
+TODO: add documentation
+
+==============================================================================
+VORAX OPTIONS                                                  *vorax-options* 
+
+TODO: add documentation
+
+"vim:ts=8 sw=8 noexpandtab tw=78 ft=help:
