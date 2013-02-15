@@ -11,10 +11,6 @@ What we have so far:
 anymore with Vorax vim distribution. Another advantage is that
 the dependecies with other packages/gems are automatically 
 installed.
-* The communication with the SqlPlus process is done now using 
-the [childprocess](https://github.com/jarib/childprocess) gem. 
-That's nice because we don't have to reimplement this low level 
-logic from scratch.
 * An improved cancel operation for an executing statement.
 * The compressed output is now smarter and the user is prompted 
 for substitution variables even in this mode. In addition, a new 
@@ -36,7 +32,7 @@ of standard Oracle functions like: INSTR(), ROUND() etc.
 2. vim 7.3
 3. install vorax.gem
 
-    gem install vorax --no-rdoc --no-ri
+   '''gem install vorax --no-rdoc --no-ri'''
 
 4. ensure you have a valid Oracle client with sqlplus available
 5. install Vorax vim plugin: manually, pathogen, vundle... it's up
