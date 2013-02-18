@@ -186,6 +186,13 @@ function! vorax#ruby#SubprocUnderCursor(text, pos) abort"{{{
 ERC
 endfunction"}}}
 
+function! vorax#ruby#RemoveAllComments(text) abort"{{{
+	ruby <<ERC
+	clear_text = Vorax::Parser.remove_all_comments(VIM::evaluate('a:text'))
+	VIM::command("return #{clear_text.inspect}")
+ERC
+endfunction"}}}
+
 " }}}
 
 " SqlPlus Interaction {{{

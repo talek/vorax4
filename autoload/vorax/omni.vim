@@ -195,6 +195,7 @@ function! s:PackageItems(schema, object) abort"{{{
         \ ' object=' . string(a:object))
   call VORAXDebug('omni s:PackageItems: fetch source...')
   let content = vorax#sqlplus#GetSource(a:schema, a:object, 'PACKAGE')
+  let content = vorax#ruby#RemoveAllComments(content)
   call VORAXDebug('omni s:PackageItems: describe package...')
   let data = vorax#ruby#DescribePackageSpec(content)
   call VORAXDebug('omni s:PackageItems: data=' . string(data))
