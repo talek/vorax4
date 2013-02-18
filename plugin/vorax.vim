@@ -183,6 +183,9 @@ if exists('g:vorax_debug') && g:vorax_debug == 1
     exe "call vorax#ruby#Log(0, " . string(msg) . ")"
   endfunction
 
+	ruby VIM::command("let rb_version = #{Vorax::VERSION.inspect}")
+	call VORAXDebug("Using ruby Vorax GEM: " . rb_version)
+
 else
 
   function! VORAXDebug(message)
