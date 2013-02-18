@@ -163,8 +163,8 @@ function! s:AliasItems(alias, prefix) abort"{{{
         else
           let data = s:Columns(metadata['schema'], metadata['object'])
           call s:Cache(metadata, data)
-          call extend(expanded_columns, s:ResultsetToOmni(data, 0, s:context['text_before'], ''))
         endif
+				call extend(expanded_columns, s:ResultsetToOmni(data, 0, s:context['text_before'], ''))
       endif
     else
       let rec = { 'word' : column,
@@ -177,6 +177,7 @@ function! s:AliasItems(alias, prefix) abort"{{{
       call add(expanded_columns, rec)
     endif
   endfor
+  call VORAXDebug("omni s:AliasItems expanded_columns=" . string(expanded_columns))
   call filter(expanded_columns, 'v:val.word =~ ''^' . a:prefix . '''')
   return expanded_columns
 endfunction"}}}
