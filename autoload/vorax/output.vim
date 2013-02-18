@@ -50,7 +50,11 @@ function! vorax#output#Close() abort " {{{
     let winnr = bufwinnr(outputBufNo)
     if winnr != -1
       exec winnr . 'wincmd w'
-      close!
+      try
+				close!
+      catch /^Vim\%((\a\+)\)\=:E444/
+				echo 'Last window baby!'
+			endtry
       wincmd p
     endif
   endif
