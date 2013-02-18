@@ -26,6 +26,10 @@ private functions etc. Likewise, Vorax completion is now aware
 of standard Oracle functions like: INSTR(), ROUND() etc.
 * Code folding for PLSQL packages.
 
+## Demo
+
+Just have a look here: http://youtu.be/DInsKTZS028
+
 ## Installation
 
 1. ensure you have ruby1.9.3
