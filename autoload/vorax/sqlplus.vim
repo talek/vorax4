@@ -33,10 +33,10 @@ endfunction
 
 function! vorax#sqlplus#Connect(cstr) abort"{{{
   call VORAXDebug("vorax#sqlplus#Connect: cstr=" . string(a:cstr))
+  let parts = s:PrepareCstr(a:cstr)
   " visual feedback to the user please
   redraw
   echo 'Initializing connection...'
-  let parts = s:PrepareCstr(a:cstr)
   " theoretically we have the buddy sqlplus process, but it is a
   " good idea to recreate it here, as a last resort just in case that
   " sqlplus process is hung or other nasty things had happen with it

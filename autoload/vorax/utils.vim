@@ -25,7 +25,7 @@ function! vorax#utils#DescribeCurrentStatement(plsql_blocks, sqlplus_commands) a
   let line = line('.')
   let col = col('.')
   let position = vorax#utils#AbsolutePosition(line, col)
-  let text = join(getline(s:ParseOffset(line, col), line('$')), "\n")
+  let text = vorax#utils#BufferContent(s:ParseOffset(line, col))
   let stmt = vorax#ruby#CurrentStatement(text, position, a:plsql_blocks, a:sqlplus_commands)
   call VORAXDebug('vorax#utils#DescribeCurrentStatement: crr_statement=' . string(stmt))
   let stmt['relative'] = position - stmt['position']
@@ -86,7 +86,12 @@ function! vorax#utils#ClearUserInputStream() abort"{{{
   endwhile
 endfunction"}}}
 
-function! vorax#utils#BufferContent() abort"{{{
+function! vorax#utils#BufferContent(...) abort"{{{
+  if exists('a:1')
+  	let start_with = a:1
+  else
+  	let start_with = 1
+  endif
   if &ff == 'dos'
     let separator = "\r\n"
   elseif &ff == 'unix'
@@ -94,7 +99,7 @@ function! vorax#utils#BufferContent() abort"{{{
   elseif &ff == 'mac'
     let separator = "\r"
   endif
-  let content = join(getline(1, '$'), separator)
+  let content = join(getline(start_with, '$'), separator)
   return content
 endfunction"}}}
 

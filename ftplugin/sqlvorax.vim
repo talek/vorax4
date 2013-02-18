@@ -10,9 +10,6 @@ if g:vorax_omni_enable
   setlocal omnifunc=vorax#omni#Complete
 endif
 
-" SuperTab integration
-let b:SuperTabNoCompleteAfter=function("vorax#omni#SupertabPreventCompletion")
-
 if exists('*VORAXAfterSqlBufferLoad')
 	" Execute hook
 	call VORAXAfterSqlBufferLoad()
