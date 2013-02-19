@@ -7,12 +7,6 @@ let b:crr_changedtick = 0
 
 if g:vorax_folding_enable
 
-  function! s:CompareRegionsByLevel(i1, i2)"{{{
-    let i1 = a:i1.level
-    let i2 = a:i2.level
-    return i1 == i2 ? 0 : i1 < i2 ? 1 : -1
-  endfunction"}}}
-
   function! s:SaveOpenFolds()"{{{
     if exists('b:descriptor')
       for element in b:descriptor
@@ -30,7 +24,7 @@ if g:vorax_folding_enable
   endfunction"}}}
 
   function! s:ComputeFoldsStructure()"{{{
-    let b:descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 's:CompareRegionsByLevel')
+    let b:descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 'vorax#utils#CompareRegionsByLevelDesc')
     for element in b:descriptor
       let element["start_pos"] = byte2line(element["start_pos"] + 1)
       let element["end_pos"] = byte2line(element["end_pos"])
@@ -80,6 +74,11 @@ if g:vorax_folding_enable
     normal! zR
   endif
 
+endif
+
+" set Vorax completion function
+if g:vorax_omni_enable
+  setlocal omnifunc=vorax#omni#Complete
 endif
 
 if exists('*VORAXAfterPlsqlBufferLoad')

@@ -52,9 +52,80 @@ function! s:WordItems(prefix) abort"{{{
         \ g:vorax_omni_max_items + 1)
   call VORAXDebug('omni s:WordItems: ' . output)
   let data  = vorax#ruby#ParseResultset(output)
+  let local_items = s:LocalItems()
+  if exists('data["resultset"][0]')
+		if exists('local_items["resultset"][0]')
+			call extend(data['resultset'][0], local_items['resultset'][0])
+		endif
+  else
+		let data['resultset'] = local_items['resultset']
+	endif
   let result = s:ResultsetToOmni(data, 0, s:context['text_before'], '')
+	call filter(result, 'v:val.word =~ ''^' . a:prefix . '''')
   return result
 endfunction"}}}
+
+function! s:LocalItems() abort
+  " where are we?
+	let result = {'resultset' : [[]]}
+	let crr_pos = line2byte(line('.')) + col('.') - 1
+	" tell me more about the code structure
+	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 'vorax#utils#CompareRegionsByLevelDesc')
+  let crr_region = vorax#utils#GetCurrentRegion(descriptor, crr_pos, '\m\(FUNCTION\)\|\(PROCEDURE\)')
+  let top_region = vorax#utils#GetTopRegion(descriptor, crr_pos)
+
+	" if we're on a PLSQL package or type
+	if top_region != {} && 
+				\ (top_region["type"] == 'BODY' || top_region["type"] == 'SPEC')
+		" it makes sense to extract info from current spec
+		let spec = vorax#utils#GetSpecRegion(descriptor, top_region["name"])
+		if spec != {}
+			" Parse the spec from the current buffer
+			let source = strpart(vorax#utils#BufferContent(), spec["start_pos"], spec["end_pos"] - spec["start_pos"])
+			let items = s:PackageItems(source)
+			if exists("items['resultset']")
+				let result['resultset'] = items['resultset']
+			endif
+		else
+			" Parse the spec from dictionary
+			let name_metadata = vorax#sqlplus#NameResolve(top_region["name"])
+			if g:vorax_omni_parse_package
+				let data = s:PackageItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
+			else
+				" get all functions/procedures from the package or type
+				let data = s:PlsqlModules(name_metadata['id'])
+			endif
+			if exists("data['resultset']")
+				let result['resultset'] = data['resultset']
+			endif
+		endif
+	endif
+
+	" local items related to the declare part of the current region
+	if crr_region != {}
+		echom string(crr_region)
+		let data = {'resultset': [[]]}
+		let source = strpart(vorax#utils#BufferContent(), crr_region["start_pos"], crr_region["body_start_pos"] - crr_region["start_pos"])
+		echom string(source)
+		let subregions = vorax#utils#GetDirectSubRegions(descriptor, crr_region)
+		let offset = 0
+		for subregion in subregions
+			call add(data['resultset'][0], [subregion['name'], subregion['name'], subregion['type'], 'local'])
+			" remove from source
+		  let start_region = subregion['start_pos'] - crr_region['start_pos']
+			let end_region = subregion['end_pos'] - crr_region['start_pos'] + 1
+			echom string(subregion)
+			echom "start_region=".start_region . " end_region=".end_region
+		  let source = strpart(source, 0, start_region + offset) . '/*' .
+						\ strpart(source, start_region + offset, end_region - start_region + offset) .
+						\ '*/' . strpart(source, end_region + offset)
+			let offset += 4
+			echom string(subregion)
+			echom string(source)
+		endfor
+	end
+	return result
+endfunction
 
 function! s:DotItems(prefix) abort"{{{
   call VORAXDebug("omni s:DotItems a:prefix=" . string(a:prefix))
@@ -80,7 +151,7 @@ function! s:DotItems(prefix) abort"{{{
         let data = s:SchemaObjects(name_metadata['schema'], a:prefix)
       elseif name_metadata['type'] == 'PACKAGE'
         if g:vorax_omni_parse_package
-          let data = s:PackageItems(name_metadata['schema'], name_metadata['object'])
+          let data = s:PackageItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
         else
           " get all functions/procedures from the package or type
           let data = s:PlsqlModules(name_metadata['id'])
@@ -190,12 +261,9 @@ function! s:SchemaObjects(schema, prefix) abort"{{{
   return vorax#ruby#ParseResultset(output)
 endfunction"}}}
 
-function! s:PackageItems(schema, object) abort"{{{
-  call VORAXDebug('omni s:PackageItems: schema=' . string(a:schema) .
-        \ ' object=' . string(a:object))
-  call VORAXDebug('omni s:PackageItems: fetch source...')
-  let content = vorax#sqlplus#GetSource(a:schema, a:object, 'PACKAGE')
-  let content = vorax#ruby#RemoveAllComments(content)
+function! s:PackageItems(source) abort"{{{
+  call VORAXDebug('omni s:PackageItems: source=' . string(a:source))
+  let content = vorax#ruby#RemoveAllComments(a:source)
   call VORAXDebug('omni s:PackageItems: describe package...')
   let data = vorax#ruby#DescribePackageSpec(content)
   call VORAXDebug('omni s:PackageItems: data=' . string(data))

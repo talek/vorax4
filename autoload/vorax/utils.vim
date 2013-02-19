@@ -87,8 +87,12 @@ function! vorax#utils#ClearUserInputStream() abort"{{{
 endfunction"}}}
 
 function! vorax#utils#BufferContent(...) abort"{{{
+	let end_with = '$'
   if exists('a:1')
   	let start_with = a:1
+  	if exists('a:2')
+			let end_with = a:2
+		endif
   else
   	let start_with = 1
   endif
@@ -99,7 +103,7 @@ function! vorax#utils#BufferContent(...) abort"{{{
   elseif &ff == 'mac'
     let separator = "\r"
   endif
-  let content = join(getline(start_with, '$'), separator)
+	let content = join(getline(start_with, end_with), separator)
   return content
 endfunction"}}}
 
@@ -109,6 +113,62 @@ function! vorax#utils#VimCmdOutput(cmd) abort"{{{
   redir END
   return output
 endfunction"}}}
+
+function! vorax#utils#CompareRegionsByLevelDesc(i1, i2)"{{{
+	let i1 = a:i1.level
+	let i2 = a:i2.level
+	return i1 == i2 ? 0 : i1 < i2 ? 1 : -1
+endfunction"}}}
+
+function! vorax#utils#GetTopRegion(descriptor, position)
+  for code_region in a:descriptor
+		if (code_region["start_pos"] < a:position) && 
+					\ (code_region["end_pos"] > a:position) &&
+					\ (code_region["level"] == 1)
+      return code_region
+		endif
+	endfor
+	return {}
+endfunction
+
+function! vorax#utils#GetCurrentRegion(descriptor, position, ...)
+  " the current region depends on the way the descriptor is sorted. If the
+  " most inner region is to be returned, then it has to be sorted DESC by
+  " level
+  for code_region in a:descriptor
+		if (code_region["start_pos"] < a:position) && (code_region["end_pos"] > a:position)
+      if exists('a:1') 
+      	if code_region["type"] =~? a:1
+					return code_region
+				endif
+			else
+				return code_region
+			endif
+		endif
+	endfor
+	return {}
+endfunction
+
+function! vorax#utils#GetSpecRegion(descriptor, name)
+  for code_region in a:descriptor
+		if code_region["name"] ==? a:name && code_region["type"] ==? 'SPEC'
+      return code_region
+		endif
+	endfor
+	return {}
+endfunction
+
+function! vorax#utils#GetDirectSubRegions(descriptor, region)
+	let result = []
+	for code_region in a:descriptor
+		if (code_region["level"] == a:region["level"] + 1) &&
+					\ (code_region["start_pos"] > a:region["start_pos"]) &&
+					\ (code_region["end_pos"] < a:region["end_pos"])
+			call add(result, code_region)
+		endif
+	endfor
+	return result
+endfunction
 
 function! s:ParseOffset(line, column) abort"{{{
   if g:vorax_parse_min_lines > 0

@@ -46,9 +46,9 @@ The main reasons which motivate us to develop this plugin are:
 
 	- the dream of an improved SqlPLUS environment. I know a lot of guys
 	  (including me) who intensively use SqlPLUS, even for complex tasks. 
-	  On the other hand its limitations are quite annoying: we want good 
+	  On the other hand, its limitations are quite annoying: we want good 
 	  code completion, pretty print output and so on. We cannot get rid of 
-	  SqlPLUS because we still think it is a great tool but we can make it 
+	  SqlPLUS because we still think it is a great tool, but we can make it 
 	  better. This is another goal of VoraX.
 
 VoraX stands for Vim ORAcle eXtension. It acts like a wrapper on the SqlPLUS
@@ -57,7 +57,7 @@ hidden way so that the user is not aware of that. This approach has pros and
 cons. From one hand it inherits all those nice SqlPLUS features like explain
 plans, column computations and so on, but on the other hand it has to deal
 with all the limitations of the SqlPLUS (formatting output, syntax highlight,
-code completion etc.) To fill this gap is the whole idea of VoraX.
+code completion etc.). To fill this gap is the whole idea of VoraX.
 
 ==============================================================================
 FEATURES                                                      *vorax-features*
@@ -132,25 +132,16 @@ However, you need to take care of some dependencies VoraX relies on:
       CREAM configurations are not supported therefore a plain Vim should be 
       used.
 
-   3. Ruby 1.9.X
+   3. Ruby 1.9.X (at least 1.9.3 is advisable)
 
-   4. Rubygems. On Debian systems is as simple as: 
-   
-      sudo apt-get install rubygems
 
-   5. The ruby-vorax gem:
+   4. The ruby-vorax gem:
 
       gem install vorax
 
-   6. A working Oracle client with SqlPLUS, which has to be available in the 
+   5. A working Oracle client with SqlPLUS, which has to be available in the 
       environment $PATH variable. The instant client with SqlPLUS should be 
       just fine.
-
-   7. Optionally, if you want to securely store passwords for your Oracle 
-      connections then the openssl ruby extension must be available. 
-      On Ubuntu/Debian systems you may use the following command to install it: 
-      
-      sudo apt-get install libopenssl-ruby1.9 
 
 ==============================================================================
 CONNECTING TO A DATABASE                                       *vorax-connect* 

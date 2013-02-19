@@ -67,6 +67,11 @@ function! vorax#sqlplus#Connect(cstr) abort"{{{
   " reset the omni cache
   call vorax#omni#ResetCache()
   redraw
+	" run AfterConnect hook
+	if exists('*VORAXAfterConnect')
+		" Execute hook
+		call VORAXAfterConnect()
+	endif
 endfunction"}}}
 
 function! vorax#sqlplus#Initialize() abort"{{{

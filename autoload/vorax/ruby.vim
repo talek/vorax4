@@ -167,6 +167,8 @@ function! vorax#ruby#PlsqlRegions(source_text) abort"{{{
       regions << {'start_pos' => node.content.start_pos,
                   'end_pos' => node.content.end_pos,
                   'type' => node.content.type,
+                  'name' => node.content.name,
+                  'body_start_pos' => node.content.body_start_pos,
                   'level' => node.node_depth}
     end
   end
