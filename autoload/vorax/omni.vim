@@ -65,7 +65,7 @@ function! s:WordItems(prefix) abort"{{{
   return result
 endfunction"}}}
 
-function! s:LocalItems() abort
+function! s:LocalItems() abort"{{{
   " where are we?
 	let result = {'resultset' : [[]]}
 	let crr_pos = line2byte(line('.')) + col('.') - 1
@@ -73,6 +73,7 @@ function! s:LocalItems() abort
 	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 'vorax#utils#CompareRegionsByLevelDesc')
   let crr_region = vorax#utils#GetCurrentRegion(descriptor, crr_pos, '\m\(FUNCTION\)\|\(PROCEDURE\)')
   let top_region = vorax#utils#GetTopRegion(descriptor, crr_pos)
+	let buffer_content = vorax#utils#BufferContent()
 
 	" if we're on a PLSQL package or type
 	if top_region != {} && 
@@ -81,7 +82,7 @@ function! s:LocalItems() abort
 		let spec = vorax#utils#GetSpecRegion(descriptor, top_region["name"])
 		if spec != {}
 			" Parse the spec from the current buffer
-			let source = strpart(vorax#utils#BufferContent(), spec["start_pos"], spec["end_pos"] - spec["start_pos"])
+			let source = strpart(buffer_content, spec["start_pos"], spec["end_pos"] - spec["start_pos"])
 			let items = s:PackageItems(source)
 			if exists("items['resultset']")
 				let result['resultset'] = items['resultset']
@@ -99,33 +100,44 @@ function! s:LocalItems() abort
 				let result['resultset'] = data['resultset']
 			endif
 		endif
+		if top_region["type"] == 'BODY'
+			" if we're on a body, it's a good idea to get the private global
+			" declaration
+			let subregions = vorax#utils#GetDirectSubRegions(descriptor, top_region)
+			let body_content = strpart(buffer_content, top_region["start_pos"])
+			let global_private = vorax#utils#RemoveDirectSubRegions(body_content, descriptor, top_region)
+			let global_private = vorax#ruby#RemoveAllComments(global_private)
+			let global_private = substitute(global_private, '\m\<begin\>.*$', '', 'g')
+			let items = s:PackageItems(global_private)
+			if exists("items['resultset'][0]")
+				call extend(result['resultset'][0], items['resultset'][0])
+			endif
+		endif
 	endif
 
 	" local items related to the declare part of the current region
-	if crr_region != {}
-		echom string(crr_region)
-		let data = {'resultset': [[]]}
-		let source = strpart(vorax#utils#BufferContent(), crr_region["start_pos"], crr_region["body_start_pos"] - crr_region["start_pos"])
-		echom string(source)
-		let subregions = vorax#utils#GetDirectSubRegions(descriptor, crr_region)
-		let offset = 0
-		for subregion in subregions
-			call add(data['resultset'][0], [subregion['name'], subregion['name'], subregion['type'], 'local'])
-			" remove from source
-		  let start_region = subregion['start_pos'] - crr_region['start_pos']
-			let end_region = subregion['end_pos'] - crr_region['start_pos'] + 1
-			echom string(subregion)
-			echom "start_region=".start_region . " end_region=".end_region
-		  let source = strpart(source, 0, start_region + offset) . '/*' .
-						\ strpart(source, start_region + offset, end_region - start_region + offset) .
-						\ '*/' . strpart(source, end_region + offset)
-			let offset += 4
-			echom string(subregion)
-			echom string(source)
-		endfor
-	end
+	call s:ExtractDeclareItems(buffer_content, descriptor, crr_region, result)
 	return result
-endfunction
+endfunction"}}}
+
+function! s:ExtractDeclareItems(source, descriptor, crr_region, data)"{{{
+	if a:crr_region != {}
+		call add(a:data['resultset'][0], [a:crr_region['name'], a:crr_region['name'], a:crr_region['type'], ''])
+		let source = strpart(a:source, a:crr_region["start_pos"], a:crr_region["body_start_pos"] - a:crr_region["start_pos"])
+		let subregions = vorax#utils#GetDirectSubRegions(a:descriptor, a:crr_region)
+		for subregion in subregions
+			" add declare modules (local procedures and functions)
+			call add(a:data['resultset'][0], [subregion['name'], subregion['name'], subregion['type'], ''])
+		endfor
+		let source = vorax#utils#RemoveDirectSubRegions(source, a:descriptor, a:crr_region)
+		let items = s:PackageItems(source)
+		if exists("items['resultset'][0]")
+			call extend(a:data['resultset'][0], items['resultset'][0])
+		endif
+		let crr_region = vorax#utils#GetUpperRegion(a:descriptor, a:crr_region, '\m\(FUNCTION\)\|\(PROCEDURE\)')
+		call s:ExtractDeclareItems(a:source, a:descriptor, crr_region, a:data)
+	end
+endfunction"}}}
 
 function! s:DotItems(prefix) abort"{{{
   call VORAXDebug("omni s:DotItems a:prefix=" . string(a:prefix))

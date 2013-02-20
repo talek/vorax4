@@ -131,6 +131,40 @@ function! vorax#utils#GetTopRegion(descriptor, position)
 	return {}
 endfunction
 
+function! vorax#utils#RemoveDirectSubRegions(code_source, descriptor, crr_region)
+	let code_source = a:code_source
+	let subregions = vorax#utils#GetDirectSubRegions(a:descriptor, a:crr_region)
+	let offset = 0
+	for subregion in subregions
+		" remove from source
+		let start_region = subregion['start_pos'] - a:crr_region['start_pos'] - offset
+		let end_region = subregion['end_pos'] - a:crr_region['start_pos'] + 1 - offset
+		let code_source = strpart(code_source, 0, start_region) .
+					\ strpart(code_source, end_region )
+		let offset += (end_region - start_region)
+	endfor
+	return code_source
+endfunction
+
+function! vorax#utils#GetUpperRegion(descriptor, region, ...)
+  " the current region depends on the way the descriptor is sorted. If the
+  " most inner region is to be returned, then it has to be sorted DESC by
+  " level
+  for code_region in a:descriptor
+		if (code_region["start_pos"] < a:region["start_pos"]) && (code_region["end_pos"] > a:region["end_pos"]) &&
+					\ (code_region["level"] < a:region["level"])
+      if exists('a:1') 
+      	if code_region["type"] =~? a:1
+					return code_region
+				endif
+			else
+				return code_region
+			endif
+		endif
+	endfor
+	return {}
+endfunction
+
 function! vorax#utils#GetCurrentRegion(descriptor, position, ...)
   " the current region depends on the way the descriptor is sorted. If the
   " most inner region is to be returned, then it has to be sorted DESC by

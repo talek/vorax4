@@ -85,7 +85,7 @@ call s:initVariable('g:vorax_omni_enable', 1)
 " Everything else is assumed to be [lower].
 call s:initVariable('g:vorax_omni_case', 'smart')
 call s:initVariable('g:vorax_omni_max_items', 200)
-call s:initVariable('g:vorax_omni_word_prefix_size', 3)
+call s:initVariable('g:vorax_omni_word_prefix_size', 2)
 call s:initVariable('g:vorax_omni_parse_package', 1)
 call s:initVariable('g:vorax_omni_force_upcase_const', 1)
 call s:initVariable('g:vorax_omni_sort_items', 0)
