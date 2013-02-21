@@ -68,7 +68,7 @@ endfunction"}}}
 function! s:LocalItems() abort"{{{
   " where are we?
 	let result = {'resultset' : [[]]}
-	let crr_pos = line2byte(line('.')) + col('.') - 1
+	let crr_pos = s:context['absolute_pos']
 	" tell me more about the code structure
 	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 'vorax#utils#CompareRegionsByLevelDesc')
   let crr_region = vorax#utils#GetCurrentRegion(descriptor, crr_pos, '\m\(FUNCTION\)\|\(PROCEDURE\)')
@@ -115,6 +115,24 @@ function! s:LocalItems() abort"{{{
 		endif
 	endif
 
+	" if on a FOR...LOOP then add the local counter/cursor variable
+  let crr_block = vorax#utils#GetCurrentRegion(descriptor, crr_pos)
+	if crr_block != {} && crr_block['type'] == 'FOR_BLOCK'
+		" add local FOR variables from the outter loops
+		while 1
+      let upper = vorax#utils#GetUpperRegion(descriptor, crr_block)
+			if upper == {}
+				break
+			else
+				let context = crr_block['context']
+				if context != {} && context['for_var'] != ''
+					call add(result['resultset'][0], [context['for_var'], context['for_var'], 'local', ''])
+				endif
+				let crr_block = upper
+			endif
+		endwhile
+	endif
+
 	" local items related to the declare part of the current region
 	call s:ExtractDeclareItems(buffer_content, descriptor, crr_region, result)
 	return result
@@ -148,7 +166,13 @@ function! s:DotItems(prefix) abort"{{{
   if oracle_name != ''
     " before anything else, check if it's an alias
     if oracle_name !~ '\m\.' 
-      let result = s:AliasItems(oracle_name, a:prefix)
+			let result = s:AliasItems(oracle_name, a:prefix)
+			if len(result) > 0
+				" it's an alias: just return its columns
+				return result
+			endif
+			" it could be a local FOR..LOOP variable
+    	let result = s:DotItemsForLocalLoop(oracle_name, a:prefix)
       if len(result) > 0
         " it's an alias: just return its columns
         return result
@@ -198,6 +222,32 @@ function! s:DotItems(prefix) abort"{{{
   return result
 endfunction"}}}
 
+function! s:DotItemsForLocalLoop(variable, prefix)
+	let crr_pos = s:context['absolute_pos']
+	" tell me more about the code structure
+	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 'vorax#utils#CompareRegionsByLevelDesc')
+	let crr_block = vorax#utils#GetCurrentRegion(descriptor, crr_pos)
+	if crr_block != {} && crr_block['type'] == 'FOR_BLOCK'
+		" add local FOR variables from the outter loops
+		while 1
+			let upper = vorax#utils#GetUpperRegion(descriptor, crr_block)
+			if upper == {}
+				break
+			else
+				let context = crr_block['context']
+				if context != {} && context['for_var'] == a:variable
+					if context['expr'] != ''
+						let expr = 'select * from ' . context['expr'] . ' ' . a:variable
+						return s:AliasItems(a:variable, a:prefix, expr)
+					endif
+				endif
+				let crr_block = upper
+			endif
+		endwhile
+	endif
+	return []
+endfunction
+
 function! s:ArgumentItems(prefix) abort"{{{
   let result = []
   let stmt = vorax#utils#DescribeCurrentStatement(0, 0)
@@ -229,10 +279,14 @@ function! s:ArgumentItems(prefix) abort"{{{
   return result
 endfunction"}}}
 
-function! s:AliasItems(alias, prefix) abort"{{{
+function! s:AliasItems(alias, prefix, ...) abort"{{{
   call VORAXDebug("omni s:AliasItems alias=" . string(a:alias). " prefix=" . string(a:prefix))
   let expanded_columns = []
-  let stmt = vorax#utils#DescribeCurrentStatement(0, 0)
+  if exists("a:1")
+  	let stmt = {'text' : a:1, 'relative' : 1}
+  else
+		let stmt = vorax#utils#DescribeCurrentStatement(0, 0)
+	endif
   let columns = vorax#ruby#AliasColumns(stmt.text, a:alias, stmt.relative - 1)
   call VORAXDebug("omni s:AliasItems alias columns=" . string(columns))
   for column in columns
@@ -306,6 +360,7 @@ function! s:CompletionContext() abort"{{{
   let context = { 'start_from' : -1,
                 \ 'current_line' : strpart(getline('.'), 0, col('.') - 1),
                 \ 'current_col' : col('.'),
+								\ 'absolute_pos' : line2byte(line('.')) + col('.') - 1,
                 \ 'text_before' : s:NonEmptyAbove(),
                 \ 'completion_type' : ''}
 

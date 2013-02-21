@@ -14,7 +14,7 @@ let g:vorax_ruby_loaded = 1
 
 " Always set the following variable to match the
 " vorax.gem version requirement.
-let s:ruby_vorax_gem_requirement = "~> 0.2"
+let s:ruby_vorax_gem_requirement = "~> 0.3"
 
 let s:ruby_ver = ''
 if has('ruby')
@@ -165,15 +165,32 @@ function! vorax#ruby#PlsqlRegions(source_text) abort"{{{
   structure = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
   structure.tree.breadth_each do |node|
     if node.content
-      regions << {'start_pos' => node.content.start_pos,
-                  'end_pos' => node.content.end_pos,
-                  'type' => node.content.type,
-                  'name' => node.content.name,
-                  'body_start_pos' => node.content.body_start_pos,
-                  'level' => node.node_depth}
+      collect = []
+      context_hash = {}
+      if node.content.context
+				node.content.context.each { |k, v| collect << "#{k.to_s.inspect} : #{(v ? v : '').inspect}" }
+				context_hash = "{" + collect.join(',') + "}"
+			end
+      item = {'start_pos' => node.content.start_pos,
+							'end_pos' => node.content.end_pos,
+							'type' => node.content.type,
+							'name' => node.content.name,
+							'context' => context_hash,
+							'body_start_pos' => node.content.body_start_pos,
+							'level' => node.node_depth}
+		  collect = [] 
+			item.each do |k, v| 
+			  if k != 'context'
+					collect << "#{k.to_s.inspect} : #{(v ? v : '').inspect}"
+				else
+					collect << "#{k.to_s.inspect} : #{(v ? v : ''.inspect)}"
+				end
+			end
+			vim_item_hash = "{" + collect.join(',') + "}"
+    	regions << vim_item_hash;
     end
   end
-  VIM::command("return #{regions.inspect.gsub(/=>/, ':')}")
+  VIM::command("return [#{regions.join(',')}]")
 ERC
 endfunction"}}}
 

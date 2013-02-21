@@ -120,7 +120,7 @@ function! vorax#utils#CompareRegionsByLevelDesc(i1, i2)"{{{
 	return i1 == i2 ? 0 : i1 < i2 ? 1 : -1
 endfunction"}}}
 
-function! vorax#utils#GetTopRegion(descriptor, position)
+function! vorax#utils#GetTopRegion(descriptor, position)"{{{
   for code_region in a:descriptor
 		if (code_region["start_pos"] < a:position) && 
 					\ (code_region["end_pos"] > a:position) &&
@@ -129,9 +129,9 @@ function! vorax#utils#GetTopRegion(descriptor, position)
 		endif
 	endfor
 	return {}
-endfunction
+endfunction"}}}
 
-function! vorax#utils#RemoveDirectSubRegions(code_source, descriptor, crr_region)
+function! vorax#utils#RemoveDirectSubRegions(code_source, descriptor, crr_region)"{{{
 	let code_source = a:code_source
 	let subregions = vorax#utils#GetDirectSubRegions(a:descriptor, a:crr_region)
 	let offset = 0
@@ -144,9 +144,9 @@ function! vorax#utils#RemoveDirectSubRegions(code_source, descriptor, crr_region
 		let offset += (end_region - start_region)
 	endfor
 	return code_source
-endfunction
+endfunction"}}}
 
-function! vorax#utils#GetUpperRegion(descriptor, region, ...)
+function! vorax#utils#GetUpperRegion(descriptor, region, ...)"{{{
   " the current region depends on the way the descriptor is sorted. If the
   " most inner region is to be returned, then it has to be sorted DESC by
   " level
@@ -163,9 +163,9 @@ function! vorax#utils#GetUpperRegion(descriptor, region, ...)
 		endif
 	endfor
 	return {}
-endfunction
+endfunction"}}}
 
-function! vorax#utils#GetCurrentRegion(descriptor, position, ...)
+function! vorax#utils#GetCurrentRegion(descriptor, position, ...)"{{{
   " the current region depends on the way the descriptor is sorted. If the
   " most inner region is to be returned, then it has to be sorted DESC by
   " level
@@ -181,18 +181,18 @@ function! vorax#utils#GetCurrentRegion(descriptor, position, ...)
 		endif
 	endfor
 	return {}
-endfunction
+endfunction"}}}
 
-function! vorax#utils#GetSpecRegion(descriptor, name)
+function! vorax#utils#GetSpecRegion(descriptor, name)"{{{
   for code_region in a:descriptor
 		if code_region["name"] ==? a:name && code_region["type"] ==? 'SPEC'
       return code_region
 		endif
 	endfor
 	return {}
-endfunction
+endfunction"}}}
 
-function! vorax#utils#GetDirectSubRegions(descriptor, region)
+function! vorax#utils#GetDirectSubRegions(descriptor, region)"{{{
 	let result = []
 	for code_region in a:descriptor
 		if (code_region["level"] == a:region["level"] + 1) &&
@@ -202,7 +202,7 @@ function! vorax#utils#GetDirectSubRegions(descriptor, region)
 		endif
 	endfor
 	return result
-endfunction
+endfunction"}}}
 
 function! s:ParseOffset(line, column) abort"{{{
   if g:vorax_parse_min_lines > 0
