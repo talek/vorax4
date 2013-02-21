@@ -27,9 +27,10 @@ if has('ruby') && s:ruby_ver =~ '\m^1\.9.*$'
     ruby <<ERC
     unless Gem::Version::Requirement.new([VIM::evaluate("s:ruby_vorax_gem_requirement")]).satisfied_by?(Gem::Version.new(Vorax::VERSION))
       VIM::command("echom 'Vorax found an incompatible version of its buddy ruby code!'")
-      VIM::command("echom 'To fix it:")
-      VIM::command("echom '  1) ensure you run the last version of Vorax")
-      VIM::command("echom '  2) gem update vorax")
+      VIM::command("echom 'To fix it:'")
+      VIM::command("echom '  1) ensure you run the last version of Vorax'")
+      VIM::command("echom '  2) gem update vorax'")
+    	VIM::command("throw 'LoadError'")
     end
 ERC
  catch /.*LoadError.*/

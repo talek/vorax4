@@ -163,34 +163,33 @@ hi User3 term=standout cterm=standout ctermfg=5 gui=reverse guifg=#d33682
 
 " Logging Initialization {{{
 
+function! VORAXDebug(message)
+	" dummy function: do nothing
+endfunction
+
 if exists('g:vorax_debug') && g:vorax_debug == 1
   " because this automatically forces loading of voraxlib/ruby.vim,
   " the startup of Vim will be slower, but this shouldn't be a
   " problem assuming that the user explicitly turned on vorax logging
   try
     exe "call vorax#ruby#InitLogging(g:vorax_homedir . '/vorax.log')"
+
+		function! VORAXDebug(message)
+			if type(a:message) == 3 || type(a:message) == 4
+				" a list or a dictionary
+				let msg = string(a:message)
+			else
+				let msg = a:message
+			endif
+			exe "call vorax#ruby#Log(0, " . string(msg) . ")"
+		endfunction
+
   catch /E117/
     echo "Sorry, don't expect VoraX to work properly!"
   endtry
 
-  function! VORAXDebug(message)
-    if type(a:message) == 3 || type(a:message) == 4
-      " a list or a dictionary
-      let msg = string(a:message)
-    else
-      let msg = a:message
-    endif
-    exe "call vorax#ruby#Log(0, " . string(msg) . ")"
-  endfunction
-
 	ruby VIM::command("let rb_version = #{Vorax::VERSION.inspect}")
 	call VORAXDebug("Using ruby Vorax GEM: " . rb_version)
-
-else
-
-  function! VORAXDebug(message)
-    " dummy function: do nothing
-  endfunction
 
 endif
 
