@@ -14,7 +14,7 @@ let g:vorax_ruby_loaded = 1
 
 " Always set the following variable to match the
 " vorax.gem version requirement.
-let s:ruby_vorax_gem_requirement = "~> 0.1"
+let s:ruby_vorax_gem_requirement = "~> 0.2"
 
 let s:ruby_ver = ''
 if has('ruby')
