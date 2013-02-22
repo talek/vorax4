@@ -49,7 +49,7 @@ call s:initVariable('g:vorax_output_window_size', 20)
 call s:initVariable('g:vorax_output_window_statusline', '%!vorax#output#StatusLine()')
 call s:initVariable('g:vorax_output_window_append', 0)
 call s:initVariable('g:vorax_output_window_sticky_cursor', 0)
-call s:initVariable('g:vorax_output_window_hl_error', 'pandocCitationID')
+call s:initVariable('g:vorax_output_window_hl_error', 'Error')
 
 " The type of funnel:
 "   0 = no funnel

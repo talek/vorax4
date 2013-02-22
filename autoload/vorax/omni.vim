@@ -6,22 +6,30 @@
 let s:cache_items = {}
 
 function! vorax#omni#Complete(findstart, base) abort"{{{
+	call VORAXDebug("vorax#omni#Complete START => a:findstart=" . string(a:findstart) . " a:base=" . string(a:base)
   if a:findstart
     let s:context = s:CompletionContext()
-    call VORAXDebug("vorax#omni#Complete: context = " . string(s:context))
+		call VORAXDebug("vorax#omni#Complete END => context = " . string(s:context))
     return s:context['start_from']
   else
     let items = []
     if s:context['completion_type'] == 'argument'
+			call VORAXDebug("vorax#omni#Complete START ArgumentItems")
       let items = s:ArgumentItems(a:base)
+			call VORAXDebug("vorax#omni#Complete END ArgumentItems")
     elseif s:context['completion_type'] == 'identifier'
+			call VORAXDebug("vorax#omni#Complete START WordItems")
       let items = s:WordItems(a:base)
+			call VORAXDebug("vorax#omni#Complete END WordItems")
     elseif s:context['completion_type'] == 'dot'
+			call VORAXDebug("vorax#omni#Complete START DotItems")
       let items = s:DotItems(a:base)
+			call VORAXDebug("vorax#omni#Complete END DotItems")
     endif
     if g:vorax_omni_sort_items
       call sort(items, "s:CompareOmniItems")
     endif
+		call VORAXDebug("vorax#omni#Complete END")
     if len(items) > 0
       return items
     else
@@ -83,7 +91,7 @@ function! s:LocalItems() abort"{{{
 		if spec != {}
 			" Parse the spec from the current buffer
 			let source = strpart(buffer_content, spec["start_pos"], spec["end_pos"] - spec["start_pos"])
-			let items = s:PackageItems(source)
+			let items = s:DeclareItems(source)
 			if exists("items['resultset']")
 				let result['resultset'] = items['resultset']
 			endif
@@ -91,7 +99,7 @@ function! s:LocalItems() abort"{{{
 			" Parse the spec from dictionary
 			let name_metadata = vorax#sqlplus#NameResolve(top_region["name"])
 			if g:vorax_omni_parse_package
-				let data = s:PackageItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
+				let data = s:DeclareItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
 			else
 				" get all functions/procedures from the package or type
 				let data = s:PlsqlModules(name_metadata['id'])
@@ -108,7 +116,7 @@ function! s:LocalItems() abort"{{{
 			let global_private = vorax#utils#RemoveDirectSubRegions(body_content, descriptor, top_region)
 			let global_private = vorax#ruby#RemoveAllComments(global_private)
 			let global_private = substitute(global_private, '\m\<begin\>.*$', '', 'g')
-			let items = s:PackageItems(global_private)
+			let items = s:DeclareItems(global_private)
 			if exists("items['resultset'][0]")
 				call extend(result['resultset'][0], items['resultset'][0])
 			endif
@@ -148,7 +156,7 @@ function! s:ExtractDeclareItems(source, descriptor, crr_region, data)"{{{
 			call add(a:data['resultset'][0], [subregion['name'], subregion['name'], subregion['type'], ''])
 		endfor
 		let source = vorax#utils#RemoveDirectSubRegions(source, a:descriptor, a:crr_region)
-		let items = s:PackageItems(source)
+		let items = s:DeclareItems(source)
 		if exists("items['resultset'][0]")
 			call extend(a:data['resultset'][0], items['resultset'][0])
 		endif
@@ -178,38 +186,9 @@ function! s:DotItems(prefix) abort"{{{
         return result
       endif
     endif
-    let name_metadata = vorax#sqlplus#NameResolve(oracle_name)
-    if s:IsCached(name_metadata)
-      let data = s:Cache(name_metadata)
-    else
-      if name_metadata['type'] == 'SCHEMA'
-        " get all schema objects matching the prefix
-        let data = s:SchemaObjects(name_metadata['schema'], a:prefix)
-      elseif name_metadata['type'] == 'PACKAGE'
-        if g:vorax_omni_parse_package
-          let data = s:PackageItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
-        else
-          " get all functions/procedures from the package or type
-          let data = s:PlsqlModules(name_metadata['id'])
-        endif
-      elseif name_metadata['type'] == 'TYPE'
-        " get all functions/procedures from the package or type
-        let data = s:PlsqlModules(name_metadata['id'])
-      elseif name_metadata['type'] == 'TABLE' ||
-            \ name_metadata['type'] == 'VIEW'
-        " get all columns
-        let data = s:Columns(name_metadata['schema'],
-              \ name_metadata['object'])
-      elseif name_metadata['type'] == 'SEQUENCE'
-        let data = {'resultset' : [[ 
-              \ ['nextval', 'nextval', '', ''], 
-              \ ['currval', 'currval', '', ''] 
-              \ ]]}
-      endif
-      if exists('data')
-        call s:Cache(name_metadata, data)
-      endif
-    endif
+    " if here, it means it's not an alias. Hope it's a qualified
+    " oracle object
+  	let data = s:QualifiedNameItems(oracle_name, a:prefix)
   endif
 
   let result = []
@@ -222,7 +201,43 @@ function! s:DotItems(prefix) abort"{{{
   return result
 endfunction"}}}
 
-function! s:DotItemsForLocalLoop(variable, prefix)
+function! s:QualifiedNameItems(oracle_name, prefix)"{{{
+	let name_metadata = vorax#sqlplus#NameResolve(a:oracle_name)
+	if s:IsCached(name_metadata)
+		let data = s:Cache(name_metadata)
+	else
+		if name_metadata['type'] == 'SCHEMA'
+			" get all schema objects matching the prefix
+			let data = s:SchemaObjects(name_metadata['schema'], a:prefix)
+		elseif name_metadata['type'] == 'PACKAGE'
+			if g:vorax_omni_parse_package
+				let data = s:DeclareItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
+			else
+				" get all functions/procedures from the package or type
+				let data = s:PlsqlModules(name_metadata['id'])
+			endif
+		elseif name_metadata['type'] == 'TYPE'
+			" get all functions/procedures from the package or type
+			let data = s:PlsqlModules(name_metadata['id'])
+		elseif name_metadata['type'] == 'TABLE' ||
+					\ name_metadata['type'] == 'VIEW'
+			" get all columns
+			let data = s:Columns(name_metadata['schema'],
+						\ name_metadata['object'])
+		elseif name_metadata['type'] == 'SEQUENCE'
+			let data = {'resultset' : [[ 
+						\ ['nextval', 'nextval', '', ''], 
+						\ ['currval', 'currval', '', ''] 
+						\ ]]}
+		endif
+		if exists('data')
+			call s:Cache(name_metadata, data)
+		endif
+	endif
+	return data
+endfunction"}}}
+
+function! s:DotItemsForLocalLoop(variable, prefix)"{{{
 	let crr_pos = s:context['absolute_pos']
 	" tell me more about the code structure
 	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 'vorax#utils#CompareRegionsByLevelDesc')
@@ -239,6 +254,8 @@ function! s:DotItemsForLocalLoop(variable, prefix)
 					if context['expr'] != ''
 						let expr = 'select * from ' . context['expr'] . ' ' . a:variable
 						return s:AliasItems(a:variable, a:prefix, expr)
+					elseif context['cursor_var'] != ''
+						" a cursor variable
 					endif
 				endif
 				let crr_block = upper
@@ -246,7 +263,7 @@ function! s:DotItemsForLocalLoop(variable, prefix)
 		endwhile
 	endif
 	return []
-endfunction
+endfunction"}}}
 
 function! s:ArgumentItems(prefix) abort"{{{
   let result = []
@@ -327,12 +344,12 @@ function! s:SchemaObjects(schema, prefix) abort"{{{
   return vorax#ruby#ParseResultset(output)
 endfunction"}}}
 
-function! s:PackageItems(source) abort"{{{
-  call VORAXDebug('omni s:PackageItems: source=' . string(a:source))
+function! s:DeclareItems(source) abort"{{{
+  call VORAXDebug('omni s:DeclareItems: source=' . string(a:source))
   let content = vorax#ruby#RemoveAllComments(a:source)
-  call VORAXDebug('omni s:PackageItems: describe package...')
-  let data = vorax#ruby#DescribePackageSpec(content)
-  call VORAXDebug('omni s:PackageItems: data=' . string(data))
+  call VORAXDebug('omni s:DeclareItems: describe package...')
+  let data = vorax#ruby#DescribeDeclare(content)
+  call VORAXDebug('omni s:DeclareItems: data=' . string(data))
   let result = {'resultset' : [[]]} " to match the format of a resultset from the database
   for component in ['constants', 'variables', 'types', 'cursors', 'functions', 'procedures']
     for item in data[component]

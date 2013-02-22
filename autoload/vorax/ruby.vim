@@ -137,7 +137,7 @@ function! vorax#ruby#AliasColumns(statement, alias_name, position) abort"{{{
 ERC
 endfunction"}}}
 
-function! vorax#ruby#DescribePackageSpec(source_text) abort"{{{
+function! vorax#ruby#DescribeDeclare(source_text) abort"{{{
   let result = {'constants' : [], 
         \ 'variables' : [],
         \ 'types' : [],
@@ -146,7 +146,7 @@ function! vorax#ruby#DescribePackageSpec(source_text) abort"{{{
         \ 'procedures' : [],
         \ 'functions' : []}
   ruby <<ERC
-  parser = Vorax::Parser::PackageSpec.new
+  parser = Vorax::Parser::Declare.new
   parser.walk(VIM::evaluate('a:source_text'))
   VIM::command("let result['constants'] = #{parser.constants.to_a.inspect}")
   VIM::command("let result['variables'] = #{parser.variables.to_a.inspect}")

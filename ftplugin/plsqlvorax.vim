@@ -65,8 +65,8 @@ if g:vorax_folding_enable
   setlocal foldcolumn=2
 
   call s:CreateFolds(1)
-  autocmd InsertLeave <buffer> call s:CreateFolds(0)
-  autocmd CursorMoved <buffer> call s:CreateFolds(0)
+  "autocmd InsertLeave <buffer> call s:CreateFolds(0)
+  autocmd CursorHold <buffer> call s:CreateFolds(0)
 
   if g:vorax_folding_initial_state ==? 'all_close'
     normal! zM
