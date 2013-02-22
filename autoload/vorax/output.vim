@@ -6,6 +6,7 @@
 let s:name = "__VORAX_OUTPUT__"
 let s:read_chunk_size = 30000
 let s:first_chunk = 0
+let s:vorax_executing = 0
 
 " The type of funnel:
 "   0 = no funnel
@@ -97,7 +98,12 @@ function! vorax#output#Clear() abort " {{{
   endif
 endfunction " }}}
 
+function! vorax#output#IsWaitingForData() abort"{{{
+	return s:vorax_executing
+endfunction"}}}
+
 function! vorax#output#SpitterStart() abort " {{{
+  let s:vorax_executing = 1
   let s:save_ut = &ut
   set ut=50
   if !g:vorax_output_window_sticky_cursor
@@ -121,6 +127,7 @@ function! vorax#output#SpitterStop() abort " {{{
   if exists("s:save_ut")
 		let &ut = s:save_ut
 	endif
+  let s:vorax_executing = 0
 endfunction " }}}
 
 function! vorax#output#FetchAndSpit() abort " {{{
