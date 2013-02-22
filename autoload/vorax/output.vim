@@ -98,6 +98,8 @@ function! vorax#output#Clear() abort " {{{
 endfunction " }}}
 
 function! vorax#output#SpitterStart() abort " {{{
+  let s:save_ut = &ut
+  set ut=50
   if !g:vorax_output_window_sticky_cursor
     let s:originating_window = winnr()
   endif
@@ -116,6 +118,9 @@ function! vorax#output#SpitterStop() abort " {{{
     exe s:originating_window.'wincmd w'
   endif
   call vorax#sqlplus#UpdateSessionOwner()
+  if exists("s:save_ut")
+		let &ut = s:save_ut
+	endif
 endfunction " }}}
 
 function! vorax#output#FetchAndSpit() abort " {{{
@@ -269,7 +274,6 @@ function! vorax#output#StatusLine() abort"{{{
 endfunction"}}}
 
 function! s:ConfigureBuffer() abort " {{{
-  set ut=50
   setlocal winfixheight
   setlocal hidden
   setlocal winfixheight
