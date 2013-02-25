@@ -6,7 +6,7 @@
 let s:cache_items = {}
 
 function! vorax#omni#Complete(findstart, base) abort"{{{
-	call VORAXDebug("vorax#omni#Complete START => a:findstart=" . string(a:findstart) . " a:base=" . string(a:base)
+	call VORAXDebug("vorax#omni#Complete START => a:findstart=" . string(a:findstart) . " a:base=" . string(a:base))
   if a:findstart
     let s:context = s:CompletionContext()
 		call VORAXDebug("vorax#omni#Complete END => context = " . string(s:context))
@@ -211,7 +211,7 @@ function! s:QualifiedNameItems(oracle_name, prefix)"{{{
 			let data = s:SchemaObjects(name_metadata['schema'], a:prefix)
 		elseif name_metadata['type'] == 'PACKAGE'
 			if g:vorax_omni_parse_package
-				let data = s:DeclareItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
+				let data = s:DeclareItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object'], name_metadata['type']))
 			else
 				" get all functions/procedures from the package or type
 				let data = s:PlsqlModules(name_metadata['id'])
