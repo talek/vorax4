@@ -192,6 +192,15 @@ function! vorax#utils#GetSpecRegion(descriptor, name)"{{{
 	return {}
 endfunction"}}}
 
+function! vorax#utils#GetBodyRegion(descriptor, name)"{{{
+  for code_region in a:descriptor
+		if code_region["name"] ==? a:name && code_region["type"] ==? 'BODY'
+      return code_region
+		endif
+	endfor
+	return {}
+endfunction"}}}
+
 function! vorax#utils#GetDirectSubRegions(descriptor, region)"{{{
 	let result = []
 	for code_region in a:descriptor

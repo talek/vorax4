@@ -73,96 +73,145 @@ function! s:WordItems(prefix) abort"{{{
   return result
 endfunction"}}}
 
-function! s:LocalItems() abort"{{{
-  " where are we?
-	let result = {'resultset' : [[]]}
-	let crr_pos = s:context['absolute_pos']
-	" tell me more about the code structure
-	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 'vorax#utils#CompareRegionsByLevelDesc')
-  let crr_region = vorax#utils#GetCurrentRegion(descriptor, crr_pos, '\m\(FUNCTION\)\|\(PROCEDURE\)')
-  let top_region = vorax#utils#GetTopRegion(descriptor, crr_pos)
-	let buffer_content = vorax#utils#BufferContent()
+function! s:DescribeLocalItems(source, descriptor, crr_region, ...)"{{{
+	let result = []
+	if exists('a:1')
+		let exact = a:1
+	endif
+	let crr_block = a:crr_region
+	while 1
+		if crr_block == {}
+			break
+		else
+      if crr_block['type'] == 'FOR_BLOCK'
+				let context = crr_block['context']
+				if context != {} 
+					let type = ''
+					let captured_text = ''
+					if context['expr'] != ''
+						let type = 'expr'
+						let captured_text = context['expr']
+					elseif context['cursor_var'] != ''
+						let type = 'cursor_var'
+						let captured_text = context['cursor_var']
+					endif
+					let item = {'name' : context['for_var'],
+								\ 'is_a' : 'for_loop',
+								\ 'type' : type,
+								\ 'captured_text' : captured_text}
+          if exists('exact') && context['for_var'] ==? exact
+          	return add([], item)
+          else
+          	call add(result, item)
+          endif
+				endif
+			elseif crr_block['type'] == 'FUNCTION' || crr_block['type'] == 'PROCEDURE'
+				let declare_region = strpart(a:source, 
+							\ crr_block["start_pos"], 
+							\ crr_block["body_start_pos"] - crr_block["start_pos"])
+				let items = vorax#ruby#DescribeDeclare(a:source)
+				if exists('exact')
+					for item in items
+						if item['name'] ==? exact
+							return add([], item)
+						endif
+					endfor
+				else
+					call extend(result, items)
+				endif
+			elseif crr_block['type'] == 'BODY'
+				" if we're on a body, it's a good idea to get the private global
+				" declaration
+				let body_items = s:BodyItems(a:source, a:descriptor, s:context['absolute_pos'])
+				echo string(body_items)
+				for item in body_items
+					if exists('exact')
+						if item['name'] ==? exact
+							return add([], item)
+						endif
+					else
+            call extend(result, items)
+					endif
+				endfor
+				" look into spec
+				let items = s:SpecItems(a:source, a:descriptor, s:context['absolute_pos'])
+				if exists('exact')
+					for item in items
+						if item['name'] ==? exact
+							return add([], item)
+						endif
+					endfor
+				else
+					call extend(result, items)
+				endif
+			elseif crr_block['type'] == 'SPEC'
+				" look into spec
+				let items = s:SpecItems(a:source, a:descriptor, s:context['absolute_pos'])
+				if exists('exact')
+					for item in items
+						if item['name'] ==? exact
+							return add([], item)
+						endif
+					endfor
+				else
+					call extend(result, items)
+				endif
+			endif
+			let crr_block = vorax#utils#GetUpperRegion(a:descriptor, crr_block)
+		endif
+	endwhile
+	return result
+endfunction"}}}
 
+function! s:BodyItems(source, descriptor, pos) abort"{{{
+  let top_region = vorax#utils#GetTopRegion(a:descriptor, a:pos)
+	let body = vorax#utils#GetBodyRegion(a:descriptor, top_region['name'])
+	let subregions = vorax#utils#GetDirectSubRegions(a:descriptor, body)
+	let body_content = strpart(a:source, body["start_pos"])
+	let global_private = vorax#utils#RemoveDirectSubRegions(body_content, a:descriptor, body)
+	let global_private = vorax#ruby#RemoveAllComments(global_private)
+	let global_private = substitute(global_private, '\m\<begin\>.*$', '', 'g')
+	let items = vorax#ruby#DescribeDeclare(global_private)
+	return items
+endfunction"}}}
+
+function! s:SpecItems(source, descriptor, pos) abort"{{{
+  let top_region = vorax#utils#GetTopRegion(a:descriptor, a:pos)
 	" if we're on a PLSQL package or type
 	if top_region != {} && 
 				\ (top_region["type"] == 'BODY' || top_region["type"] == 'SPEC')
 		" it makes sense to extract info from current spec
-		let spec = vorax#utils#GetSpecRegion(descriptor, top_region["name"])
+		let spec = vorax#utils#GetSpecRegion(a:descriptor, top_region["name"])
 		if spec != {}
 			" Parse the spec from the current buffer
-			let source = strpart(buffer_content, spec["start_pos"], spec["end_pos"] - spec["start_pos"])
-			let items = s:DeclareItems(source)
-			if exists("items['resultset']")
-				let result['resultset'] = items['resultset']
-			endif
+			let source = strpart(a:source, spec["start_pos"], spec["end_pos"] - spec["start_pos"])
+			return vorax#ruby#DescribeDeclare(source)
 		else
 			" Parse the spec from dictionary
 			let name_metadata = vorax#sqlplus#NameResolve(top_region["name"])
-			if g:vorax_omni_parse_package
-				let data = s:DeclareItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
-			else
-				" get all functions/procedures from the package or type
-				let data = s:PlsqlModules(name_metadata['id'])
-			endif
-			if exists("data['resultset']")
-				let result['resultset'] = data['resultset']
-			endif
-		endif
-		if top_region["type"] == 'BODY'
-			" if we're on a body, it's a good idea to get the private global
-			" declaration
-			let subregions = vorax#utils#GetDirectSubRegions(descriptor, top_region)
-			let body_content = strpart(buffer_content, top_region["start_pos"])
-			let global_private = vorax#utils#RemoveDirectSubRegions(body_content, descriptor, top_region)
-			let global_private = vorax#ruby#RemoveAllComments(global_private)
-			let global_private = substitute(global_private, '\m\<begin\>.*$', '', 'g')
-			let items = s:DeclareItems(global_private)
-			if exists("items['resultset'][0]")
-				call extend(result['resultset'][0], items['resultset'][0])
-			endif
+			return vorax#ruby#DescribeDeclare(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
 		endif
 	endif
-
-	" if on a FOR...LOOP then add the local counter/cursor variable
-  let crr_block = vorax#utils#GetCurrentRegion(descriptor, crr_pos)
-	if crr_block != {} && crr_block['type'] == 'FOR_BLOCK'
-		" add local FOR variables from the outter loops
-		while 1
-      let upper = vorax#utils#GetUpperRegion(descriptor, crr_block)
-			if upper == {}
-				break
-			else
-				let context = crr_block['context']
-				if context != {} && context['for_var'] != ''
-					call add(result['resultset'][0], [context['for_var'], context['for_var'], 'local', ''])
-				endif
-				let crr_block = upper
-			endif
-		endwhile
-	endif
-
-	" local items related to the declare part of the current region
-	call s:ExtractDeclareItems(buffer_content, descriptor, crr_region, result)
-	return result
 endfunction"}}}
 
-function! s:ExtractDeclareItems(source, descriptor, crr_region, data)"{{{
-	if a:crr_region != {}
-		call add(a:data['resultset'][0], [a:crr_region['name'], a:crr_region['name'], a:crr_region['type'], ''])
-		let source = strpart(a:source, a:crr_region["start_pos"], a:crr_region["body_start_pos"] - a:crr_region["start_pos"])
-		let subregions = vorax#utils#GetDirectSubRegions(a:descriptor, a:crr_region)
-		for subregion in subregions
-			" add declare modules (local procedures and functions)
-			call add(a:data['resultset'][0], [subregion['name'], subregion['name'], subregion['type'], ''])
-		endfor
-		let source = vorax#utils#RemoveDirectSubRegions(source, a:descriptor, a:crr_region)
-		let items = s:DeclareItems(source)
-		if exists("items['resultset'][0]")
-			call extend(a:data['resultset'][0], items['resultset'][0])
-		endif
-		let crr_region = vorax#utils#GetUpperRegion(a:descriptor, a:crr_region, '\m\(FUNCTION\)\|\(PROCEDURE\)')
-		call s:ExtractDeclareItems(a:source, a:descriptor, crr_region, a:data)
-	end
+function! s:LocalItems() abort"{{{
+  " where are we?
+	let result = {'resultset' : [[]]}
+	let crr_pos = s:context['absolute_pos']
+	
+	" tell me more about the code structure
+	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 
+				\ 'vorax#utils#CompareRegionsByLevelDesc')
+  let crr_region = vorax#utils#GetCurrentRegion(descriptor, crr_pos)
+	let buffer_content = vorax#utils#BufferContent()
+
+	let items = s:DescribeLocalItems(buffer_content, descriptor, crr_region)
+	for item in items
+		let rec = [item['name'], item['name'], item['is_a'], '']
+		call s:ConvertToOmniCase(rec, s:context['text_before'])    
+		call add(result['resultset'][0], rec)
+	endfor
+	return result
 endfunction"}}}
 
 function! s:DotItems(prefix) abort"{{{
@@ -182,7 +231,6 @@ function! s:DotItems(prefix) abort"{{{
 			" it could be a local FOR..LOOP variable
     	let result = s:DotItemsForLocalLoop(oracle_name, a:prefix)
       if len(result) > 0
-        " it's an alias: just return its columns
         return result
       endif
     endif
@@ -203,6 +251,7 @@ endfunction"}}}
 
 function! s:QualifiedNameItems(oracle_name, prefix)"{{{
 	let name_metadata = vorax#sqlplus#NameResolve(a:oracle_name)
+	let data = {'resultset' : [[]]}
 	if s:IsCached(name_metadata)
 		let data = s:Cache(name_metadata)
 	else
@@ -240,27 +289,25 @@ endfunction"}}}
 function! s:DotItemsForLocalLoop(variable, prefix)"{{{
 	let crr_pos = s:context['absolute_pos']
 	" tell me more about the code structure
-	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 'vorax#utils#CompareRegionsByLevelDesc')
+	let source = vorax#utils#BufferContent()
+	let descriptor = sort(vorax#ruby#PlsqlRegions(source), 'vorax#utils#CompareRegionsByLevelDesc')
 	let crr_block = vorax#utils#GetCurrentRegion(descriptor, crr_pos)
-	if crr_block != {} && crr_block['type'] == 'FOR_BLOCK'
-		" add local FOR variables from the outter loops
-		while 1
-			let upper = vorax#utils#GetUpperRegion(descriptor, crr_block)
-			if upper == {}
-				break
-			else
-				let context = crr_block['context']
-				if context != {} && context['for_var'] == a:variable
-					if context['expr'] != ''
-						let expr = 'select * from ' . context['expr'] . ' ' . a:variable
-						return s:AliasItems(a:variable, a:prefix, expr)
-					elseif context['cursor_var'] != ''
-						" a cursor variable
-					endif
-				endif
-				let crr_block = upper
+  let items = s:DescribeLocalItems(source, descriptor, crr_block, a:variable)
+	if len(items) == 1
+		if items[0]['type'] ==? 'expr'
+			let expr = 'select * from ' . items[0]['captured_text'] . ' ' . a:variable
+			return s:AliasItems(a:variable, a:prefix, expr)
+		elseif items[0]['type'] ==? 'cursor_var'
+			" a cursor variable
+			let c_var = items[0]['captured_text']
+			let curs_items = s:DescribeLocalItems(source, descriptor, crr_block, c_var)
+			if len(curs_items) == 1
+				" get just the query
+				let expr = substitute(curs_items[0]['captured_text'], '\m\c\_.\{-\}\(select\)', '\1', '') 
+				let expr = 'select * from (' . expr . ') vorax'
+				return s:AliasItems('vorax', a:prefix, expr)
 			endif
-		endwhile
+		endif
 	endif
 	return []
 endfunction"}}}
@@ -351,13 +398,11 @@ function! s:DeclareItems(source) abort"{{{
   let data = vorax#ruby#DescribeDeclare(content)
   call VORAXDebug('omni s:DeclareItems: data=' . string(data))
   let result = {'resultset' : [[]]} " to match the format of a resultset from the database
-  for component in ['constants', 'variables', 'types', 'cursors', 'functions', 'procedures']
-    for item in data[component]
-      let rec = [item, item, strpart(component, 0, len(component) - 1), '']
-      call s:ConvertToOmniCase(rec, s:context['text_before'])    
-      call add(result.resultset[0], rec)
-    endfor
-  endfor
+	for item in data
+		let rec = [item['name'], item['name'], item['is_a'], '']
+		call s:ConvertToOmniCase(rec, s:context['text_before'])    
+		call add(result.resultset[0], rec)
+	endfor
   return result
 endfunction"}}}
 

@@ -138,23 +138,10 @@ ERC
 endfunction"}}}
 
 function! vorax#ruby#DescribeDeclare(source_text) abort"{{{
-  let result = {'constants' : [], 
-        \ 'variables' : [],
-        \ 'types' : [],
-        \ 'exceptions' : [],
-        \ 'cursors' : [],
-        \ 'procedures' : [],
-        \ 'functions' : []}
+  let result = []
   ruby <<ERC
-  parser = Vorax::Parser::Declare.new
-  parser.walk(VIM::evaluate('a:source_text'))
-  VIM::command("let result['constants'] = #{parser.constants.to_a.inspect}")
-  VIM::command("let result['variables'] = #{parser.variables.to_a.inspect}")
-  VIM::command("let result['types'] = #{parser.types.to_a.inspect}")
-  VIM::command("let result['exceptions'] = #{parser.exceptions.to_a.inspect}")
-  VIM::command("let result['cursors'] = #{parser.cursors.to_a.inspect}")
-  VIM::command("let result['procedures'] = #{parser.procedures.to_a.inspect}")
-  VIM::command("let result['functions'] = #{parser.functions.to_a.inspect}")
+  parser = Vorax::Parser::Declare.new(VIM::evaluate('a:source_text'))
+  VIM::command("let result = #{parser.to_vim}")
 ERC
   return result
 endfunction"}}}
