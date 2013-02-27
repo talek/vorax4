@@ -73,12 +73,28 @@ function! s:WordItems(prefix) abort"{{{
   return result
 endfunction"}}}
 
-function! s:DescribeLocalItems(source, descriptor, crr_region, ...)"{{{
-	let result = []
-	if exists('a:1')
-		let exact = a:1
+function! s:ResolveName(source, descriptor, crr_region, var)
+	call VORAXDebug("vorax#omni.vim s:ResolveName: a:var=" . string(a:var))
+	let items = s:DescribeLocalItems(a:source, a:descriptor, a:crr_region)
+	call VORAXDebug("vorax#omni.vim s:ResolveName: items=".string(items))
+	let parts = split(a:var, '\m\.')
+	if len(parts) == 1
+    " simple var lookup
+		call filter(items, 'v:val["name"] ==? a:var')
+		if len(items) > 0
+			return items[0]
+		endif
+	elseif len(parts) > 1
+		" check if the first part correspond to a local variable
+		" TODO: to be implemented
 	endif
+	return {}
+endfunction
+
+function! s:DescribeLocalItems(source, descriptor, crr_region)"{{{
+	let result = []
 	let crr_block = a:crr_region
+	call VORAXDebug(string(a:descriptor))
 	while 1
 		if crr_block == {}
 			break
@@ -99,63 +115,47 @@ function! s:DescribeLocalItems(source, descriptor, crr_region, ...)"{{{
 								\ 'is_a' : 'for_loop',
 								\ 'type' : type,
 								\ 'captured_text' : captured_text}
-          if exists('exact') && context['for_var'] ==? exact
-          	return add([], item)
-          else
-          	call add(result, item)
-          endif
+					call VORAXDebug('omni s:DescribeLocalItems -> add from FOR_BLOCK: ' . string(item))
+					call add(result, item)
 				endif
 			elseif crr_block['type'] == 'FUNCTION' || crr_block['type'] == 'PROCEDURE'
 				let declare_region = strpart(a:source, 
 							\ crr_block["start_pos"], 
 							\ crr_block["body_start_pos"] - crr_block["start_pos"])
-				let items = vorax#ruby#DescribeDeclare(a:source)
-				if exists('exact')
-					for item in items
-						if item['name'] ==? exact
-							return add([], item)
-						endif
-					endfor
-				else
-					call extend(result, items)
-				endif
+				let subregions = vorax#utils#GetDirectSubRegions(a:descriptor, crr_block)
+				" process local function
+				for subregion in subregions
+					if subregion['type'] == 'PROCEDURE' || subregion['type'] == 'FUNCTION'
+						let item = {'name' : subregion['name'],
+									\ 'is_a' : tolower(subregion['type']),
+									\ 'type' : '',
+									\ 'captured_text' : strpart(a:source, 
+																						\ subregion["start_pos"],
+																						\ subregion["body_start_pos"] - subregion["start_pos"])
+						      \ }
+						call add(result, item)
+					endif
+				endfor
+				let declare_region = vorax#utils#RemoveDirectSubRegions(declare_region, a:descriptor, crr_block)
+				let declare_region = vorax#ruby#RemoveAllComments(declare_region)
+				let items = vorax#ruby#DescribeDeclare(declare_region)
+				call VORAXDebug('omni s:DescribeLocalItems -> add from FUNCTION/PROCEDURE: ' . string(items))
+				call extend(result, items)
 			elseif crr_block['type'] == 'BODY'
 				" if we're on a body, it's a good idea to get the private global
 				" declaration
 				let body_items = s:BodyItems(a:source, a:descriptor, s:context['absolute_pos'])
-				echo string(body_items)
-				for item in body_items
-					if exists('exact')
-						if item['name'] ==? exact
-							return add([], item)
-						endif
-					else
-            call extend(result, items)
-					endif
-				endfor
+				call VORAXDebug('omni s:DescribeLocalItems -> add from BODY ' . string(body_items))
+				call extend(result, body_items)
 				" look into spec
 				let items = s:SpecItems(a:source, a:descriptor, s:context['absolute_pos'])
-				if exists('exact')
-					for item in items
-						if item['name'] ==? exact
-							return add([], item)
-						endif
-					endfor
-				else
-					call extend(result, items)
-				endif
+				call VORAXDebug('omni s:DescribeLocalItems -> add from SPEC ' . string(items))
+				call extend(result, items)
 			elseif crr_block['type'] == 'SPEC'
 				" look into spec
 				let items = s:SpecItems(a:source, a:descriptor, s:context['absolute_pos'])
-				if exists('exact')
-					for item in items
-						if item['name'] ==? exact
-							return add([], item)
-						endif
-					endfor
-				else
-					call extend(result, items)
-				endif
+				call VORAXDebug('omni s:DescribeLocalItems -> add from SPEC ' . string(items))
+				call extend(result, items)
 			endif
 			let crr_block = vorax#utils#GetUpperRegion(a:descriptor, crr_block)
 		endif
@@ -292,18 +292,18 @@ function! s:DotItemsForLocalLoop(variable, prefix)"{{{
 	let source = vorax#utils#BufferContent()
 	let descriptor = sort(vorax#ruby#PlsqlRegions(source), 'vorax#utils#CompareRegionsByLevelDesc')
 	let crr_block = vorax#utils#GetCurrentRegion(descriptor, crr_pos)
-  let items = s:DescribeLocalItems(source, descriptor, crr_block, a:variable)
-	if len(items) == 1
-		if items[0]['type'] ==? 'expr'
-			let expr = 'select * from ' . items[0]['captured_text'] . ' ' . a:variable
+  let item = s:ResolveName(source, descriptor, crr_block, a:variable)
+	if has_key(item, 'name')
+		if item['type'] ==? 'expr'
+			let expr = 'select * from ' . item['captured_text'] . ' ' . a:variable
 			return s:AliasItems(a:variable, a:prefix, expr)
-		elseif items[0]['type'] ==? 'cursor_var'
+		elseif item['type'] ==? 'cursor_var'
 			" a cursor variable
-			let c_var = items[0]['captured_text']
-			let curs_items = s:DescribeLocalItems(source, descriptor, crr_block, c_var)
-			if len(curs_items) == 1
+			let c_var = item['captured_text']
+			let curs_item = s:ResolveName(source, descriptor, crr_block, c_var)
+			if has_key(curs_item, 'name')
 				" get just the query
-				let expr = substitute(curs_items[0]['captured_text'], '\m\c\_.\{-\}\(select\)', '\1', '') 
+				let expr = substitute(curs_item['captured_text'], '\m\c\_.\{-\}\(select\)', '\1', '') 
 				let expr = 'select * from (' . expr . ') vorax'
 				return s:AliasItems('vorax', a:prefix, expr)
 			endif
