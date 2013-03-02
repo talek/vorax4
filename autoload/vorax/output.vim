@@ -312,7 +312,7 @@ function! s:ConfigureBuffer() abort " {{{
   exe 'match ' . g:vorax_output_window_hl_error . ' /^\(ORA-\|SP[0-9]\?-\).*/'
 
   " ESC for cancelling the currently executing statement
-  nnoremap <buffer> <silent> <Esc> :VORAXOutputAbort<CR>
+  exe 'nnoremap <buffer> <silent>' . g:vorax_output_abort_key . ' :VORAXOutputAbort<CR>'
 
 endfunction " }}}
 
