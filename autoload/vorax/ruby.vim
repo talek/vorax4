@@ -138,6 +138,7 @@ ERC
 endfunction"}}}
 
 function! vorax#ruby#DescribeDeclare(source_text) abort"{{{
+  call VORAXDebug("vorax#ruby#DescribeDeclare source_text=" . string(a:source_text))
   let result = []
   ruby <<ERC
   parser = Vorax::Parser::Declare.new(VIM::evaluate('a:source_text'))
@@ -199,6 +200,16 @@ function! vorax#ruby#RemoveAllComments(text) abort"{{{
 	VIM::command("return #{clear_text.inspect}")
 ERC
 endfunction"}}}
+
+function! vorax#ruby#DescribeRecordType(text) abort
+	ruby <<ERC
+  vim_result = Parser.describe_record(VIM::evaluate('a:text')).map do |hash|
+    hash.map { |k, v| "#{k.to_s.inspect} : #{v.to_s.inspect}" }
+  end.join(",")
+	VIM::command("return [#{vim_result}]")
+ERC
+
+endfunction
 
 " }}}
 
