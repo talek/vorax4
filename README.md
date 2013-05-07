@@ -2,7 +2,7 @@
 
 Hi guys! This is the next major version of Vorax. It's in an early
 stage, I know, but is ready for testing. So if you are willing to 
-contribute or to test this beta version, you are very welcomed to
+contribute or to test this beta version, you are very welcome to
 do so.
 
 What we have so far:
