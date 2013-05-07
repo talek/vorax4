@@ -115,8 +115,8 @@ function! vorax#utils#VimCmdOutput(cmd) abort"{{{
 endfunction"}}}
 
 function! vorax#utils#CompareRegionsByLevelDesc(i1, i2)"{{{
-	let i1 = a:i1.level
-	let i2 = a:i2.level
+	let i1 = a:i1['level']
+	let i2 = a:i2['level']
 	return i1 == i2 ? 0 : i1 < i2 ? 1 : -1
 endfunction"}}}
 
@@ -212,6 +212,14 @@ function! vorax#utils#GetDirectSubRegions(descriptor, region)"{{{
 	endfor
 	return result
 endfunction"}}}
+
+function! vorax#utils#IsEmpty(str) abort "{{{
+	if vorax#utils#Strip(a:str) == ''
+		return 1
+	else
+		return 0
+	endif
+endfunction "}}}
 
 function! s:ParseOffset(line, column) abort"{{{
   if g:vorax_parse_min_lines > 0

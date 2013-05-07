@@ -189,9 +189,6 @@ if exists('g:vorax_debug') && g:vorax_debug == 1
     echo "Sorry, don't expect VoraX to work properly!"
   endtry
 
-	ruby VIM::command("let rb_version = #{Vorax::VERSION.inspect}")
-	call VORAXDebug("Using ruby Vorax GEM: " . rb_version)
-
 endif
 
 " }}}

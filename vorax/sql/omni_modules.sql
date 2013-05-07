@@ -26,5 +26,6 @@ select distinct procedure_name word,
        '' kind,
        '' menu
   from all_procedures
- where object_id = '&1';
+ where object_id = '&1'
+   and procedure_name is not null;
 

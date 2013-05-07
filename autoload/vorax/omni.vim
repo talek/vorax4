@@ -4,27 +4,30 @@
 " License:     see LICENSE.txt
 
 let s:cache_items = {}
+let s:plsql_struct_key = 'plsql_struct'
 
-function! vorax#omni#Complete(findstart, base) abort"{{{
+function! vorax#omni#Complete(findstart, base) abort "{{{
 	call VORAXDebug("vorax#omni#Complete START => a:findstart=" . string(a:findstart) . " a:base=" . string(a:base))
   if a:findstart
     let s:context = s:CompletionContext()
 		call VORAXDebug("vorax#omni#Complete END => context = " . string(s:context))
     return s:context['start_from']
   else
+		if s:context.completion_type ==? 'identifier' || s:context.completion_type ==? 'dot'
+			" tell me more about the code structure
+			let text_code = vorax#utils#BufferContent(1, line('.')) . a:base
+			call vorax#ruby#ComputePlsqlStructure('plsql_struct', text_code)
+			let s:context.local_items = vorax#ruby#LocalItems(s:plsql_struct_key, 
+						\ s:context.absolute_pos - 1, '')
+  	endif
     let items = []
+    let s:context['prefix'] = a:base
     if s:context['completion_type'] == 'argument'
-			call VORAXDebug("vorax#omni#Complete START ArgumentItems")
       let items = s:ArgumentItems(a:base)
-			call VORAXDebug("vorax#omni#Complete END ArgumentItems")
     elseif s:context['completion_type'] == 'identifier'
-			call VORAXDebug("vorax#omni#Complete START WordItems")
       let items = s:WordItems(a:base)
-			call VORAXDebug("vorax#omni#Complete END WordItems")
     elseif s:context['completion_type'] == 'dot'
-			call VORAXDebug("vorax#omni#Complete START DotItems")
       let items = s:DotItems(a:base)
-			call VORAXDebug("vorax#omni#Complete END DotItems")
     endif
     if g:vorax_omni_sort_items
       call sort(items, "s:CompareOmniItems")
@@ -36,9 +39,9 @@ function! vorax#omni#Complete(findstart, base) abort"{{{
       return -2
     endif
   endif
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#omni#SupertabPreventCompletion(text) abort"{{{
+function! vorax#omni#SupertabPreventCompletion(text) abort "{{{
   if s:ShouldCompleteArgument(s:NonEmptyAbove())
     return 0
   endif
@@ -47,13 +50,45 @@ function! vorax#omni#SupertabPreventCompletion(text) abort"{{{
   else
     return 0
   endif
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#omni#ResetCache() abort"{{{
+function! vorax#omni#ResetCache() abort "{{{
   let s:cache_items = {}
-endfunction"}}}
+endfunction "}}}
 
-function! s:WordItems(prefix) abort"{{{
+function! s:ArgumentItems(prefix) abort "{{{
+  let result = []
+  let stmt = vorax#utils#DescribeCurrentStatement(0, 0)
+  call VORAXDebug("omni s:ArgumentItems(): stmt = " . string(stmt))
+  " look backward in the current statement
+  let module = vorax#ruby#ArgumentBelongsTo(stmt['text'], stmt['relative'])
+  call VORAXDebug("omni s:ArgumentItems(): module = " . string(module))
+  if module != ""
+    " try to resolve this module
+    let module_metadata = vorax#sqlplus#NameResolve(module)
+    if module_metadata['type'] == 'FUNCTION' ||
+          \ module_metadata['type'] == 'PROCEDURE' ||
+          \ module_metadata['type'] == 'PACKAGE' ||
+          \ module_metadata['type'] == 'TYPE'
+			let module_metadata.cache_key = module_metadata.id . ':args'
+			if s:IsCached(module_metadata)
+				let data = s:Cache(module_metadata)
+			else
+        " successfully resolved, go on
+        let output = vorax#sqlplus#RunVoraxScript('omni_arguments.sql',
+              \ module_metadata['id'],
+              \ module_metadata['extra'])
+        let data  = vorax#ruby#ParseResultset(output)
+				call s:Cache(module_metadata, data)
+			endif
+      call VORAXDebug("s:ArgumentItems data=" . string(data))
+      let result = s:ResultsetToOmni(data, 1, module, ' ')
+    endif
+  endif
+  return result
+endfunction "}}}
+
+function! s:WordItems(prefix) abort "{{{
   call VORAXDebug("omni s:WordItems a:prefix=" . string(a:prefix))
   let output = vorax#sqlplus#RunVoraxScript('omni_word.sql',
         \ toupper(a:prefix),
@@ -71,285 +106,408 @@ function! s:WordItems(prefix) abort"{{{
   let result = s:ResultsetToOmni(data, 0, s:context['text_before'], '')
 	call filter(result, 'v:val.word =~ ''^' . a:prefix . '''')
   return result
+endfunction "}}}
+
+function! s:ShortLocalName(name)"{{{
+  let short_name = toupper(substitute(a:name, '\m"', '', 'g'))
+	let composite_name = toupper(
+				\ substitute(
+				\   vorax#ruby#CompositeName(s:plsql_struct_key, s:context.absolute_pos),
+				\   '"', 
+				\   '', 
+				\   'g')
+				\ )
+  if composite_name != ''
+		" only if we are on a composite module
+		if strpart(short_name, 0, len(composite_name)) ==? composite_name
+			let short_name = strpart(short_name, len(composite_name) + 1, len(short_name))
+			if short_name != ''
+				return short_name
+			else
+				return a:name
+			endif
+		endif
+		let short_name_parts = split(short_name, '\m\.')
+		let composite_name_parts = split(composite_name, '\m\.')
+		if len(composite_name_parts) == 2
+			let composite_schema = composite_name_parts[0]
+			let composite_object = composite_name_parts[1]
+		elseif len(composite_name_parts) == 1
+			let composite_schema = vorax#sqlplus#Properties()['user']
+			let composite_object = composite_name_parts[0]
+		endif
+		if exists('composite_schema')
+			if len(short_name_parts) >= 2
+				" is the leading part pointing to the composite name?
+				if strpart(short_name, 0, len(composite_object)) ==? composite_object
+					let short_name = strpart(short_name, len(composite_object) + 1, len(short_name))
+				elseif composite_schema != "" && strpart(short_name, 0, len(composite_schema)) ==? composite_schema
+					let short_name = strpart(short_name, len(composite_schema) + 1, len(short_name))
+					if strpart(short_name, 0, len(composite_object)) ==? composite_object
+						let short_name = strpart(short_name, len(composite_object) + 1, len(short_name))
+					endif
+				endif
+			endif
+		endif
+		return short_name
+	endif
+	return a:name
 endfunction"}}}
 
-function! s:ResolveName(source, descriptor, crr_region, var)
-	call VORAXDebug("vorax#omni.vim s:ResolveName: a:var=" . string(a:var))
-	let items = s:DescribeLocalItems(a:source, a:descriptor, a:crr_region)
-	call VORAXDebug("vorax#omni.vim s:ResolveName: items=".string(items))
-	let parts = split(a:var, '\m\.')
-	" check the first part of the var
-	let local_var = filter(copy(items), 'v:val["name"] ==? parts[0]')
-	if exists('local_var[0]')
-		" great! it's a local variable. Look for a local type.
-		echom string(local_var)
-		if len(parts) > 1
-      " follow the chain
-      
+function! s:GetTextBeforeLastDot() "{{{
+  let start = match(s:context['text_before'], '\m[a-zA-Z0-9$#_.]*$') " last blank
+  let end = strridx(s:context['text_before'], '.')       " last dot
+  return strpart(s:context['text_before'], start, end - start)
+endfunction "}}}
+
+function! s:FindLocalItem(item_name) "{{{
+	for item in s:context.local_items
+		if (item["item_type"] == 'ForVariable' && item["variable"] ==? a:item_name) ||
+					\ (has_key(item, 'name') && item['name'] ==? a:item_name)
+			return item
+		endif
+	endfor
+	return {}
+endfunction "}}}
+
+function! s:DotItems(prefix) "{{{
+  let omni_items = []
+	let dot_string = s:GetTextBeforeLastDot()
+	let items = copy(s:FollowDotChain(split(dot_string, '\m\.'), {}, [], 1))
+	call filter(items, 'toupper(v:val["name"]) =~ "^' . toupper(a:prefix) . '"')
+	for item in items
+		let rec = s:Item2Omni(item)
+		call add(omni_items, rec)
+	endfor
+	return s:ResultsetToOmni({'resultset' : [omni_items]}, 0, dot_string, '')
+endfunction "}}}
+
+function! s:Item2Omni(item) "{{{
+	if exists('a:item["item_type"]')
+		let menu = ''
+		if a:item["item_type"] == 'VariableItem'
+			let type = a:item["vartype"]
+		elseif a:item['item_type'] == 'CursorItem'
+			let type = 'cursor'
+		elseif a:item['item_type'] == 'TypeItem'
+			let type = 'type'
+			let menu = a:item['is_a']
+		elseif a:item['item_type'] == 'ConstantItem'
+			let type = 'constant'
+			let menu = a:item["vartype"]
+		elseif exists("a:item['type']")
+			let type = a:item["type"]
+		else
+			let type = ''
+		endif
+    if a:item["item_type"] == 'FunctionItem' ||
+					\ a:item["item_type"] == 'ProcedureItem'
+			let abbr = a:item['name'] . '()'
+		else
+			let abbr = a:item['name']
+		end
+		let rec = [a:item['name'],
+						\  abbr,
+						\  type,
+						\  menu]
+		return rec
+	endif
+	return ''
+endfunction "}}}
+
+function! s:DotHeadDescriptor(dot_parts) "{{{
+	let dot_parts = a:dot_parts
+	let stmt = vorax#utils#DescribeCurrentStatement(0, 0)
+	if vorax#ruby#IsAliasVisible(stmt.text, dot_parts[0], stmt.relative - 1)
+		" it's an alias
+		let crr_item = {'item_type' : 'AliasItem',
+					\ 'name' : dot_parts[0],
+					\ 'statement' : stmt.text,
+					\ 'relpos' : stmt.relative}
+		call remove(dot_parts, 0)
+	else
+		let items = vorax#ruby#LocalItems(s:plsql_struct_key, s:context.absolute_pos - 1, '')
+
+		let short_name = s:ShortLocalName(join(dot_parts, '.'))
+		
+		" is it a local item?
+		let crr_item = s:FindLocalItem(dot_parts[0])
+		if exists('crr_item["item_type"]')
+			call remove(dot_parts, 0)
+		else
+			" it's not a local item. describe it on the database level
+			let name_metadata = vorax#sqlplus#NameResolve(join(dot_parts[0:2], '.'))
+			if name_metadata['schema'] != ''
+				" successfully located in the dictionary
+				let crr_item = s:OracleObjectItemType(name_metadata)
+				if dot_parts[0] ==? name_metadata['schema']
+					call remove(dot_parts, 0)
+				endif
+				if len(dot_parts) > 0 && dot_parts[0] ==? name_metadata['object']
+					call remove(dot_parts, 0)
+				endif
+			endif
 		endif
 	endif
-	return {}
-endfunction
+	return {'dot_chain' : dot_parts, 'ref' : crr_item}
+endfunction "}}}
 
-function! s:DescribeLocalItems(source, descriptor, crr_region)"{{{
-	let result = []
-	let crr_block = a:crr_region
-	call VORAXDebug(string(a:descriptor))
-	while 1
-		call VORAXDebug('crr_block=' . string(crr_block))
-		if crr_block == {}
-			break
-		else
-      if crr_block['type'] == 'FOR_BLOCK'
-				let context = crr_block['context']
-				if context != {} 
-					let type = ''
-					let captured_text = ''
-					if context['expr'] != ''
-						let type = 'expr'
-						let captured_text = context['expr']
-					elseif context['cursor_var'] != ''
-						let type = 'cursor_var'
-						let captured_text = context['cursor_var']
-					endif
-					let item = {'name' : context['for_var'],
-								\ 'is_a' : 'for_loop',
-								\ 'type' : type,
-								\ 'captured_text' : captured_text}
-					call VORAXDebug('omni s:DescribeLocalItems -> add from FOR_BLOCK: ' . string(item))
-					call add(result, item)
-				endif
-			elseif crr_block['type'] ==? 'FUNCTION' || crr_block['type'] ==? 'PROCEDURE'
-				let declare_region = strpart(a:source, 
-							\ crr_block["start_pos"], 
-							\ crr_block["body_start_pos"] - crr_block["start_pos"])
-				let subregions = vorax#utils#GetDirectSubRegions(a:descriptor, crr_block)
-				" process local function
-				for subregion in subregions
-					if subregion['type'] ==? 'PROCEDURE' || subregion['type'] ==? 'FUNCTION'
-						let item = {'name' : subregion['name'],
-									\ 'is_a' : tolower(subregion['type']),
-									\ 'type' : '',
-									\ 'captured_text' : strpart(a:source, 
-																						\ subregion["start_pos"],
-																						\ subregion["body_start_pos"] - subregion["start_pos"])
-						      \ }
-						call add(result, item)
+function! s:FollowDotChain(dot_parts, ref, items_acc, first) "{{{
+	let items_acc = a:items_acc
+	let dot_parts = a:dot_parts
+	let ref = a:ref
+	if a:first
+    " we're on the first element of the dot chain
+    let head_descriptor = s:DotHeadDescriptor(dot_parts)
+		let ref = head_descriptor['ref']
+		let dot_parts = head_descriptor['dot_chain']
+		" if we know what the head is, go on and follow the chain
+		if exists('ref["item_type"]')
+			return s:FollowDotChain(a:dot_parts, ref, items_acc, 0)
+		endif
+	else
+		" we're on the tail of the dot chain
+		if exists('a:ref["item_type"]')
+			if a:ref["item_type"] ==? 'VariableItem' || a:ref["item_type"] ==? 'ConstantItem'
+				let items_acc = s:VariableTypeItems(a:ref)
+			elseif a:ref["item_type"] ==? 'AliasItem'
+				let items_acc = s:AliasItems(a:ref["name"], '', a:ref['statement'], a:ref['relpos'])
+			elseif a:ref["item_type"] ==? 'TypeItem'
+				let items_acc = s:TypeAttributes(a:ref)
+			elseif a:ref["item_type"] ==? 'OracleTypeRef'
+				let items_acc = s:OracleTypeRefItems(a:ref)
+			elseif a:ref["item_type"] ==? 'ForVariable'
+				let items_acc = s:ForVariableItems(a:ref)
+			elseif a:ref["item_type"] ==? 'ArgumentItem'
+				let var_item = {'name' : a:ref['name'], 'vartype' : a:ref['data_type'], 'item_type' : 'VariableItem'}
+				let items_acc = s:VariableTypeItems(var_item)
+			elseif s:IsSchemaItem(a:ref)
+				let items_acc = s:SchemaObjects(a:ref['metadata']['schema'], s:context['prefix'])
+			elseif a:ref['item_type'] ==? 'OracleItem' && s:HasColumns(a:ref['metadata'])
+				let items_acc = s:Columns(a:ref)
+			elseif s:IsPackage(a:ref)
+				let items_acc = s:PackageItems(a:ref)
+			elseif s:IsType(a:ref)
+				let items_acc = s:OracleTypeAttributes(a:ref)
+			else
+				" broken chain
+				return []
+			endif
+			" compute the next ref
+			if len(a:dot_parts) > 0
+				for item in items_acc
+					if exists("item['item_type']") && toupper(item['name']) ==? toupper(a:dot_parts[0])
+						call remove(a:dot_parts, 0)
+						return s:FollowDotChain(a:dot_parts, item, items_acc, 0)
 					endif
 				endfor
-				let declare_region = vorax#utils#RemoveDirectSubRegions(declare_region, a:descriptor, crr_block)
-				let declare_region = vorax#ruby#RemoveAllComments(declare_region)
-				let items = vorax#ruby#DescribeDeclare(";" . declare_region)
-				call VORAXDebug('omni s:DescribeLocalItems -> add from FUNCTION/PROCEDURE: ' . string(items))
-				call extend(result, items)
-			elseif crr_block['type'] == 'BODY'
-				" if we're on a body, it's a good idea to get the private global
-				" declaration
-				let body_items = s:BodyItems(a:source, a:descriptor, s:context['absolute_pos'])
-				call VORAXDebug('omni s:DescribeLocalItems -> add from BODY ' . string(body_items))
-				call extend(result, body_items)
-				" look into spec
-				let items = s:SpecItems(a:source, a:descriptor, s:context['absolute_pos'])
-				call VORAXDebug('omni s:DescribeLocalItems -> add from SPEC ' . string(items))
-				call extend(result, items)
-			elseif crr_block['type'] == 'SPEC'
-				" look into spec
-				let items = s:SpecItems(a:source, a:descriptor, s:context['absolute_pos'])
-				call VORAXDebug('omni s:DescribeLocalItems -> add from SPEC ' . string(items))
-				call extend(result, items)
 			endif
-			let crr_block = vorax#utils#GetUpperRegion(a:descriptor, crr_block)
-		endif
-	endwhile
-	return result
-endfunction"}}}
-
-function! s:BodyItems(source, descriptor, pos) abort"{{{
-  let top_region = vorax#utils#GetTopRegion(a:descriptor, a:pos)
-	let body = vorax#utils#GetBodyRegion(a:descriptor, top_region['name'])
-	let subregions = vorax#utils#GetDirectSubRegions(a:descriptor, body)
-	let body_content = strpart(a:source, body["start_pos"])
-	let global_private = vorax#utils#RemoveDirectSubRegions(body_content, a:descriptor, body)
-	let global_private = vorax#ruby#RemoveAllComments(global_private)
-	let global_private = substitute(global_private, '\m\<begin\>.*$', '', 'g')
-	let items = vorax#ruby#DescribeDeclare(global_private)
-	return items
-endfunction"}}}
-
-function! s:SpecItems(source, descriptor, pos) abort"{{{
-  let top_region = vorax#utils#GetTopRegion(a:descriptor, a:pos)
-	" if we're on a PLSQL package or type
-	if top_region != {} && 
-				\ (top_region["type"] == 'BODY' || top_region["type"] == 'SPEC')
-		" it makes sense to extract info from current spec
-		let spec = vorax#utils#GetSpecRegion(a:descriptor, top_region["name"])
-		if spec != {}
-			" Parse the spec from the current buffer
-			let source = strpart(a:source, spec["start_pos"], spec["end_pos"] - spec["start_pos"])
-			return vorax#ruby#DescribeDeclare(source)
-		else
-			" Parse the spec from dictionary
-			let name_metadata = vorax#sqlplus#NameResolve(top_region["name"])
-			return vorax#ruby#DescribeDeclare(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object']))
 		endif
 	endif
-endfunction"}}}
+	return items_acc
+endfunction "}}}
 
-function! s:LocalItems() abort"{{{
+function! s:OracleTypeRefItems(attr_item) "{{{
+	let items = []
+	let attr_type = a:attr_item["type"]
+	let name_metadata = vorax#sqlplus#NameResolve(attr_type)
+	let items = s:OracleTypeAttributes(s:OracleObjectItemType(name_metadata))
+	return items
+endfunction "}}}
+
+function! s:VariableTypeItems(var_item) "{{{
+	let items = []
+	let vartype = s:ResolveVariableType(a:var_item["vartype"])
+	if exists('vartype["item_type"]')
+		let items = s:TypeAttributes(vartype)
+	endif
+	return items
+endfunction "}}}
+
+function! s:ForVariableItems(for_item) "{{{
+	let items = []
+	if a:for_item['domain_type'] ==? 'cursor_var'
+		let var_type = s:ResolveVariableType(a:for_item['domain'])
+		let a:for_item["domain_type"] = 'expr'
+		let a:for_item["domain"] = '(' . var_type['query'] . ')'
+	endif
+	" look at the query behind
+	let expr = 'select * from ' . a:for_item['domain'] . ' ' . a:for_item['variable']
+	let items = s:AliasItems(a:for_item['variable'], '', expr)
+	return items
+endfunction "}}}
+
+function! s:OracleTypeAttributes(item) "{{{
+  let items = []
+	if s:IsCached(a:item['metadata'])
+		let items = s:Cache(a:item['metadata'])
+	else
+		let vartype = a:item
+		if exists('vartype["item_type"]') && vartype["item_type"] ==? "OracleObject"
+			let data = s:TypeItems(vartype['metadata']['schema'], vartype['metadata']['object'])
+			if exists("data['resultset'][0]")
+				for rec in data['resultset'][0]
+					if vorax#utils#IsEmpty(rec[2])
+						call add(items, {'item_type': 'FunctionItem', 
+									\ 'type': '', 
+									\ 'name': rec[0]})
+					else
+						call add(items, {'item_type': 'OracleTypeRef', 
+									\ 'type': rec[2], 
+									\ 'name': rec[0]})
+					endif
+				endfor	
+				call s:Cache(a:item['metadata'], items)
+			endif
+		endif
+	endif
+	return items
+endfunction "}}}
+
+function! s:TypeAttributes(item) "{{{
+	let items = []
+	let vartype = a:item
+	if exists('vartype["item_type"]')
+		if vartype["item_type"] ==? "TypeItem" && vartype["is_a"] ==? "record"
+			let type_attrs = vorax#ruby#DescribeRecordType(vartype['text'])
+			for attr in type_attrs
+				call add(items, { 'item_type': 'VariableItem',
+							\ 'vartype' : attr['type'],
+							\ 'name' : attr['name']})
+			endfor
+		elseif vartype["item_type"] ==? "OracleObject"
+			let items = s:OracleTypeAttributes(a:item)
+		endif
+	endif
+	return items
+endfunction "}}}
+
+function! s:LocalItems() abort "{{{
   " where are we?
 	let result = {'resultset' : [[]]}
 	let crr_pos = s:context['absolute_pos']
-	
-	" tell me more about the code structure
-	let descriptor = sort(vorax#ruby#PlsqlRegions(vorax#utils#BufferContent()), 
-				\ 'vorax#utils#CompareRegionsByLevelDesc')
-  let crr_region = vorax#utils#GetCurrentRegion(descriptor, crr_pos)
-	let buffer_content = vorax#utils#BufferContent()
-
-	let items = s:DescribeLocalItems(buffer_content, descriptor, crr_region)
+  	
+	let items = vorax#ruby#LocalItems(s:plsql_struct_key, crr_pos-1, '')
+  let args = []
 	for item in items
-		let rec = [item['name'], item['name'], item['is_a'], '']
-		call s:ConvertToOmniCase(rec, s:context['text_before'])    
-		call add(result['resultset'][0], rec)
+		if item["item_type"] == 'forvar'
+			let rec = [item['variable'], item['variable'], '', '']
+		elseif has_key(item, 'name')
+			if item["item_type"] == 'ConstantItem'
+				let rec = [item['name'], item['name'], 'constant', item['vartype']]
+			elseif item["item_type"] == 'VariableItem'
+				let rec = [item['name'], item['name'], 'variable', item['vartype']]
+			elseif item["item_type"] == 'TypeItem'
+				let rec = [item['name'], item['name'], 'type', '']
+			elseif item["item_type"] == 'CursorItem'
+				let rec = [item['name'], item['name'], 'cursor', '']
+			elseif item["item_type"] == 'ExceptionItem'
+				let rec = [item['name'], item['name'], 'exception', '']
+			elseif item["item_type"] == 'FunctionItem'
+				let rec = [item['name'], item['name'], 'func', '']
+			elseif item["item_type"] == 'ProcedureItem'
+				let rec = [item['name'], item['name'], 'proc', '']
+			elseif item["item_type"] == 'ArgumentItem'
+				let rec = [item['name'], item['name'], item['data_type'], 'arg ' . item['direction']]
+			end
+		endif
+		if exists('rec')
+			call add(result['resultset'][0], rec)
+		endif
 	endfor
 	return result
-endfunction"}}}
+endfunction "}}}
 
-function! s:DotItems(prefix) abort"{{{
-  call VORAXDebug("omni s:DotItems a:prefix=" . string(a:prefix))
-  let start = match(s:context['text_before'], '\m[a-zA-Z0-9$#_.]*$') " last blank
-  let end = strridx(s:context['text_before'], '.')       " last dot
-  let oracle_name = strpart(s:context['text_before'], start, end - start)
-  call VORAXDebug("omni s:DotItems oracle_name=" . string(oracle_name))
-  if oracle_name != ''
-    " before anything else, check if it's an alias
-    if oracle_name !~ '\m\.' 
-			let result = s:AliasItems(oracle_name, a:prefix)
-			if len(result) > 0
-				" it's an alias: just return its columns
-				return result
+function! s:ResolveVariableType(name) "{{{
+		let name = s:ShortLocalName(a:name)
+		let ref = s:FindLocalItem(name)
+    if ref != {}
+			return ref
+		else
+			let parts = split(name, '\m\.')
+			" is it in another package?
+			" describe it baby
+			let name_metadata = vorax#sqlplus#NameResolve(name)
+			if name_metadata['type'] == 'PACKAGE'
+				" get rid of the extra field
+				let name_metadata['extra'] = ''
+				" get the source of the package
+				if s:IsCached(name_metadata)
+					let data = s:Cache(name_metadata)
+				else
+					let pkg_source = vorax#sqlplus#GetSource(name_metadata['schema'], 
+								\ name_metadata['object'], 
+								\ name_metadata['type'])
+					let data = vorax#ruby#DescribeDeclare(pkg_source)
+					call s:Cache(name_metadata, data)
+				endif
+				let type = filter(copy(data), 
+							\ 'exists(''v:val["name"]'') && toupper(v:val["name"]) ==? "' . toupper(parts[-1]) . '"')
+				if len(type) > 0
+					return type[0]
+				endif
+			elseif name_metadata['type'] == 'TYPE'
+				return s:OracleObjectItemType(name_metadata)
 			endif
-			" it could be a local FOR..LOOP variable
-    	let result = s:DotItemsForLocalLoop(oracle_name, a:prefix)
-      if len(result) > 0
-        return result
-      endif
-    endif
-    " if here, it means it's not an alias. Hope it's a qualified
-    " oracle object
-  	let data = s:QualifiedNameItems(oracle_name, a:prefix)
-  endif
+		endif
+		return {}
+endfunction "}}}
 
-  let result = []
-  if exists('data')
-    call VORAXDebug("s:DotItems data=" . string(data))
-    let result = s:ResultsetToOmni(data, 0, s:context['text_before'], '')
-    call filter(result, 'v:val.word =~ ''^' . a:prefix . '''')
-  endif
+function! s:OracleObjectItemType(name_metadata) "{{{
+	return { 'item_type' : 'OracleObject', 
+				\ 'metadata' : a:name_metadata}
+endfunction "}}}
 
-  return result
-endfunction"}}}
-
-function! s:QualifiedNameItems(oracle_name, prefix)"{{{
-	let name_metadata = vorax#sqlplus#NameResolve(a:oracle_name)
-	let data = {'resultset' : [[]]}
-	if s:IsCached(name_metadata)
-		let data = s:Cache(name_metadata)
+function! s:IsSchemaItem(item) "{{{
+	if exists("a:item['item_type']") &&
+				\ a:item['item_type'] == 'OracleObject' &&
+				\ vorax#utils#IsEmpty(a:item['metadata']['id'])
+		return 1
 	else
-		if name_metadata['type'] == 'SCHEMA'
-			" get all schema objects matching the prefix
-			let data = s:SchemaObjects(name_metadata['schema'], a:prefix)
-		elseif name_metadata['type'] == 'PACKAGE'
-			if g:vorax_omni_parse_package
-				let data = s:DeclareItems(vorax#sqlplus#GetSource(name_metadata['schema'], name_metadata['object'], name_metadata['type']))
-			else
-				" get all functions/procedures from the package or type
-				let data = s:PlsqlModules(name_metadata['id'])
-			endif
-		elseif name_metadata['type'] == 'TYPE'
-			" get all functions/procedures from the package or type
-			let data = s:PlsqlModules(name_metadata['id'])
-		elseif name_metadata['type'] == 'TABLE' ||
-					\ name_metadata['type'] == 'VIEW'
-			" get all columns
-			let data = s:Columns(name_metadata['schema'],
-						\ name_metadata['object'])
-		elseif name_metadata['type'] == 'SEQUENCE'
-			let data = {'resultset' : [[ 
-						\ ['nextval', 'nextval', '', ''], 
-						\ ['currval', 'currval', '', ''] 
-						\ ]]}
-		endif
-		if exists('data')
-			call s:Cache(name_metadata, data)
-		endif
+		return 0
 	endif
-	return data
-endfunction"}}}
+endfunction "}}}
 
-function! s:DotItemsForLocalLoop(variable, prefix)"{{{
-	let crr_pos = s:context['absolute_pos']
-	" tell me more about the code structure
-	let source = vorax#utils#BufferContent()
-	let descriptor = sort(vorax#ruby#PlsqlRegions(source), 'vorax#utils#CompareRegionsByLevelDesc')
-	let crr_block = vorax#utils#GetCurrentRegion(descriptor, crr_pos)
-  let item = s:ResolveName(source, descriptor, crr_block, a:variable)
-	echom string(item)
-	if has_key(item, 'name')
-		if item['type'] ==? 'expr'
-			let expr = 'select * from ' . item['captured_text'] . ' ' . a:variable
-			return s:AliasItems(a:variable, a:prefix, expr)
-		elseif item['type'] ==? 'cursor_var'
-			" a cursor variable
-			let c_var = item['captured_text']
-			let curs_item = s:ResolveName(source, descriptor, crr_block, c_var)
-			if has_key(curs_item, 'name')
-				" get just the query
-				let expr = substitute(curs_item['captured_text'], '\m\c\_.\{-\}\(select\)', '\1', '') 
-				let expr = 'select * from (' . expr . ') vorax'
-				return s:AliasItems('vorax', a:prefix, expr)
-			endif
-		endif
+function! s:HasColumns(metadata) "{{{
+	if a:metadata['type'] == 'TABLE' ||
+				\  a:metadata['type'] == 'VIEW' ||
+				\  a:metadata['type'] == 'CLUSTER' ||
+				\  a:metadata['type'] == 'MATERIALIZED VIEW'
+		return 1
+	else
+		return 0
 	endif
-	return []
-endfunction"}}}
+endfunction "}}}
 
-function! s:ArgumentItems(prefix) abort"{{{
-  let result = []
-  let stmt = vorax#utils#DescribeCurrentStatement(0, 0)
-  call VORAXDebug("omni s:ArgumentItems(): stmt = " . string(stmt))
-  " look backward in the current statement
-  let module = vorax#ruby#ArgumentBelongsTo(stmt['text'], stmt['relative'])
-  call VORAXDebug("omni s:ArgumentItems(): module = " . string(module))
-  if module != ""
-    " try to resolve this module
-    let module_metadata = vorax#sqlplus#NameResolve(module)
-    if module_metadata['type'] == 'FUNCTION' ||
-          \ module_metadata['type'] == 'PROCEDURE' ||
-          \ module_metadata['type'] == 'PACKAGE' ||
-          \ module_metadata['type'] == 'TYPE'
-      if s:IsCached(module_metadata)
-        let data = s:Cache(module_metadata)
-      else
-        " successfully resolved, go on
-        let output = vorax#sqlplus#RunVoraxScript('omni_arguments.sql',
-              \ module_metadata['id'],
-              \ module_metadata['extra'])
-        let data  = vorax#ruby#ParseResultset(output)
-        call s:Cache(module_metadata, data)
-      endif
-      call VORAXDebug("s:ArgumentItems data=" . string(data))
-      let result = s:ResultsetToOmni(data, 1, module, ' ')
-    endif
-  endif
-  return result
-endfunction"}}}
+function! s:IsPackage(item) "{{{
+	if exists("a:item['item_type']") &&
+				\ a:item['item_type'] ==? 'OracleObject' &&
+				\ a:item['metadata']['type'] ==? 'PACKAGE'
+		return 1
+	else
+		return 0
+	endif
+endfunction "}}}
 
-function! s:AliasItems(alias, prefix, ...) abort"{{{
+function! s:IsType(item) "{{{
+	if exists("a:item['item_type']") &&
+				\ a:item['item_type'] ==? 'OracleObject' &&
+				\ a:item['metadata']['type'] ==? 'TYPE'
+		return 1
+	else
+		return 0
+	endif
+endfunction "}}}
+
+function! s:AliasItems(alias, prefix, ...) abort "{{{
   call VORAXDebug("omni s:AliasItems alias=" . string(a:alias). " prefix=" . string(a:prefix))
   let expanded_columns = []
   if exists("a:1")
-  	let stmt = {'text' : a:1, 'relative' : 1}
+  	let pos = 1
+  	if exists("a:2")
+			let pos = a:2
+		endif
+		let stmt = {'text' : a:1, 'relative' : pos}
   else
 		let stmt = vorax#utils#DescribeCurrentStatement(0, 0)
 	endif
@@ -360,40 +518,48 @@ function! s:AliasItems(alias, prefix, ...) abort"{{{
       " expand baby
       let oracle_name = substitute(column, '\m\.\*$', '', 'g')
       let metadata = vorax#sqlplus#NameResolve(oracle_name)
-      if metadata['type'] == 'TABLE' || metadata['type'] == 'VIEW'
+      if s:HasColumns(metadata)
         if s:IsCached(metadata)
           let data = s:Cache(metadata)
         else
-          let data = s:Columns(metadata['schema'], metadata['object'])
+          let data = s:Columns(s:OracleObjectItemType(metadata))
           call s:Cache(metadata, data)
         endif
-				call extend(expanded_columns, s:ResultsetToOmni(data, 0, s:context['text_before'], ''))
+				call extend(expanded_columns, data)
       endif
     else
-      let rec = { 'word' : column,
-                \ 'abbr' : column,
-                \ 'kind' : 'column',
-                \ 'menu' : '',
-                \ 'icase' : 1,
-                \ 'dup'  : 0 }
-      call s:ConvertToOmniCase(rec, s:context['text_before'])    
+      let parts = split(column, '\m\.')
+			let alias = vorax#ruby#GetAlias(stmt.text, a:alias, stmt.relative - 1)
+			call input(string(vorax#ruby#GetAllTables(stmt.text, stmt.relative -1)))
+			let rec = { 'item_type' : 'AliasRef',
+						\ 'name' : parts[-1],
+						\ 'alias' : alias}
       call add(expanded_columns, rec)
     endif
   endfor
   call VORAXDebug("omni s:AliasItems expanded_columns=" . string(expanded_columns))
-  call filter(expanded_columns, 'v:val.word =~ ''^' . a:prefix . '''')
+  call filter(expanded_columns, 'toupper(v:val.name) =~ ''^' . toupper(a:prefix) . '''')
   return expanded_columns
-endfunction"}}}
+endfunction "}}}
 
-function! s:SchemaObjects(schema, prefix) abort"{{{
+function! s:SchemaObjects(schema, prefix) abort "{{{
+  let items = []
   let output = vorax#sqlplus#RunVoraxScript('omni_schema.sql',
         \ a:schema,
         \ toupper(a:prefix),
         \ g:vorax_omni_max_items + 1)
-  return vorax#ruby#ParseResultset(output)
-endfunction"}}}
+  let data = vorax#ruby#ParseResultset(output)
+	if exists("data['resultset'][0]")
+		for rec in data['resultset'][0]
+			call add(items, {'item_type': 'OracleObject', 
+						\ 'type': rec[2], 
+						\ 'name': rec[0]})
+		endfor	
+	endif
+	return items
+endfunction "}}}
 
-function! s:DeclareItems(source) abort"{{{
+function! s:DeclareItems(source) abort "{{{
   call VORAXDebug('omni s:DeclareItems: source=' . string(a:source))
   let content = vorax#ruby#RemoveAllComments(a:source)
   call VORAXDebug('omni s:DeclareItems: describe package...')
@@ -406,26 +572,77 @@ function! s:DeclareItems(source) abort"{{{
 		call add(result.resultset[0], rec)
 	endfor
   return result
-endfunction"}}}
+endfunction "}}}
 
-function! s:PlsqlModules(object_id) abort"{{{
-  let output = vorax#sqlplus#RunVoraxScript('omni_modules.sql', a:object_id)
-  return vorax#ruby#ParseResultset(output)
-endfunction"}}}
+function! s:PackageItems(item) abort "{{{
+  let items = []
+	let metadata = copy(a:item['metadata'])
+	" get rid of the extra field
+	let metadata['extra'] = ''
+	if s:IsCached(metadata)
+		let items = s:Cache(metadata)
+	else
+		if g:vorax_omni_parse_package
+			let pkg_source = vorax#sqlplus#GetSource(metadata['schema'], 
+						\ metadata['object'], 
+						\ metadata['type'])
+			let items = vorax#ruby#DescribeDeclare(pkg_source)
+			call s:Cache(metadata, items)
+		else
+			" look into the db dictionary
+			let output = vorax#sqlplus#RunVoraxScript('omni_modules.sql', metadata["id"])
+			let data  = vorax#ruby#ParseResultset(output)
+			if exists("data['resultset'][0]")
+				for rec in data['resultset'][0]
+					call add(items, {'item_type': (rec[2] != '' ? 'FunctionItem' : 'ProcedureItem'), 
+								\ 'type': rec[2], 
+								\ 'name': rec[0]})
+				endfor	
+				call s:Cache(metadata, items)
+			endif
+		endif
+	endif
+	return items
+endfunction "}}}
 
-function! s:Columns(schema, object) abort"{{{
-  let output = vorax#sqlplus#RunVoraxScript('omni_columns.sql',
+function! s:Columns(item) abort "{{{
+  let schema = a:item['metadata']['schema']
+  let object = a:item['metadata']['object']
+  let items = []
+	if s:IsCached(a:item['metadata'])
+		let items = s:Cache(a:item['metadata'])
+	else
+		let output = vorax#sqlplus#RunVoraxScript('omni_columns.sql',
+					\ schema,
+					\ object)
+		let data = vorax#ruby#ParseResultset(output)
+		if exists("data['resultset'][0]")
+			for rec in data['resultset'][0]
+				call add(items, {'item_type': 'OracleTypeRef', 
+							\ 'type': rec[2], 
+							\ 'name': rec[0]})
+			endfor	
+			call s:Cache(a:item['metadata'], items)
+		endif
+	endif
+	return items
+endfunction "}}}
+
+function! s:TypeItems(schema, object) abort "{{{
+  let output = vorax#sqlplus#RunVoraxScript('omni_type_items.sql',
         \ a:schema,
         \ a:object)
   return vorax#ruby#ParseResultset(output)
-endfunction"}}}
+endfunction "}}}
 
-function! s:CompletionContext() abort"{{{
+function! s:CompletionContext() abort "{{{
   let context = { 'start_from' : -1,
                 \ 'current_line' : strpart(getline('.'), 0, col('.') - 1),
+								\ 'prefix' : '',
                 \ 'current_col' : col('.'),
 								\ 'absolute_pos' : line2byte(line('.')) + col('.') - 1,
                 \ 'text_before' : s:NonEmptyAbove(),
+								\ 'local_items' : [],
                 \ 'completion_type' : ''}
 
   " guess completion type on the current position
@@ -444,9 +661,9 @@ function! s:CompletionContext() abort"{{{
     endif
   endif
   return context
-endfunction"}}}
+endfunction "}}}
 
-function! s:ResultsetToOmni(data, allow_dup, case_probe, padd_with) abort"{{{
+function! s:ResultsetToOmni(data, allow_dup, case_probe, padd_with) abort "{{{
   let result = []
   let data = a:data
   if exists('data["resultset"][0]')
@@ -479,21 +696,21 @@ function! s:ResultsetToOmni(data, allow_dup, case_probe, padd_with) abort"{{{
     endif
   endif
   return result
-endfunction"}}}
+endfunction "}}}
 
-function! s:ShouldCompleteArgument(text) abort"{{{
+function! s:ShouldCompleteArgument(text) abort "{{{
   return a:text =~ '\m[(,]\s*$'
-endfunction"}}}
+endfunction "}}}
 
-function! s:DotMatch(text) abort"{{{
+function! s:DotMatch(text) abort "{{{
   return match(a:text, '\m\([.]\)\@<=\w*$')
-endfunction"}}}
+endfunction "}}}
 
-function! s:IdentifierMatch(text) abort"{{{
+function! s:IdentifierMatch(text) abort "{{{
   return match(a:text, '\m[A-Za-z0-9#$_]\{' . g:vorax_omni_word_prefix_size . ',\}$')
-endfunction"}}}
+endfunction "}}}
 
-function! s:NonEmptyAbove() abort"{{{
+function! s:NonEmptyAbove() abort "{{{
   let line_no = line('.')
   let col_no = col('.')
   let first = 1
@@ -514,9 +731,9 @@ function! s:NonEmptyAbove() abort"{{{
   else
     return ''
   endif
-endfunction"}}}
+endfunction "}}}
 
-function! s:DetectCase(...) abort"{{{
+function! s:DetectCase(...) abort "{{{
   if exists('a:1')
     let base = a:1
   else
@@ -528,9 +745,9 @@ function! s:DetectCase(...) abort"{{{
   elseif last_letter ==# toupper(last_letter)
     return 'upper'
   endif
-endfunction"}}}
+endfunction "}}}
 
-function! s:OmniCase(...) abort"{{{
+function! s:OmniCase(...) abort "{{{
   let omni_case = g:vorax_omni_case
   if omni_case ==? 'smart' ||
         \ omni_case ==? 'upper' ||
@@ -546,9 +763,9 @@ function! s:OmniCase(...) abort"{{{
     endif
   endif
   return omni_case
-endfunction"}}}
+endfunction "}}}
 
-function! s:ConvertToOmniCase(array, ...)"{{{
+function! s:ConvertToOmniCase(array, ...) "{{{
   if exists('a:1')
     let case = s:OmniCase(a:1)
   else
@@ -559,22 +776,35 @@ function! s:ConvertToOmniCase(array, ...)"{{{
   elseif case == 'upper'
     return map(a:array, 'toupper(v:val)')
   endif
-endfunction"}}}
+endfunction "}}}
 
-function! s:CompareOmniItems(i1, i2)"{{{
+function! s:CompareOmniItems(i1, i2) "{{{
   let i1 = toupper(a:i1.word)
   let i2 = toupper(a:i2.word)
   return i1 == i2 ? 0 : i1 > i2 ? 1 : -1
-endfunction"}}}
+endfunction "}}}
 
-function! s:IsCached(metadata) abort"{{{
-  let key = a:metadata['id'] . ':' . a:metadata['extra']
-  return has_key(s:cache_items, key)
-endfunction"}}}
+function! s:CacheKey(metadata) abort "{{{
+	let extra = a:metadata.extra
+	if a:metadata.type == 'PACKAGE' ||
+				\ a:metadata.type == 'TYPE'
+		let extra = ''
+	endif
+	if exists("a:metadata.cache_key")
+		let key = a:metadata.cache_key
+	else
+		let key = a:metadata.id . ':' . extra
+	endif
+	return key
+endfunction "}}}
 
-function! s:Cache(metadata, ...) abort"{{{
+function! s:IsCached(metadata) abort "{{{
+  return has_key(s:cache_items, s:CacheKey(a:metadata))
+endfunction "}}}
+
+function! s:Cache(metadata, ...) abort "{{{
   if a:metadata.id != ''
-    let key = a:metadata.id . ':' . a:metadata.extra
+    let key = s:CacheKey(a:metadata)
     if exists('a:1')
       let data = a:1
       for cache_schema in g:vorax_omni_cache
@@ -587,9 +817,9 @@ function! s:Cache(metadata, ...) abort"{{{
       endfor
     else
       if s:IsCached(a:metadata)
-        return s:cache_items[key]
+        return copy(s:cache_items[key])
       endif
     endif
   endif
-endfunction"}}}
+endfunction "}}}
 

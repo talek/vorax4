@@ -28,6 +28,7 @@ set serveroutput on
 set define off
 set echo off
 set define '&'
+set verify off
 
 declare
   type object_table is table of char(1) index by varchar2(200);

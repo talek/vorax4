@@ -8,13 +8,13 @@
 " Initialization {{{
 
 if exists('g:vorax_ruby_loaded')
-  finish
+"  finish
 endif
 let g:vorax_ruby_loaded = 1
 
 " Always set the following variable to match the
 " vorax.gem version requirement.
-let s:ruby_vorax_gem_requirement = "~> 0.4"
+let s:ruby_vorax_gem_requirement = "~> 0.5"
 
 let s:ruby_ver = ''
 if has('ruby')
@@ -35,7 +35,9 @@ if has('ruby') && s:ruby_ver =~ '\m^1\.9.*$'
 ERC
  catch /.*LoadError.*/
     echom "Vorax cannot load its ruby buddy code!"
-    echom "You need to install vorax gem using:"
+    echom v:exception
+    echom ""
+    echom "Maybe you need to install vorax gem using:"
     echom "   gem install vorax"
     finish
   endtry
@@ -56,6 +58,7 @@ function! vorax#ruby#InitLogging(file)
     Vorax::logger.formatter = proc do |severity, datetime, progname, msg|
       "#{datetime.strftime('%Y-%m-%d %H:%M:%S.%3N')} [#{progname}] - #{msg}\n"
     end
+  	Vorax::logger.debug(Vorax::VERSION)
   end
 ERC
 endfunction
@@ -118,10 +121,37 @@ endfunction"}}}
 
 function! vorax#ruby#ArgumentBelongsTo(statement, position) abort"{{{
   ruby <<ERC
-  argument = Vorax::Parser.argument_belongs_to(VIM::evaluate('a:statement'), VIM::evaluate('a:position')-1)
+  argument = Vorax::Parser.argument_belongs_to(VIM::evaluate('a:statement'), VIM::evaluate('a:position'))
   VIM::command("return #{argument.inspect}")
 ERC
 endfunction"}}}
+
+function! vorax#ruby#GetAlias(statement, alias_name, position)
+  call VORAXDebug('vorax#ruby#GetAlias a:statement=' . string(a:statement) .
+				\ ' a:alias_name = ' . string(a:alias_name) .
+				\ ' a:position = ' . a:position)
+  ruby <<ERC
+  vim_alias = {}
+  inspector = Vorax::Parser::StmtInspector.new(VIM::evaluate('a:statement'))
+  target_alias = inspector.find_alias(VIM::evaluate('a:alias_name'), 
+                                      VIM::evaluate('a:position') - 1)
+  if target_alias
+		vim_alias = "{'alias_type' : #{target_alias.class.name.split(/::/).last.inspect}, 'base' : #{target_alias.base.inspect} }"
+	end
+  VIM::command("return #{vim_alias}") 
+ERC
+endfunction
+
+function! vorax#ruby#IsAliasVisible(statement, alias_name, position) "{{{
+  ruby <<ERC
+  status = 0
+  inspector = Vorax::Parser::StmtInspector.new(VIM::evaluate('a:statement'))
+  target_alias = inspector.find_alias(VIM::evaluate('a:alias_name'), 
+                                      VIM::evaluate('a:position') - 1)
+  status = 1 if target_alias
+  VIM::command("return #{status}") 
+ERC
+endfunction "}}}
 
 function! vorax#ruby#AliasColumns(statement, alias_name, position) abort"{{{
   exec VORAXDebug("ruby.vim AliasColumns() statement=" . string(a:statement) .
@@ -141,56 +171,129 @@ function! vorax#ruby#DescribeDeclare(source_text) abort"{{{
   call VORAXDebug("vorax#ruby#DescribeDeclare source_text=" . string(a:source_text))
   let result = []
   ruby <<ERC
-  parser = Vorax::Parser::Declare.new(VIM::evaluate('a:source_text'))
-  VIM::command("let result = #{parser.to_vim}")
+    structure = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
+		region = structure.regions.children.first.content
+		items = []
+		region.declared_items.each do |i| 
+			item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
+				if v.nil?
+					h[k] = '' 
+				elsif v.is_a?(TrueClass) 
+					h[k] = 1
+				elsif v.is_a?(FalseClass)
+					h[k] = 0
+				else
+					h[k] = v
+				end
+			end
+			items << item.to_json
+		end
+  VIM::command("return [#{items.join(',')}]")
 ERC
-  return result
+endfunction"}}}
+
+function! vorax#ruby#ComputePlsqlStructure(stored_as, source_text) abort"{{{
+	ruby <<ERC
+	Vorax.extra[VIM::evaluate('a:stored_as')] = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
+ERC
+endfunction"}}}
+
+function! vorax#ruby#CompositeName(structure_stored_in, position) abort "{{{
+	ruby <<ERC
+	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
+  region = structure.region_at(VIM::evaluate('a:position'))
+  package_name = ''
+  begin
+	  if region 
+	  	if region.is_a?(Vorax::Parser::CompositeRegion)
+				package_name = region.name
+				break
+			end
+      region = region.node.parent.content
+		else
+			break
+		end
+	end while true
+	VIM::command("return #{package_name.inspect}")
+ERC
+endfunction "}}}
+
+function! vorax#ruby#RegionScope(structure_stored_in, position) abort"{{{
+  call VORAXDebug("vorax#ruby#LocalItems: start")
+	ruby <<ERC
+	scope = []
+	structure = VORAX.extra[VIM::evaluate('a:structure_stored_in')]
+  region = structure.region_at(VIM::evaluate('a:position'))
+  begin
+	  if region
+      vim_region_hash = region.to_hash.inject({}) { |h,(k,v)| h[k] = (v ? v : ''); h }.to_json
+	    scope << vim_region_hash
+      region = region.node.parent.content
+		else
+			break
+		end
+	end while true
+  VIM::command("return [#{scope.join(',')}]")
+ERC
+endfunction"}}}
+
+function! vorax#ruby#LocalItems(structure_stored_in, position, prefix)"{{{
+	ruby <<ERC
+	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
+  region = structure.region_at(VIM::evaluate('a:position'))
+  items = []
+  begin
+	  if region
+      if region.kind_of?(Vorax::Parser::ForRegion)
+      	item = {:item_type => 'ForVariable', 
+      	          :domain => region.domain, 
+      	          :domain_type => region.domain_type.to_s,
+      	          :variable => region.variable.to_s,
+      	          :declared_at => region.variable_position,
+      	          :start_pos => region.start_pos,
+									:end_pos => region.end_pos
+      	          }.to_json
+      	items << item
+      elsif region.respond_to?(:declared_items)
+				region.declared_items.each do |i| 
+				  if i.respond_to?(:name) && i.name.downcase.start_with?(VIM::evaluate('a:prefix').downcase)
+						item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
+						  if v.nil?
+								h[k] = '' 
+						  elsif v.is_a?(TrueClass) 
+							  h[k] = 1
+						  elsif v.is_a?(FalseClass)
+							  h[k] = 0
+						  else
+						  	h[k] = v
+						  end
+					  end
+						items << item.to_json
+					end
+			  end
+			end
+      region = region.node.parent.content
+		else
+			break
+		end
+	end while true
+  VIM::command("return [#{items.join(',')}]")
+ERC
 endfunction"}}}
 
 function! vorax#ruby#PlsqlRegions(source_text) abort"{{{
   ruby <<ERC
-  regions = []
+  vim_regions = []
   structure = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
-  structure.tree.breadth_each do |node|
-    if node.content
-      collect = []
-      context_hash = {}
-      if node.content.context
-				node.content.context.each { |k, v| collect << "#{k.to_s.inspect} : #{(v ? v : '').inspect}" }
-				context_hash = "{" + collect.join(',') + "}"
-			end
-      item = {'start_pos' => node.content.start_pos,
-							'end_pos' => node.content.end_pos,
-							'type' => node.content.type,
-							'name' => node.content.name,
-							'context' => context_hash,
-							'body_start_pos' => node.content.body_start_pos,
-							'level' => node.node_depth}
-		  collect = [] 
-			item.each do |k, v| 
-			  if k != 'context'
-					collect << "#{k.to_s.inspect} : #{(v ? v : '').inspect}"
-				else
-					collect << "#{k.to_s.inspect} : #{(v ? v : ''.inspect)}"
-				end
-			end
-			vim_item_hash = "{" + collect.join(',') + "}"
-    	regions << vim_item_hash;
+  structure.regions.breadth_each do |node|
+    region = node.content
+    if region
+      vim_hash = region.to_hash.inject({}) { |h,(k,v)| h[k] = (v ? v : ''); h }
+      vim_hash[:level] = node.level
+    	vim_regions << vim_hash.to_json
     end
   end
-  VIM::command("return [#{regions.join(',')}]")
-ERC
-endfunction"}}}
-
-function! vorax#ruby#SubprocUnderCursor(text, pos) abort"{{{
-  ruby <<ERC
-  modules = Vorax::Parser.plsql_structure(VIM::evaluate('a:text'))
-  crr_module = modules.find { |subprog| (subprog.start_pos..subprog.end_pos).include?(VIM::evaluate('a:pos')) }
-  if crr_module
-    VIM::command("return #{crr_module.name.inspect}")
-  else
-    VIM::command("return ''")
-  end
+  VIM::command("return [#{vim_regions.join(',')}]")
 ERC
 endfunction"}}}
 
@@ -201,15 +304,27 @@ function! vorax#ruby#RemoveAllComments(text) abort"{{{
 ERC
 endfunction"}}}
 
-function! vorax#ruby#DescribeRecordType(text) abort
+function! vorax#ruby#DescribeRecordType(text) abort"{{{
 	ruby <<ERC
-  vim_result = Parser.describe_record(VIM::evaluate('a:text')).map do |hash|
-    hash.map { |k, v| "#{k.to_s.inspect} : #{v.to_s.inspect}" }
-  end.join(",")
-	VIM::command("return [#{vim_result}]")
+    items = []
+    rec_items = Vorax::Parser.describe_record(VIM::evaluate('a:text'))
+		rec_items.each do |i|
+				item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
+					if v.nil?
+						h[k] = '' 
+					elsif v.is_a?(TrueClass) 
+						h[k] = 1
+					elsif v.is_a?(FalseClass)
+						h[k] = 0
+					else
+						h[k] = v
+					end
+				end
+				items << item.to_json
+	  end
+		VIM::command("return [#{items.join(',')}]")
 ERC
-
-endfunction
+endfunction"}}}
 
 " }}}
 
