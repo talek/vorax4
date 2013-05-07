@@ -1,0 +1,89 @@
+create or replace package test as
+
+  g_var varchar2(100);
+
+  procedure test(p1 integer);
+  function muci(x varchar2, y clob) return boolean;
+
+end test;
+/
+
+create or replace package body test as
+
+  lg_var_private varchar2(100);
+  
+  procedure private_proc(p integer) as
+
+    l_var varchar2(100);
+
+    /* local function */
+    function abc return boolean as
+    begin
+      return true;
+    end;
+    
+    procedure xyz as
+    begin
+      null;
+    end;
+
+  begin
+    l_var := 'abc';
+    for x in (select * from v$session) loop
+      dbms_output.put_line(x.);
+      if x = 'X' then
+        dbms_output.put_line('Great!');
+      end if;
+      if 1 = 0 then
+        if 1 = 1 then
+          for y in (select * from cat) loop
+            dbms_output.put_line(y.table_name);
+            dbms_output.put_line('------------------------------');
+          end loop;
+          dbms_output.put_line('not here ever!');
+        end if;
+        if 1 = 0 then
+          dbms_output.put_line('OMG!');
+        end if;
+      end if;
+      null;
+    end loop;
+    select dummy into l_var from dual;
+    if l_var is not null then
+      dbms_output.put_line('yessss baby!');
+    end if;
+    dbms_output.put_line('a loop is following');
+    loop
+      exit when l_var = 'X';
+      dbms_output.put_line('should not be here');
+    end loop;
+    dbms_output.put_line('that''s all folks!');
+  end;
+
+  lg_muci varchar2(100);
+
+  procedure test(p1 integer) as
+  begin
+    dbms_output.put_line('just a test');
+    begin
+      null;
+    exception
+      when others then
+        null;
+    end;
+  end;
+
+  lg_buci varchar2(100);
+
+  function muci(x varchar2, y clob) return boolean as
+  begin
+    return false;
+  end;
+
+  lg_whatever boolean;
+
+begin
+  g_var := 'test';
+end test;
+/
+

@@ -1,0 +1,52 @@
+# encoding: utf-8
+
+module Vorax
+
+  module Parser
+
+    class StatementInspector
+
+      def initialize(statement)
+        @statement = statement
+      end
+
+      def type
+        @type ||= Statement.new.type(statement)
+      end
+
+      def data_source
+        descriptor.refs
+      end
+
+      def recursive_data_source(refs, collect, position)
+        inner = refs.find { |r| r.respond_to?(:range) && r.range.include?(position) }
+        collect.unshift(refs).flatten!
+        if inner
+          desc = Parser::Alias.new
+          desc.walk(inner.base)
+          data_source(desc.refs, collect, position - inner_expr.range.first)
+        else
+          return collect
+        end
+      end
+
+      def query_fields
+        @query_fields ||= Column.new.walk(descriptor.query_fields)
+      end
+
+      private
+
+      def descriptor
+        unless @desc
+          @desc = Parser::Alias.new
+          @desc.walk(@statement)
+        end
+        @desc
+      end
+      
+    end
+
+  end
+  
+end
+

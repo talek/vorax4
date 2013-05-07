@@ -8,40 +8,31 @@
 " Initialization {{{
 
 if exists('g:vorax_ruby_loaded')
-"  finish
+  finish
 endif
 let g:vorax_ruby_loaded = 1
 
-" Always set the following variable to match the
-" vorax.gem version requirement.
-let s:ruby_vorax_gem_requirement = "~> 0.5"
-
 let s:ruby_ver = ''
 if has('ruby')
+  ruby $LOAD_PATH << File.expand_path('../vorax/ruby/lib', __FILE__)
   ruby VIM::command("let s:ruby_ver=#{RUBY_VERSION.inspect}")
 endif
 
-if has('ruby') && s:ruby_ver =~ '\m^1\.9.*$'
+if has('ruby') && (s:ruby_ver =~ '\m^1\.9.*$' || s:ruby_ver =~ '\m^2\.')
+  " only ruby 1.9 or above are supported
   try
     ruby require 'vorax'
-    ruby <<ERC
-    unless Gem::Version::Requirement.new([VIM::evaluate("s:ruby_vorax_gem_requirement")]).satisfied_by?(Gem::Version.new(Vorax::VERSION))
-      VIM::command("echom 'Vorax found an incompatible version of its buddy ruby code!'")
-      VIM::command("echom 'To fix it:'")
-      VIM::command("echom '  1) ensure you run the last version of Vorax'")
-      VIM::command("echom '  2) gem update vorax'")
-    	VIM::command("throw 'LoadError'")
-    end
-ERC
- catch /.*LoadError.*/
+  catch /.*LoadError.*/
+		let g:vorax_ruby_loaded = 0
     echom "Vorax cannot load its ruby buddy code!"
     echom v:exception
     echom ""
-    echom "Maybe you need to install vorax gem using:"
+    echom "Maybe you need to install the vorax gem using:"
     echom "   gem install vorax"
     finish
   endtry
 else
+	let g:vorax_ruby_loaded = 0
   echom("Vorax needs that your VIM to be compiled with ruby 1.9 support!")
   finish
 endif

@@ -1,0 +1,125 @@
+# encoding: utf-8
+
+module Vorax
+
+  module Parser
+
+    # Given a statement and a position we want to see if on that position we should
+    # provide code completion for an argument
+    class Argument
+
+      def initialize(statement)
+        @stmt = statement
+        # interesting points to search within statement
+        @marks = [BEGIN_PLSQL_SPECIAL_QUOTING, BEGIN_QUOTING,
+          CLOSE_PARAN, OPEN_PARAN, ANY]
+        # level referes to open/close brackets
+        @level = 0
+      end
+
+      # the function/procedure which owns the argument at the
+      # provided position
+      def belongs_to(position = @stmt.length)
+        @belongs_to = ''
+        stmt = @stmt[(0...position)]
+        # remove all comments
+        stmt = Parser::Comment.new.remove_all(stmt)
+        stmt.reverse!
+        @ss = StringScanner.new(stmt)
+        consume
+        return @belongs_to
+      end
+
+      private
+
+      def consume
+        while !@ss.eos?
+          @ss.skip_until(/#{@marks.join('|')}/im)
+
+          process_plsql_quoting
+          process_double_quotes
+          process_single_quotes
+          process_close_paran
+          process_open_paran
+
+          p @ss.rest
+          gets
+        end
+      end
+
+      def process_plsql_quoting
+        # pay attention, is reveresed
+        if @ss.matched =~ /'\]/
+          @ss.skip_until(/\['q/) 
+          p 'a intrat'          
+        end
+        #@ss.skip_until(/\{'q/) if @ss.matched =~ /'\}/
+        #@ss.skip_until(/\('q/) if @ss.matched =~ /'\)/
+        #@ss.skip_until(/\>'q/) if @ss.matched =~ /'\</
+      end
+
+      def process_double_quotes
+        @ss.skip_until(/"/) if @ss.matched == '"'
+      end
+
+      def process_single_quotes
+        if @ss.matched == "'" 
+          begin
+            @ss.skip_until(/\'+/) 
+          end while (@ss.matched != "'" && !@ss.eos?)
+        end
+      end
+
+      def process_close_paran
+        if @ss.matched =~ /#{CLOSE_PARAN}/
+          @level += 1 
+        end
+      end
+
+      def process_open_paran
+        if @ss.matched =~ /#{OPEN_PARAN}/
+          if @level == 0
+            extract_module
+          else
+            @level -= 1
+            @ss.terminate if @level < 0 #give up, it's an invalid statement
+          end
+        end
+      end
+
+      def extract_module
+        while !@ss.eos?
+          # consume leading whitspaces
+          @ss.scan(/\s*/)
+          if @ss.check(/"/) == '"'
+            # we have a quoted identifier
+            @belongs_to << @ss.scan(/"/)
+            @belongs_to << @ss.scan_until(/"/)
+          else
+            # unquoted identifier
+            @belongs_to << @ss.scan(/\S+/)
+          end
+          # consume trailing whitespaces
+          @ss.scan(/\s*/)
+
+          # might be a dblink
+          if @ss.check(/@/) == '@' 
+            @belongs_to << @ss.scan(/@/)
+            next
+          end
+
+          # might be package or a owner
+          if @ss.check(/\./) == '.' 
+            @belongs_to << @ss.scan(/\./)
+            next
+          end
+          @ss.terminate
+        end
+        @belongs_to.reverse!
+      end
+
+    end
+
+  end
+
+end

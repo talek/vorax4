@@ -1,0 +1,676 @@
+CREATE OR REPLACE PACKAGE "FITS_PDM_REPOSITORY"."ADMIN_TOOLKIT"
+/**
+This package provides automatic Basket Tree maintenance utilities.
+
+	 #Author  : Ovidiu Diaconu
+	 #Created : 28-Aug-2009 10:54:47 AM
+	 #DB Version: 1.8.8.0
+	 #Package version: 95
+	 #Purpose : Provides automatic Basket Tree maintenance utilities
+*/
+is
+
+  /**constant for users of admin type*/
+  ADMIN_USER constant varchar2(10) := 'admin';
+  /**constant for checking the right operation type: INS = 1*/
+  INS constant integer := 1;
+  /**constant for checking the right operation type: UPS = 2*/
+  UPD constant integer := 2;
+  /**constant for checking the right operation type: DEL = 4*/
+  DEL constant integer := 4;
+
+  /**type for basket-record*/
+  type t_basket_rec is record(
+    idn    bskcmptre_tbl.itmidn%type,
+    bskprn bskcmptre_tbl.bskprnidn%type,
+    typ    bskcmptre_tbl.itmtyp%type,
+    itmref bskcmptre_tbl.itmrefidn%type,
+    subref bskcmptre_tbl.itmsubrefidn%type,
+    depprn bskcmptre_tbl.prndepidn%type);
+
+  /**type for advisor-record*/
+  type rec_advmda is record(
+    idn    cliadvmda.cliadvidn%type,
+    nam    cliadvmda.cliadvnam%type,
+    impkey integer);
+
+  /**type for client-record*/
+  type rec_climda is record(
+    idn    climda.cliidn%type,
+    nam    varchar2(50),
+    cst    climda.clicstcnt%type,
+    adv    climda.cliintadvidn%type,
+    impkey integer);
+
+  /**type for deposit-record*/
+  type rec_depmda is record(
+    idn    DepMda.depidn%type,
+    subidn DepMda.subdepidn%type,
+    nam    DepMda.depnam%type,
+    cli    DepMda.depcliidn%type,
+    fnd    DepMda.depfndidn%type,
+    srvcat varchar2(15),
+    impkey integer);
+
+  /**type for account-record*/
+  type rec_accmda is record(
+    idn    accmda.accidn%type,
+    nam    accmda.accnam%type,
+    cli    accmda.acccliidn%type,
+    impkey integer);
+
+  /**type for account purposes-record*/
+  type rec_accpur is record(
+    idn    accpur.accidn%type,
+    dep    accpur.depnr%type,
+    subdep accpur.subdepnr%type,
+    impkey integer);
+
+  /**type for fund-record*/
+  type rec_fndmda is record(
+    depidn    depmda.depidn%type,
+    subidn    depmda.subdepidn%type,
+    depkey    integer,
+    fndIdn    fndmda.FndIdn%type,
+    fndnam    varchar2(50),
+    AdmIdn    fndmda.FndAdmIdn%type,
+    ClsCod    fndmda.FndClsCod%type,
+    MlmCod    fndmda.FndMlmCod%type,
+    MlmFndIdn fndmda.FndMlmFndIdn%type,
+    fndkey    integer);
+
+  /**
+    Checks if a certain item was modified by a BGAG user (place, name etc). Important to
+    skip some automatic changes coming from the interface, which could override updates made
+    by application user.
+
+    #param pi_itmidn           Basket tree item ID
+  */
+  function is_AdminBasket(pi_itmidn in integer)
+    return integer;
+
+	/**
+		Gets basket ID for a given impkey if record exists in basket tree (returns 0 if item not found).
+
+	  #param pi_impkey           Record ImpKey
+    #param pi_tablename        Interface table relevant to the given ImpKey
+	*/
+	function get_BasketId(pi_impkey in integer,
+                        pi_tablename in varchar2)
+    return t_basket_rec;
+
+  /**
+    Gets Advisor data from CliAdvMda.
+
+	  #param pi_advidn           Advisor ID
+    #param pi_impkey           Record ImpKey
+  */
+  function get_adv_info(pi_advidn cliadvmda.cliadvidn%type,
+                        pi_impkey cliadvmda.impkey%type)
+    return rec_advmda;
+
+  /**
+    Gets Client data from CliMda.
+
+	  #param pi_cliidn           Client ID
+    #param pi_impkey           Record ImpKey
+  */
+  function get_cli_info(pi_cliidn climda.cliidn%type,
+                        pi_impkey climda.impkey%type)
+    return rec_climda;
+
+  /**
+    Gets the client's name; for funds override with Fund name.
+
+	  #param pi_cliidn           Client ID
+    #param pi_impkey           Record ImpKey
+  */
+  function get_cli_name(pi_cliidn climda.cliidn%type,
+                        pi_impkey climda.impkey%type)
+    return varchar2;
+
+  /**
+    Gets account data from AccMda.
+
+	  #param pi_accidn           Account ID
+    #param pi_impkey           Record ImpKey
+  */
+  function get_acc_info(pi_accidn accmda.accidn%type,
+                        pi_impkey accmda.impkey%type)
+    return rec_accmda;
+
+  /**
+    Gets fund data from Depmda and FndMda.
+
+	  #param pi_fndidn           Fund ID
+    #param pi_impkey           Record ImpKey
+    #param po_cursor           Output cursor
+  */
+  procedure get_fnd_info(pi_fndidn in fndmda.fndidn%type,
+                         pi_impkey in fndmda.impkey%type,
+                         po_cursor out sys_refcursor);
+
+  /**
+    Gets deposits data from DepMda.
+
+	  #param pi_depidn           Deposit ID
+	  #param pi_subidn           Sub-deposit ID
+    #param pi_impkey           Record ImpKey
+  */
+  function get_dep_info(pi_depidn depmda.depidn%type,
+                        pi_subidn depmda.subdepidn%type,
+                        pi_impkey depmda.impkey%type default null)
+    return rec_depmda;
+
+	/**
+		Checks for BCLI composition: if BCLI contains only Acc directly linked,
+    function will return 1 else 0.
+
+	  #param pi_itmidn           Item ID in basket tree
+	  #param pi_checkfor         What to check for: A, FND...
+	*/
+	function check_item_structure(pi_itmidn bskcmptre_tbl.itmidn%type,
+																pi_checkfor bskcmptre_tbl.itmtyp%type default null)
+    return varchar2;
+
+  /**
+    This procedure returns the accounts that belong directly to a client.
+
+    #param pi_cliidn           Client ID
+    #param po_cursor           Output cursor with following format:
+      accidn    - account id
+      accnam    - account name
+  */
+  procedure get_ClientAccounts(pi_cliidn in varchar2,
+                               po_cursor out sys_refcursor);
+
+  /**
+    This function returns the advisor of a client.
+
+    #param pi_cliidn           Client ID
+  */
+  function get_ClientAdvisor(pi_cliidn in varchar2) return
+    varchar2;
+
+  /**
+    This procedure returns the accounts that belong to a deposit.
+
+    #param pi_depidn           Deposit ID
+    #param pi_subdepidn        Sub-deposit ID
+    #param po_cursor           Output cursor with following format:
+		  accidn    - account id
+		  depnr     - deposit id
+		  subdepnr  - subdeposit id
+  */
+  procedure get_DepositAccounts(pi_depidn    in varchar2,
+                                pi_subdepidn in varchar2,
+                                po_cursor    out sys_refcursor);
+
+  /**
+    This procedure returns the matched deposit and sub-deposit for an account,
+    considering business logic in WKO table.
+
+    #param pi_accidn           Account ID
+    #param po_wko_depidn       Output deposit ID
+    #param po_wko_subdep       Output sub-deposit ID
+  */
+  procedure get_AccountDeposit(pi_accidn in varchar2,
+                               po_wko_depidn out integer,
+                               po_wko_subdep out integer);
+
+  /**
+    This procedure returns the deposits that belong to a client.
+
+    #param pi_cliidn           Client ID
+    #param po_cursor           Output cursor with following format:
+		  depidn    - deposit id
+		  subdepidn - subdeposit id
+		  depnam    - deposit name
+  */
+  procedure get_ClientDeposits(pi_cliidn in varchar2,
+                               po_cursor out sys_refcursor);
+
+	/**
+		This procedure returns the clients of an advisor.
+
+    #param pi_advidn           Advisor ID
+    #param po_cursor           Output cursor
+	*/
+  procedure get_AdvisorClients(pi_advidn in varchar2,
+                               po_cursor out sys_refcursor);
+
+  /**
+    Gets fixed structure branch, where a client should go (based on cost center).
+
+    #param pi_cliidn           Client ID
+  */
+  function get_ClientFixedStructure(pi_cliidn in varchar2)
+    return integer;
+
+  /**
+    This procedure performs a DELETE of a BADV or BCLI item from BasketTree - if
+    that item is empty.
+
+    #param pi_itm_idn          The item's to be deleted identifier
+    #param pi_prevresult       Previous result
+  */
+  function delete_empty(pi_itm_idn    bskcmptre_tbl.itmidn%type,
+                        pi_prevresult integer default 0)
+    return integer;
+
+  /**
+    For a given starting node identifier, deletes all child/leaf nodes in the right order.
+    It's necessary when trying to remove an item from the J-tree, all its components must be
+    prior deleted, because of the foreign key FK_BSKCMPTRE_BSKPRNIDN.
+
+    #param pi_nodidn           Starting node identifier
+    #param pi_tree             Tree type
+  */
+  procedure Jtree_delete_Pos(pi_nodidn integer,
+                             pi_tree varchar2);
+
+  /**
+    For a given starting node identifier in O-Tree, deletes all child/leaf nodes in the right order.
+
+    #param pi_nodidn           Starting node identifier
+  */
+  procedure Otree_delete_Pos(pi_nodidn integer);
+
+  /**
+    This procedure sets the proper SrvCat for the parent BDEP and BCLI of the
+    given item (pi_itmidn).
+
+    #param pi_itmidn           Item ID in baskets tree
+  */
+  procedure set_srvcat(pi_itmidn Bskcmptre_Tbl.Itmidn%type);
+
+  /**
+    This procedure sets the proper SrvCat up until disposer level, starting with
+    a given item (D-type node).
+
+    #param pi_itmidn           Item ID in O-tree
+  */
+  procedure set_srvcat_otree(pi_itmidn Bskcmptre_Tbl.Itmidn%type);
+
+  /**
+   This function transforms various combinations of bits into plain strings: INS, UPD, DEL.
+
+	 #param pi_multiple_opr      Integer value, representing an OprTyp value
+															 I.e. pi_multiple_opr = BskSrcLog.OprTyp = 1 => 100=INS
+																	  pi_multiple_opr = BskSrcLog.OprTyp = 6 => 011=UPD + DEL
+																	  pi_multiple_opr = BskSrcLog.OprTyp = 3 => 110=INS + UPD
+   #return                     INS for pi_multiple_opr in (1,3),
+                               UPD for pi_multiple_opr in (2),
+                               DEL for pi_multiple_opr (4,6)
+  */
+  function simplify_OprTyp(pi_multiple_opr integer) return varchar2;
+
+  /**
+    For a given basket identifier, changes his parent to a new given one.
+
+	  #param pi_itmidn            Basket identifier to change its parent
+	  #param pi_newparent         New parent of the pi_item basket
+  */
+  procedure update_bskparent(pi_itmidn    Bskcmptre_Tbl.Itmidn%type,
+                             pi_newparent Bskcmptre_Tbl.Itmtyp%type);
+
+  /**
+    Updates ItmSubRefIdn and PrnDepIdn for accounts only.
+
+	  #param pi_itmidn            Account's item ID in basket tree
+	  #param pi_subref            Changed reference sub-deposit
+	  #param pi_prndep            Changed reference deposit
+  */
+
+  procedure update_ref_accounts(pi_itmidn Bskcmptre_Tbl.Itmidn%type default null,
+                                pi_subref Bskcmptre_Tbl.Itmsubrefidn%type default null,
+                                pi_prndep bskcmptre_tbl.prndepidn%type default null);
+
+  /**
+    Updates the ItmNam and/or (ItmRefIdn and/or ItmSubRefIdn) in J-tree.
+
+	  #param pi_itmidn            Basket ID
+	  #param pi_itmnam            Basket name
+	  #param pi_itmtyp            Basket type
+	  #param pi_refidn            Reference ID (client, deposit, account)
+	  #param pi_subref            Sub-reference ID (sub-deposit)
+	  #param pi_depforacc         Belonging deposit, in case of accounts
+	  #param pi_impkey            Record ImpKey in interface table
+	  #param pi_namflg            Flag name to be prefixed to the basket name
+  */
+  procedure update_nam_ref(pi_itmidn    Bskcmptre_Tbl.Itmidn%type default null,
+                           pi_itmnam    Bskcmptre_Tbl.Itmnam%type,
+                           pi_itmtyp    Bskcmptre_Tbl.Itmtyp%type,
+                           pi_refidn    Bskcmptre_Tbl.Itmrefidn%type,
+                           pi_subref    Bskcmptre_Tbl.Itmsubrefidn%type default null,
+                           pi_depforacc bskcmptre_tbl.prndepidn%type default null,
+                           pi_impkey    integer default null,
+                           pi_namflg    bskcmptre_tbl.itmnamflg%type default null);
+
+  /**
+    Updates the ItmNam and/or (ItmRefIdn and/or ItmSubRefIdn) in O-tree.
+
+	  #param pi_itmidn            Basket ID
+	  #param pi_itmnam            Basket name
+	  #param pi_itmrefidn         Reference ID (client, deposit, account)
+	  #param pi_itmsubrefidn      Sub-reference ID (sub-deposit)
+	  #param pi_prndepidn         Belonging deposit, in case of accounts
+	  #param pi_itmnamflg         Flag name to be prefixed to the basket name
+    #param pi_itmsrvcat         Service Category
+  */
+  procedure update_nam_ref_otree(pi_itmidn       Bskcmptre_Tbl.Itmidn%type default null,
+                                 pi_itmnam       Bskcmptre_Tbl.Itmnam%type,
+                                 pi_itmrefidn    Bskcmptre_Tbl.Itmrefidn%type,
+                                 pi_itmsubrefidn Bskcmptre_Tbl.Itmsubrefidn%type default null,
+                                 pi_prndepidn    bskcmptre_tbl.prndepidn%type default null,
+                                 pi_itmnamflg    bskcmptre_tbl.itmnamflg%type default null,
+                                 pi_itmsrvcat    bskcmptre_tbl.itmsrvcat%type default null);
+
+  /**
+    This function creates a new basket or a new entry within a basket, returning the
+    unique ID created.
+
+    #param pi_prnbsk            Parent identifier (ItmIdn) of new basket / basket entry
+    #param pi_bsknam            Name of new basket / basket entry
+    #param pi_tretyp            Basket tree type: J - Joshua tree, O - Other tree, P - Personal tree
+    #param pi_bsktyp            The type of the new item:
+                                  B - generic basket;
+                                  BADV - adviser based basket;
+                                  BCLI - client based basket;
+                                  BDEP - deposit based basket;
+                                  BSD - subdeposit based basket;
+                                  BT - trust based basket;
+                                  A - account item in basket;
+                                  D - deposit item in basket
+    #param pi_refidn            The reference identifier of the item/basket.
+																	* If an adviser based basket, then adviser ID.
+																	* It a client based basket then client ID etc.
+																	* If it's a deposit then it has the DepIdn field value.
+																	* If it's an account then it points to the AccIdn field.
+																	* If it's a generic basket (a container) then it has a null value.
+    #param pi_subrefidn         The reference identifier of the sub-item.
+																	* If it's a deposit then it has the SubDepIdn field value.
+																	* If it's an account then it has the sub-deposit number of its parent deposit
+																	* If it's a basket other than deposit-based basket then this field is null.
+    #param pi_cliidn            The client identifier to which item belongs. Null if a container of multiple clients items.
+    #param pi_flgidn            The item name (the language dependent string reference that shall be left padded to
+                                variable part of name). It points to an entry in AllCfgFlgTbl table.
+    #param pi_depprn            Used as DepIdn for Accounts
+    #param pi_srvcat            Service Category for ItmTyp = 'D'
+    #param pi_impkey            Record ImpKey
+
+    #return l_bsk_idn           Output basket unique identifier in basket tree
+  */
+  function create_basket(pi_prnbsk    integer,
+                         pi_bsknam    varchar2,
+                         pi_tretyp    varchar2,
+                         pi_bsktyp    varchar2,
+                         pi_refidn    varchar2,
+                         pi_subrefidn varchar2,
+                         pi_cliidn    varchar2,
+                         pi_flgidn    varchar2,
+                         pi_depprn    varchar2 default null,
+                         pi_srvcat    varchar2 default null,
+                         pi_impkey    integer default null)
+    return Bskcmptre_Tbl.Itmidn%type;
+
+  /**
+    This function creates a new POB basket or a new entry within a basket, returning the
+    unique ID created.
+
+    #param pi_prnbsk            Parent identifier (ItmIdn) of new basket / basket entry
+    #param pi_bsknam            Name of new basket / basket entry
+    #param pi_tretyp            Basket tree type: J - Joshua tree, O - Other tree, P - Personal tree
+    #param pi_bsktyp            The type of the new item: B - generic basket; BADV - adviser based basket;
+																	BCLI - client based basket; BDEP - deposit based basket; BSD - subdeposit based basket;
+																	BT - trust based basket; A - account item in basket; D - deposit item in basket
+    #param pi_refidn            The reference identifier of the item/basket.
+																	* If an adviser based basket, then adviser ID.
+																	* It a client based basket then client ID etc.
+																	* If it's a deposit then it has the DepIdn field value.
+																	* If it's an account then it points to the AccIdn field.
+																	* If it's a generic basket (a container) then it has a null value.
+    #param pi_subrefidn         The reference identifier of the sub-item.
+																	* If it's a deposit then it has the SubDepIdn field value.
+																	* If it's an account then it has the sub-deposit number of its parent deposit
+																	* If it's a basket other than deposit-based basket then this field is null.
+    #param pi_cliidn            The client identifier to which item belongs. Null if a container of multiple clients items.
+    #param pi_flgidn            The item name (the language dependent string reference that shall be left padded to
+                                variable part of name). It points to an entry in AllCfgFlgTbl table.
+    #param pi_depprn            Used as DepIdn for Accounts
+    #param pi_srvcat            Service Category for ItmTyp = 'D'
+    #param pi_impkey            Record ImpKey
+
+    #return l_bsk_idn           Output basket unique identifier in basket tree
+  */
+  function create_pob_basket(pi_prnbsk    integer,
+                             pi_bsknam    varchar2,
+                             pi_tretyp    varchar2,
+                             pi_bsktyp    varchar2,
+                             pi_refidn    varchar2,
+                             pi_subrefidn varchar2,
+                             pi_cliidn    varchar2,
+                             pi_flgidn    varchar2,
+                             pi_depprn    varchar2 default null,
+                             pi_srvcat    varchar2 default null,
+                             pi_impkey    integer default null)
+    return Bskcmptre_Tbl.Itmidn%type;
+
+  /**
+    Gets as input a unique combination for identifying an item in tree and returns
+    identifier for a found item or 0 if item was not found.
+    pi_prn must not be null for BADV.
+
+    #param pi_itmrefidn         The reference identifier of the item/basket
+    #param pi_itmsubrefidn      The reference identifier of the sub-item
+    #param pi_itmtyp            Basket type
+    #param pi_under             Node under which the search shall be performed. Default is -1 (entire J-tree)
+    #param pi_itmtretyp         Basket tree type. Default is 'J'
+    #param pi_prn               Belonging deposit, if the case
+    #param pi_itmcli            The client identifier to which item belongs
+    #param po_itmidn            Out parameter: found basket ID
+    #param po_userdef           User that last altered the item
+  */
+  procedure find_tree_item (pi_itmrefidn    bskcmptre_tbl.itmrefidn%type,
+                            pi_itmsubrefidn bskcmptre_tbl.itmsubrefidn%type,
+                            pi_itmtyp       bskcmptre_tbl.itmtyp%type,
+                            pi_under        bskcmptre_tbl.itmidn%type default -1,
+                            pi_itmtretyp    bskcmptre_tbl.itmtretyp%type default 'J',
+                            pi_prn          bskcmptre_tbl.prndepidn%type default null,
+                            pi_itmcli       bskcmptre_tbl.itmcliidn%type default null,
+                            po_itmidn out bskcmptre_tbl.itmidn%type,
+                            po_userdef out bskcmptre_tbl.itmusrdef%type );
+	/**
+		Gets as input a unique combination for identifying an item in tree based on an ImpKey.
+
+    #param pi_impkey            Record Impkey
+    #param pi_parent            Parent node
+    #param po_itmidn            Out parameter: found basket ID
+    #param po_userdef           User that last altered the item
+	*/
+  procedure find_tree_item(pi_impkey  bskcmptre_tbl.itmimpkey%type,
+                           pi_parent  bskcmptre_tbl.bskprnidn%type default null,
+                           po_itmidn  out bskcmptre_tbl.itmidn%type,
+                           po_userdef out bskcmptre_tbl.itmusrdef%type);
+
+  /**
+    Creates a fixed JTree branch item, based on configuration in BskManTre table.
+  */
+  procedure create_fixedstructure;
+
+	/**
+		This procedure creates the 'Mother' basket, if the fund is a mother fund for segment funds.
+
+    #param pio_rec_fund         In/out parameter, the fund-type record
+    #param pio_fixnode          In/out parameter, the fixed branch under which basket shall be/is created
+    #param pio_mother_basket    Created mother basket node ID
+	*/
+  procedure create_mother_fund(pio_rec_fund      in out rec_fndmda,
+                               pio_fixnode       in out bskcmptre_tbl.itmidn%type,
+                               pio_mother_basket in out bskcmptre_tbl.itmidn%type);
+
+	/**
+		Detects if necessary to created a BADV, and if necessary creates it and return the BADV itmidn.
+
+    #param pi_rec_client        The client-type record
+    #param po_fixnode           The fixed branch under which basket is created
+    #param po_parent_advisor    Parent of advisor node
+	*/
+  procedure create_badv(pi_rec_client in rec_climda,
+                        po_fixnode out bskcmptre_tbl.itmidn%type,
+                        po_parent_advisor out bskcmptre_tbl.itmidn%type);
+  /**
+    Processes special funds (e.g. Multi Manager Funds).
+
+    #param pio_rec_fund         In/out parameter, the fund-type record
+    #param pio_fixnode          In/out parameter, the fixed branch under which basket is created
+    #param pio_mother_basket    In/out parameter, mother basket node ID
+    #param po_advisor           Out parameter, parent advisor node
+  */
+  procedure process_specialfunds(pio_rec_fund      in out rec_fndmda,
+                                 pio_fixnode       in out bskcmptre_tbl.itmidn%type,
+                                 pio_mother_basket in out bskcmptre_tbl.itmidn%type,
+                                 po_advisor out bskcmptre_tbl.itmidn%type);
+  /**
+		Determines where a certain deposit-type entry shall be placed into.
+
+    #param pi_rec_client        The client-type record
+    #param pio_rec_deposit      The deposit-type record
+    #param po_fixnode           Out parameter, the fixed branch under which basket is created
+    #param pio_client_parent    In/out parameter, the client node under which basket is created
+    #param pio_mother_basket    In/out parameter, mother basket node ID
+    #param po_parent_advisor    Out parameter, parent advisor node
+	*/
+  procedure process_specialdeposits(pi_rec_client in rec_climda,
+                                    pio_rec_deposit in out rec_depmda,
+                                    po_fixnode out bskcmptre_tbl.itmidn%type,
+                                    pio_client_parent in out bskcmptre_tbl.itmidn%type,
+                                    pio_mother_basket in out bskcmptre_tbl.itmidn%type,
+                                    po_parent_advisor out bskcmptre_tbl.itmidn%type);
+
+	/**
+		Process some special accounts.
+
+    #param pi_rec_client        The client-type record
+    #param pi_rec_account       The account-type record
+    #param pi_depidn            The deposit to which the account is belonging
+	*/
+  procedure process_specialaccounts(pi_rec_client in rec_climda,
+                                    pi_rec_account in rec_accmda,
+                                    pi_depidn in depmda.depidn%type);
+
+  /**
+    Process Advisor records from BskSrcLog table.
+
+    #param pi_ImpKey            Record ImpKey
+    #param pi_OprTyp            Operation type: INS, UPD, DEL
+  */
+  procedure process_advmda(pi_ImpKey integer,
+                           pi_OprTyp varchar2);
+
+  /**
+    Process Client records from BskSrcLog table.
+
+    #param pi_ImpKey            Record ImpKey
+    #param pi_OprTyp            Operation type: INS, UPD, DEL
+  */
+  procedure process_climda(pi_ImpKey integer,
+                           pi_OprTyp varchar2);
+
+  /**
+    Process Deposit records from BskSrcLog table.
+
+    #param pi_ImpKey            Record ImpKey
+    #param pi_OprTyp            Operation type: INS, UPD, DEL
+  */
+  procedure process_depmda(pi_ImpKey integer,
+                           pi_OprTyp varchar2);
+
+  /**
+    Process Account records from BskSrcLog table.
+
+    #param pi_ImpKey            Record ImpKey
+    #param pi_OprTyp            Operation type: INS, UPD, DEL
+  */
+  procedure process_accmda(pi_ImpKey integer,
+                           pi_OprTyp varchar2);
+
+  /**
+    Process AccPur records from BskSrcLog table
+
+    #param pi_ImpKey            Record ImpKey
+    #param pi_OprTyp            Operation type: INS, UPD, DEL
+  */
+  procedure process_accpur(pi_ImpKey integer,
+                           pi_OprTyp varchar2);
+
+  /**
+    Process FndMda records from BskSrcLog table
+
+    #param pi_ImpKey            Record ImpKey
+    #param pi_OprTyp            Operation type: INS, UPD, DEL
+  */
+  procedure process_fndmda(pi_ImpKey integer,
+                           pi_OprTyp varchar2);
+
+  /**
+    This procedure maintains the O-Tree in synch with changes on J-tree.
+
+    #param pi_oprtyp            Operation type: INS, UPD, DEL
+    #param pi_itmidn            Basket ID
+    #param pi_bskprnidn         Basket parent ID
+    #param pi_itmnam            Basket name
+    #param pi_itmcliidn         Basket client
+    #param pi_itmtyp            Basket type
+    #param pi_itmrefidn         The reference identifier of the item/basket
+    #param pi_itmsubrefidn      The reference identifier of the sub-item
+    #param pi_prndepidn         Parent deposit
+    #param pi_itmnamflg         Flag identifier (variable part, appended to the name of basket)
+    #param pi_itmsrvcat         Service category
+    #param pi_itmimpkey         Item ImpKey
+  */
+  procedure synch_otree(pi_oprtyp       varchar2,
+                        pi_itmidn       integer,
+                        pi_bskprnidn    integer,
+                        pi_itmnam       varchar2,
+                        pi_itmcliidn    varchar2,
+                        pi_itmtyp       varchar2,
+                        pi_itmrefidn    varchar2,
+                        pi_itmsubrefidn varchar2,
+                        pi_prndepidn    varchar2,
+                        pi_itmnamflg    varchar2,
+                        pi_itmsrvcat    varchar2,
+                        pi_itmimpkey    integer);
+
+  /**
+    This procedure is launched by the 30' Oracle Job and searches for records in
+    BskSrcLog table, to be processed within baskets table.
+  */
+  procedure interface_synch;
+
+end admin_toolkit;
+/
+CREATE OR REPLACE PACKAGE BODY "FITS_PDM_REPOSITORY"."ADMIN_TOOLKIT" is
+
+  INVALID_UNKNOWN constant integer := 200;
+  TREKAGNST       constant integer := 105;
+  TRECTD          constant integer := 120;
+  TREASSFIX constant integer := 1100;
+  TRETRDBOK constant integer := 1200;
+  TREASSFLA constant integer := 1300;
+  TREPRVEQU constant integer := 135;
+  TREFSP    constant integer := 180;
+  TREFNDSPE constant integer := 1110;
+  TREFNDPUB constant integer := 1120;
+  TREFNDADM constant integer := 130;
+  TRECTDACC constant integer := 1205;
+  TREBNKNSTACC constant integer := 1255;
+  TREBNKNST constant integer := 125;
+  ErrMsgNo integer :=1;
+
+  -- make sure when creating a family basket to mark all the structure under it
+  -- with the user that created the family basket (on itmusrdef)
+  function is_AdminBasket(pi_itmidn in integer) return integer is
+    l_result integer;
+  begin
+    l_re
