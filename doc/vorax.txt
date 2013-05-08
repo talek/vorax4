@@ -25,47 +25,57 @@
 ==============================================================================
 WHAT IS VORAX                                                   *vorax-whatis*
 
-VoraX is a minimalist Oracle IDE based on the well known Vim editor. 
+VoraX is a simple yet powerful IDE for Oracle databases that relies on the 
+widely known SqlPLUS which is actually used to connect to the database, to 
+execute SQL statements and to get the results back. 
+
+Nonetheless, this interaction is hidden from the user who just uses his/her Vim 
+environment without knowing that, behind, a SqlPLUS process does all the work.
+
+The big advantage of this approach is that almost all SqlPLUS commands may be 
+used without a problem. 
+
+You will be able to format columns, set pagination, autotrace queries etc. 
+Basically, everything you used to type on your SqlPLUS prompt is guaranteed to 
+work in VoraX, except maybe for some exotic cases (e.g. using vim in console 
+mode, having the EDITOR set to a terminal editor and executing the "ed" 
+sqlplus command... who needs that anyway?). 
+
+The other advantage is that you'll get an efficient Oracle IDE with a very 
+small footprint. For Oracle DBAs this is huge because they don't need heavy 
+tools with a lot of features they never use. Hence, the fact that VoraX may be 
+used within a regular console makes it suitable for server environments.
+
 The main reasons which motivate us to develop this plugin are:
 
 	- the power of Vim editor. When applied to Oracle development or 
 	  database administration it brings a lot of efficiency and fun.
 
 	- the need for a cross platform tool. Vim is available on many
-	  platforms which means you're free to use any OS you like.
+	  platforms which means you're free to use it on any OS you like.
 
 	- availability as a console IDE. Having a shiny IDE on a slow SSH
-	  connection doesn't sound so good, does it? A geek DBA will enjoy
-	  using VoraX because of his "addiction" for console applications.
-	  With VoraX in place he doesn't need to leave his beloved terminal 
-	  anymore.
+	  connection doesn't sound so good, does it?
 
-	- having an IDE with a very small footprint. VoraX is nothing but a 
+	- having an IDE with a small footprint. VoraX is nothing but a 
 	  collection of VimL and Ruby scripts provided as a Vim plugin. We 
 	  hope VoraX will consume as less resources as possible.
 
 	- the dream of an improved SqlPLUS environment. I know a lot of guys
-	  (including me) who intensively use SqlPLUS, even for complex tasks. 
+	  (including me) who use SqlPLUS a lot, even for complex tasks. 
 	  On the other hand, its limitations are quite annoying: we want good 
 	  code completion, pretty print output and so on. We cannot get rid of 
-	  SqlPLUS because we still think it is a great tool, but we can make it 
+	  SqlPLUS because we still think it's a great tool, but we can make it 
 	  better. This is another goal of VoraX.
 
-VoraX stands for Vim ORAcle eXtension. It acts like a wrapper on the SqlPLUS
-environment. Every call to the database is made through SqlPLUS but in a
-hidden way so that the user is not aware of that. This approach has pros and
-cons. From one hand it inherits all those nice SqlPLUS features like explain
-plans, column computations and so on, but on the other hand it has to deal
-with all the limitations of the SqlPLUS (formatting output, syntax highlight,
-code completion etc.). To fill this gap is the whole idea of VoraX.
+VoraX stands for Vim ORAcle eXtension.
 
 ==============================================================================
 FEATURES                                                      *vorax-features*
 
-VoraX comes with the following features:
+Below are some of the features Vorax is endowed with:
 
-	- Advanced code completion for database object names, columns, aliases
-	  and procedure/function parameters;
+	- Advanced code completion;
 
 	- Folding PL/SQL code;
 
@@ -83,8 +93,8 @@ VoraX comes with the following features:
 	- Convenient key mappings for: describe object under cursor, execute
 	  current statement, etc. ** IN WORK **
 	
-	- Pretty print output. You may switch to a vertical columns output or
-	  to a compressed format. In a compressed output all columns width are
+	- Pretty print output. You may switch to a vertical columns layout or
+	  to a compressed format. In a compressed layout all columns width are
 	  resized according to the length of the contained data.
 
 	- Built-in HTML Oracle documentation search. ** IN WORK **
@@ -93,15 +103,15 @@ VoraX comes with the following features:
 ARCHITECTURE                                              *vorax-architecture*
 
 VoraX is based on SqlPLUS to interact with the database. Every statement you
-execute using VoraX is actually run by SqlPLUS behind. When VoraX is
+execute using VoraX is actually run by a hidden SqlPLUS process. When VoraX is
 initialized a SqlPLUS process is started in background. Then VoraX
 communicates with this process by sending commands and grabbing the
 corresponding output.
 
 In order to be able to implement this kind of interaction, VoraX uses Ruby
-language. Even we'd like to have a pure VimL implementation, that isn't yet
+language. Even we'd like to have a pure VimL implementation, this isn't yet
 possible. However, we tried to limit the development of VoraX features in Ruby 
-as much as possible and use VimL instead. Nevertheless, parsing html output, 
+as much as possible and use VimL instead. Nevertheless, processing html output, 
 writing and parsing Oracle grammars for code completion and other complex 
 tasks are still written in Ruby.
 
@@ -113,8 +123,8 @@ the vorax archive into $HOME/.vim if you are on a *NIX platform or into
 $HOME/vimfiles if you are on Windows. If you want VoraX to be available for
 all users then you may consider installing VoraX in your Vim HOME location. 
 
-You may also use Pathogen, vim-addon-manager or other similar addons management
-plugins if you want. It's completely up to you!
+You may also use Pathogen, vim-addon-manager, Vundle or other similar addons 
+management plugins if you want. It's completely up to you!
 
 However, you need to take care of some dependencies VoraX relies on: 
 
@@ -124,39 +134,175 @@ However, you need to take care of some dependencies VoraX relies on:
       :echo has('patch501')
 
    2. Your Vim must have ruby support enabled. In order to check this you may 
-      execute :version and look for +ruby. The supported Ruby is 1.9.X. To 
-      check this you may run the following command within your Vim editor:
+      execute :version and look for +ruby. The supported Ruby is 1.9.3 or 
+      higher, including Ruby 2.0. To check the Ruby version with which your
+      VIM was compiled, you may run the following command:
       
       :ruby puts RUBY_VERSION
       
       CREAM configurations are not supported therefore a plain Vim should be 
       used.
 
-   3. Ruby 1.9.X (at least 1.9.3 is advisable)
+   3. Ruby 1.9.3 or higher.
 
 
-   4. The ruby-vorax gem:
+   4. The ruby vorax gem:
 
-      gem install vorax
+      gem install vorax --no-rdoc --no-ri
+      
+      This is just a convenient method to install Vorax prerequisites.
 
    5. A working Oracle client with SqlPLUS, which has to be available in the 
-      environment $PATH variable. The instant client with SqlPLUS should be 
+      environment $PATH variable. An instant client with SqlPLUS should be 
       just fine.
 
 ==============================================================================
 CONNECTING TO A DATABASE                                       *vorax-connect* 
 
-TODO: add documentation
+The first thing you'll usually do after you start Vorax is to connect to a
+target database. There is a simple command just for this:
+
+  :VORAXConnect <connect_string>
+
+For example, you may use:
+
+  :VORAXConnect scott/tiger@db
+
+If you don't provide the password or the database you want to connect to, Vorax 
+will ask for the missing information.
 
 ==============================================================================
 EXECUTING STATEMENTS                                              *vorax-exec* 
 
-TODO: add documentation
+The most common way to execute a statement is from an SQL buffer. The default
+key for running statements in Vorax is:
+
+  <Leader>e
+
+Supposing you have the following commands loaded into an SQL buffer:
+
+  set serveroutput on
+  begin
+    dbms_output.put_line('Test');
+  end;
+  /
+  select 'Abc' from dual;
+
+You have the following options to run each of the above statements:
+
+  * move the cursor on the statement you want to execute and press 
+    "<Leader>e". Vorax will try to automatically figure out what is the 
+    statement under cursor, regardless it's an SQL command, a PLSQL statement 
+    or a SQLPLUS command.
+
+  * visual select the statement(s) to be executed and run the selection with
+    the same "<Leader>e" mapping.
+
+Note: The default mapping, of course, is configurable.
+
+In addition, you may use:
+
+  :VORAXExec <command>
+
+This last method may prove to be convenient when you don't want to open a SQL 
+buffer.
+
+If the running command is taking too long to complete you may cancel it using
+the default <Esc> mapping. How the statement is cancelled is depending on the 
+OS under which Vorax is running:
+  
+  * on UNIX flavors, an INT signal is sent to the "slave" SQLPLUS process.
+    This is like a <C-c> in the terminal window. From this point is up to 
+    the SQLPLUS process to tell the server to cancel the query. Vorax will 
+    simply wait for a confirmation that the statement was successfully cancelled. 
+    During this time, Vorax will display:
+    
+    Cancelling... Press "K" to abort the session
+    
+    Some statements needs a lot of time to be cancelled, especially because of 
+    the involved UNDO data which has to be applied during the rollback phase. 
+    Others, even they don't change data, involves other obscure complex 
+    cancellation tasks which take time. So, if you want to simply abort the 
+    session, you may press "K" and the SQLPLUS process will be killed. The
+    session on the server might still be running until, eventually, the server
+    will figure out that there's no client on the other end of the "wire".
+
+  * on WINDOWS a running statement cannot be cancelled without killing the
+    SQLPLUS process. This is a bug/limitation of the SQLPLUS on Windows. As
+    soon as the Oracle will implement the following improvement request,
+    Vorax will be able to handle more nicely the cancel operation on this
+    platform:
+
+      Bug 8890996: ENH: CONTROL-C SHOULD NOT EXIT WINDOWS CONSOLE SQLPLUS
+
+		So, on Windows, when the user asks for a cancellation of a running
+		statement, by default, Vorax will display a warning message and it
+		will ask the user to confirm that he really want to abort his session.
+
+If the g:vorax_auto_connect variable is 1, then Vorax will automatically
+reconnect using the last credentials used in the VORAXConnect command.
 
 ==============================================================================
 THE OUTPUT WINDOW                                               *vorax-output* 
 
-TODO: add documentation
+Vorax has a built-in output window. This is a special VIM buffer where the
+result of executing various statements is redirected to. Some of the relevant
+settings for this window are:
+
+  * g:vorax_output_window_position: where to anchor the output window: bottom
+    or top. By default is "bottom".
+
+  * g:vorax_output_window_size: the size of the window. By default is 20 rows.
+
+  * g:vorax_output_window_append: whenever or not the output generated by
+    various commands to be appended at the end of the output window, without
+    removing the old content. By default is "0", which means that only the
+    content belonging to the last executed statement is displayed.
+
+  * g:vorax_output_window_sticky_cursor: whenever or not to keep the cursor
+    in the output window after a statement is executed. By default is "0",
+    which means the cursor will be placed into the originating buffer from
+    where the statement was executed.
+
+  * g:vorax_output_window_hl_error: the highlight group to be used for
+    highlighting errors within the output window (usually, everything like
+    ORA-*, SP-*)
+
+  * g:vorax_output_abort_key: the key mapping for cancelling a running
+    statement. By default is <Esc>.
+
+  * g_vorax_output_window_default_funnel: this defines the default layout
+    for the spit output (details below, keep reading).
+
+The output window display may be toggled using:
+
+  :VORAXOutputToggle
+
+or the default mapping <Leader>o.
+
+You can also toggle the append mode for the output window using:
+
+  :VORAXOutputToggleAppend
+
+or using the default local mapping <Leader>a.
+
+The output spit by various commands may be funneled through some predefined
+formatters which are very handy quite often. These formatters are:
+
+  * VERTICAL: displays every column from the output of a query, line by
+    line.
+  * PAGEZIP: compress every page spit by the execution of a query. By
+    compressing, we mean that the column width is adjusted so that to fit
+    to the width of the largest value of that column, within the defined
+    SQLPLUS pagesize.
+  * TABLEZIP: like the PAGEZIP, but it does compression for the entire
+    table.
+
+You can toggle the above modes using:
+
+  Command                 Default local mapping
+  ----------------------  -----------------------------
+  :VORAXOutputPagezip     <Leader>p
 
 ==============================================================================
 THE CODE COMPLETION SYSTEM                                        *vorax-omni* 
