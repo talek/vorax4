@@ -14,7 +14,7 @@ let g:vorax_ruby_loaded = 1
 
 let s:ruby_ver = ''
 if has('ruby')
-  ruby $LOAD_PATH << File.expand_path('../vorax/ruby/lib', __FILE__)
+  ruby $LOAD_PATH << File.expand_path('../../../vorax/ruby/lib', VIM::evaluate("expand('<sfile>')"))
   ruby VIM::command("let s:ruby_ver=#{RUBY_VERSION.inspect}")
 endif
 
