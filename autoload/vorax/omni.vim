@@ -192,6 +192,9 @@ function! s:Item2Omni(item) "{{{
 		elseif a:item['item_type'] == 'TypeItem'
 			let type = 'type'
 			let menu = a:item['is_a']
+		elseif a:item['item_type'] == 'SubtypeItem'
+			let type = 'subtype'
+			let menu = a:item['is_a']
 		elseif a:item['item_type'] == 'ConstantItem'
 			let type = 'constant'
 			let menu = a:item["vartype"]
@@ -274,6 +277,8 @@ function! s:FollowDotChain(dot_parts, ref, items_acc, first) "{{{
 				let items_acc = s:AliasItems(a:ref["name"], '', a:ref['statement'], a:ref['relpos'])
 			elseif a:ref["item_type"] ==? 'TypeItem'
 				let items_acc = s:TypeAttributes(a:ref)
+			elseif a:ref["item_type"] ==? 'SubtypeItem'
+				let items_acc = s:SubtypeAttributes(a:ref)
 			elseif a:ref["item_type"] ==? 'OracleTypeRef'
 				let items_acc = s:OracleTypeRefItems(a:ref)
 			elseif a:ref["item_type"] ==? 'ForVariable'
@@ -382,6 +387,29 @@ function! s:TypeAttributes(item) "{{{
 	return items
 endfunction "}}}
 
+function! s:SubtypeAttributes(item)
+	let items = []
+	if exists('a:item["item_type"]')
+		let ref = s:ResolveVariableType(a:item['defined_in'] . '.' . a:item["is_a"])
+		if exists("ref['item_type']")
+			if ref["item_type"] ==? "TypeItem" && ref["is_a"] ==? "record"
+				let type_attrs = vorax#ruby#DescribeRecordType(ref['text'])
+				for attr in type_attrs
+					call add(items, { 'item_type': 'VariableItem',
+								\ 'vartype' : attr['type'],
+								\ 'name' : attr['name']})
+				endfor
+			elseif ref["item_type"] ==? "SubtypeItem"
+				let items = s:SubtypeAttributes(ref)
+			elseif ref["item_type"] ==? "OracleObject"
+				let items = s:OracleTypeAttributes(ref)
+			endif
+		endif
+	endif
+	return items
+
+endfunction
+
 function! s:LocalItems() abort "{{{
   " where are we?
 	let result = {'resultset' : [[]]}
@@ -439,6 +467,11 @@ function! s:ResolveVariableType(name) "{{{
 								\ name_metadata['object'], 
 								\ name_metadata['type'])
 					let data = vorax#ruby#DescribeDeclare(pkg_source)
+					for item in data
+						if exists('item["item_type"]') && item["item_type"] ==? 'SubtypeItem'
+							let item["defined_in"] = name_metadata['schema'] . '.' . name_metadata['object']
+						endif
+					endfor
 					call s:Cache(name_metadata, data)
 				endif
 				let type = filter(copy(data), 
@@ -530,7 +563,6 @@ function! s:AliasItems(alias, prefix, ...) abort "{{{
     else
       let parts = split(column, '\m\.')
 			let alias = vorax#ruby#GetAlias(stmt.text, a:alias, stmt.relative - 1)
-			call input(string(vorax#ruby#GetAllTables(stmt.text, stmt.relative -1)))
 			let rec = { 'item_type' : 'AliasRef',
 						\ 'name' : parts[-1],
 						\ 'alias' : alias}
@@ -587,6 +619,11 @@ function! s:PackageItems(item) abort "{{{
 						\ metadata['object'], 
 						\ metadata['type'])
 			let items = vorax#ruby#DescribeDeclare(pkg_source)
+			for item in items
+				if exists('item["item_type"]') && item["item_type"] ==? 'SubtypeItem'
+					let item["defined_in"] = metadata['schema'] . '.' . metadata['object']
+				endif
+			endfor
 			call s:Cache(metadata, items)
 		else
 			" look into the db dictionary

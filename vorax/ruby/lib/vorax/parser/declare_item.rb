@@ -141,6 +141,10 @@ module Vorax
 			
 		end
 
+		# A subtype item.
+		class SubtypeItem < TypeItem
+		end
+
 		# A cursor definition.
 		class CursorItem < DeclareItem
 

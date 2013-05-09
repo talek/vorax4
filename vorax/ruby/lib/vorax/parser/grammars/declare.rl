@@ -21,12 +21,13 @@ action tail {
 }
 
 id = identifier >{@start = p} %{@identifier = data[@start...p]};
-keywords = K_CURSOR | K_FUNCTION | K_PROCEDURE | K_TYPE | K_PRAGMA | K_EXCEPTION | K_BEGIN;
+keywords = K_CURSOR | K_FUNCTION | K_PROCEDURE | K_SUBTYPE | K_TYPE | K_PRAGMA | K_EXCEPTION | K_BEGIN;
 name = (id - keywords) >{@declared_at = p + 1};
 variable_type = ((qualified_identifier - keywords) (K_ROWTYPE | K_VARTYPE)?) >{@start = p} @{@type = data[@start..p]};
 
 cursor = K_CURSOR ws+ name ws+ K_IS ws+ %tail;
 type = K_TYPE ws+ name ws+ K_IS ws+ variable_type %tail;
+subtype = K_SUBTYPE ws+ name ws+ K_IS ws+ variable_type %tail;
 function = K_FUNCTION ws+ name %tail;
 procedure = K_PROCEDURE ws+ name %tail;
 pragma = K_PRAGMA ws+ %tail;
@@ -45,6 +46,7 @@ main := |*
   begin => {};
   cursor => { @items << CursorItem.new(@declared_at, @identifier, data[ts...te]) };
   type => { @items << TypeItem.new(@declared_at, @identifier, @type, data[ts...te]) };
+  subtype => { @items << SubtypeItem.new(@declared_at, @identifier, @type, data[ts...te]) };
   function => { @items << FunctionItem.new(@declared_at, data[ts...te]) };
   procedure => { @items << ProcedureItem.new(@declared_at, data[ts...te]) };
   named_item => {

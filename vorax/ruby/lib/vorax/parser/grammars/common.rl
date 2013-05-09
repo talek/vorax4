@@ -26,6 +26,7 @@ identifier_level3 = identifier '.' identifier_level2;
 qualified_identifier = identifier_level3 | identifier_level2 | identifier;
 
 # define intereseting keywords
+K_SUBTYPE=/subtype/i;
 K_OVERRIDING=/overriding/i;
 K_FINAL=/final/i;
 K_INSTANTIABLE=/instantiable/i;

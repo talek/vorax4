@@ -287,7 +287,8 @@ describe 'region' do
 								Parser::VariableItem.new(434, "g_var3", "dual.dummy%type"),
 								Parser::VariableItem.new(460, "g_var4", "all_objects%rowtype"),
 								Parser::ProcedureItem.new(501, "procedure my_proc(p1 integer); "),
-								Parser::FunctionItem.new(533, "function my_func(param1 varchar2, param2 boolean := true) return boolean; ")]
+								Parser::FunctionItem.new(533, "function my_func(param1 varchar2, param2 boolean := true) return boolean; "),
+								Parser::TypeItem.new(609, "id", "varchar2", "subtype id is varchar2(10);")]
 		region.declared_items.should == expected
 	end# }}}
 

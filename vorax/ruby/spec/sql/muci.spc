@@ -22,5 +22,6 @@ create or replace package muci as
   procedure my_proc(p1 integer);
   function my_func(param1 varchar2, param2 boolean := true) return boolean;
 
+  subtype id is varchar2(10);
 end;
 /
