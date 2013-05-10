@@ -117,7 +117,7 @@ function! vorax#ruby#ArgumentBelongsTo(statement, position) abort"{{{
 ERC
 endfunction"}}}
 
-function! vorax#ruby#GetAlias(statement, alias_name, position)
+function! vorax#ruby#GetAlias(statement, alias_name, position)"{{{
   call VORAXDebug('vorax#ruby#GetAlias a:statement=' . string(a:statement) .
 				\ ' a:alias_name = ' . string(a:alias_name) .
 				\ ' a:position = ' . a:position)
@@ -131,7 +131,7 @@ function! vorax#ruby#GetAlias(statement, alias_name, position)
 	end
   VIM::command("return #{vim_alias}") 
 ERC
-endfunction
+endfunction"}}}
 
 function! vorax#ruby#IsAliasVisible(statement, alias_name, position) "{{{
   ruby <<ERC
@@ -246,22 +246,24 @@ function! vorax#ruby#LocalItems(structure_stored_in, position, prefix)"{{{
       	          }.to_json
       	items << item
       elsif region.respond_to?(:declared_items)
-				region.declared_items.each do |i| 
-				  if i.respond_to?(:name) && i.name.downcase.start_with?(VIM::evaluate('a:prefix').downcase)
-						item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
-						  if v.nil?
-								h[k] = '' 
-						  elsif v.is_a?(TrueClass) 
-							  h[k] = 1
-						  elsif v.is_a?(FalseClass)
-							  h[k] = 0
-						  else
-						  	h[k] = v
-						  end
-					  end
-						items << item.to_json
+			  if region.declared_items
+					region.declared_items.each do |i| 
+						if i && i.respond_to?(:name) && i.name.downcase.start_with?(VIM::evaluate('a:prefix').downcase)
+							item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
+								if v.nil?
+									h[k] = '' 
+								elsif v.is_a?(TrueClass) 
+									h[k] = 1
+								elsif v.is_a?(FalseClass)
+									h[k] = 0
+								else
+									h[k] = v
+								end
+							end
+							items << item.to_json
+						end
 					end
-			  end
+				end
 			end
       region = region.node.parent.content
 		else

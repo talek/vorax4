@@ -16,9 +16,20 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
 		if s:context.completion_type ==? 'identifier' || s:context.completion_type ==? 'dot'
 			" tell me more about the code structure
 			let text_code = vorax#utils#BufferContent(1, line('.')) . a:base
-			call vorax#ruby#ComputePlsqlStructure('plsql_struct', text_code)
-			let s:context.local_items = vorax#ruby#LocalItems(s:plsql_struct_key, 
-						\ s:context.absolute_pos - 1, '')
+			if b:sql_type_override ==? 'plsqlvorax'
+				" a plsql buffer
+				call vorax#ruby#ComputePlsqlStructure('plsql_struct', text_code)
+				let s:context.local_items = vorax#ruby#LocalItems(s:plsql_struct_key, 
+							\ s:context.absolute_pos - 1, '')
+			elseif b:sql_type_override ==? 'sqlvorax'
+				" a sql buffer
+        let stmt = vorax#ruby#CurrentStatement(text_code, 
+							\ s:context.absolute_pos - 1, 
+							\ 1, 0)
+				call vorax#ruby#ComputePlsqlStructure('plsql_struct', stmt.text)
+				let s:context.local_items = vorax#ruby#LocalItems(s:plsql_struct_key, 
+							\ s:context.absolute_pos - 1, '')
+			endif
   	endif
     let items = []
     let s:context['prefix'] = a:base
@@ -387,7 +398,7 @@ function! s:TypeAttributes(item) "{{{
 	return items
 endfunction "}}}
 
-function! s:SubtypeAttributes(item)
+function! s:SubtypeAttributes(item) "{{{
 	let items = []
 	if exists('a:item["item_type"]')
 		let ref = s:ResolveVariableType(a:item['defined_in'] . '.' . a:item["is_a"])
@@ -407,8 +418,7 @@ function! s:SubtypeAttributes(item)
 		endif
 	endif
 	return items
-
-endfunction
+endfunction "}}}
 
 function! s:LocalItems() abort "{{{
   " where are we?

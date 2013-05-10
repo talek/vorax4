@@ -260,35 +260,37 @@ module Vorax
 
           # describe current subprog
           metadata = SubprogItem.new(start_pos, text)
-          start_pointer = start_pos + metadata.declare_start_pos - 1
+          if metadata.declare_start_pos
+						start_pointer = start_pos + metadata.declare_start_pos - 1
 
-          node.children.each do |child|
-            subregion = child.content 
-            if subregion && subregion.kind_of?(SubprogRegion)
-              if subregion.text =~ /^function/i
-                item = FunctionItem.new(subregion.name_pos, subregion.text, false)
-                item.name = subregion.name
-                @items << item
-              elsif subregion.text =~ /^procedure/i
-                item = ProcedureItem.new(subregion.name_pos, subregion.text, false)
-                item.name = subregion.name
-                @items << item
-              end
-							declare_section = content[start_pointer...subregion.start_pos-1]
-							named_items = Parser::Declare.new(declare_section).items
-							named_items.each { |i| i.declared_at += start_pointer }
-							@items.push(*named_items)
-							start_pointer = subregion.end_pos
-            end
-          end
-					declare_section = content[start_pointer...body_start_pos-1]
-					named_items = Parser::Declare.new(declare_section).items
-					named_items.each { |i| i.declared_at += start_pointer }
-					@items.push(*named_items)
+						node.children.each do |child|
+							subregion = child.content 
+							if subregion && subregion.kind_of?(SubprogRegion)
+								if subregion.text =~ /^function/i
+									item = FunctionItem.new(subregion.name_pos, subregion.text, false)
+									item.name = subregion.name
+									@items << item
+								elsif subregion.text =~ /^procedure/i
+									item = ProcedureItem.new(subregion.name_pos, subregion.text, false)
+									item.name = subregion.name
+									@items << item
+								end
+								declare_section = content[start_pointer...subregion.start_pos-1]
+								named_items = Parser::Declare.new(declare_section).items
+								named_items.each { |i| i.declared_at += start_pointer }
+								@items.push(*named_items)
+								start_pointer = subregion.end_pos
+							end
+						end
+						declare_section = content[start_pointer...body_start_pos-1]
+						named_items = Parser::Declare.new(declare_section).items
+						named_items.each { |i| i.declared_at += start_pointer }
+						@items.push(*named_items)
 
-          # adjust the offset of the declared parameters
-          args = metadata.args.each { |arg| arg.declared_at += start_pos }
-          @items.push(*args)
+						# adjust the offset of the declared parameters
+						args = metadata.args.each { |arg| arg.declared_at += start_pos }
+						@items.push(*args)
+					end
 
           return @items
         end

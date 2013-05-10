@@ -57,9 +57,8 @@ module Vorax
         # be prepare for any nasting parse error.
         # Failing here is kind of usual, having in mind
         # that we often parse incomplete code.
-        puts e.to_s
-        puts e.backtrace
         Vorax.debug(e.to_s)
+        Vorax.debug(e.backtrace)
       end
 
       # Get the computed regions in a hierachical structure.
