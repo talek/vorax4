@@ -104,7 +104,7 @@ module Vorax
 
 			def ==(obj)
         super && self.name.to_s == obj.name.to_s && 
-        	self.name_pos = obj.name_pos
+        	self.name_pos == obj.name_pos
 			end
       
 		end
@@ -149,8 +149,8 @@ module Vorax
 
 			def ==(obj)
         super && self.signature_end_pos.to_s == obj.signature_end_pos.to_s && 
-        	self.declare_end_pos.to_s = obj.declare_end_pos.to_s &&
-        	self.name_pos.to_s = obj.name_pos.to_s
+        	self.declare_end_pos.to_s == obj.declare_end_pos.to_s &&
+        	self.name_pos.to_s == obj.name_pos.to_s
 			end
       
 		end
@@ -162,10 +162,13 @@ module Vorax
       def declared_items
         if @items
           return @items
-        else
-          content = structure.code[(signature_end_pos..declare_end_pos)]
-          @items = Parser::Declare.new(content).items
-          @items.each { |i| i.declared_at += signature_end_pos }
+				else
+          if self.signature_end_pos
+						self.declare_end_pos = self.end_pos unless self.declare_end_pos
+						content = structure.code[(self.signature_end_pos..self.declare_end_pos)]
+						@items = Parser::Declare.new(content).items
+						@items.each { |i| i.declared_at += signature_end_pos }
+          end
           return @items
         end
       end
@@ -202,7 +205,7 @@ module Vorax
 							start_pointer = subregion.end_pos
             end
           end
-				  stop_position = declare_end_pos ? declare_end_pos - 1 : content.length
+				  stop_position = slef.declare_end_pos ? self.declare_end_pos - 1 : content.length
 					declare_section = content[start_pointer...stop_position]
 					unless declare_section.empty?
 						# find the first "begin" keyword
