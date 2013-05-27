@@ -8,7 +8,7 @@
 " Initialization {{{
 
 if exists('g:vorax_ruby_loaded')
-  "finish
+  finish
 endif
 let g:vorax_ruby_loaded = 1
 
