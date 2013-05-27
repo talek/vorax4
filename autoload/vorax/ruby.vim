@@ -8,7 +8,7 @@
 " Initialization {{{
 
 if exists('g:vorax_ruby_loaded')
-  finish
+  "finish
 endif
 let g:vorax_ruby_loaded = 1
 
@@ -210,7 +210,6 @@ ERC
 endfunction "}}}
 
 function! vorax#ruby#RegionScope(structure_stored_in, position) abort"{{{
-  call VORAXDebug("vorax#ruby#LocalItems: start")
 	ruby <<ERC
 	scope = []
 	structure = VORAX.extra[VIM::evaluate('a:structure_stored_in')]

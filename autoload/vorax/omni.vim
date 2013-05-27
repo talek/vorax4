@@ -267,6 +267,10 @@ function! s:DotHeadDescriptor(dot_parts) "{{{
 endfunction "}}}
 
 function! s:FollowDotChain(dot_parts, ref, items_acc, first) "{{{
+  call VORAXDebug('omni s:FollowDotChain => a:dot_parts=' . string(a:dot_parts) .
+				\ ' a:ref=' . string(a:ref) . 
+				\ ' a:items_acc=' . string(a:items_acc) .
+				\ ' a:first= ' . string(a:first))
 	let items_acc = a:items_acc
 	let dot_parts = a:dot_parts
 	let ref = a:ref
@@ -294,12 +298,14 @@ function! s:FollowDotChain(dot_parts, ref, items_acc, first) "{{{
 				let items_acc = s:OracleTypeRefItems(a:ref)
 			elseif a:ref["item_type"] ==? 'ForVariable'
 				let items_acc = s:ForVariableItems(a:ref)
+			elseif a:ref["item_type"] ==? 'CursorItem'
+				let items_acc = s:CursorColumns(a:ref)
 			elseif a:ref["item_type"] ==? 'ArgumentItem'
 				let var_item = {'name' : a:ref['name'], 'vartype' : a:ref['data_type'], 'item_type' : 'VariableItem'}
 				let items_acc = s:VariableTypeItems(var_item)
 			elseif s:IsSchemaItem(a:ref)
 				let items_acc = s:SchemaObjects(a:ref['metadata']['schema'], s:context['prefix'])
-			elseif a:ref['item_type'] ==? 'OracleItem' && s:HasColumns(a:ref['metadata'])
+			elseif a:ref['item_type'] ==? 'OracleObject' && s:HasColumns(a:ref['metadata'])
 				let items_acc = s:Columns(a:ref)
 			elseif s:IsPackage(a:ref)
 				let items_acc = s:PackageItems(a:ref)
@@ -333,9 +339,25 @@ endfunction "}}}
 
 function! s:VariableTypeItems(var_item) "{{{
 	let items = []
-	let vartype = s:ResolveVariableType(a:var_item["vartype"])
+	if exists('a:var_item["global_in"]')
+		let global_in = a:var_item["global_in"]
+	else
+		let global_in = ''
+	endif
+	let vartype = s:ResolveVariableType(a:var_item["vartype"],
+				\ global_in)
 	if exists('vartype["item_type"]')
-		let items = s:TypeAttributes(vartype)
+		if vartype['item_type'] ==? 'OracleObject' 
+			if vartype['metadata']['type'] ==? 'TYPE'
+				let items = s:TypeAttributes(vartype)
+			elseif s:HasColumns(vartype['metadata'])
+				let items = s:Columns(vartype)
+			endif
+		elseif vartype['item_type'] ==? 'CursorItem'
+			let items = s:CursorColumns(vartype)
+		elseif vartype['item_type'] ==? 'OracleTypeRef'
+			let items = s:OracleTypeRefItems(vartype)
+		endif
 	endif
 	return items
 endfunction "}}}
@@ -352,6 +374,14 @@ function! s:ForVariableItems(for_item) "{{{
 	let items = s:AliasItems(a:for_item['variable'], '', expr)
 	return items
 endfunction "}}}
+
+function! s:CursorColumns(cursor_item)
+	let expr = 'select * from (' . 
+				\ a:cursor_item['query'] . ')' . 
+				\ ' vorax$$alias'
+	let items = s:AliasItems('vorax$$alias', '', expr)
+	return items
+endfunction
 
 function! s:OracleTypeAttributes(item) "{{{
   let items = []
@@ -428,7 +458,7 @@ function! s:LocalItems() abort "{{{
 	let items = vorax#ruby#LocalItems(s:plsql_struct_key, crr_pos-1, '')
   let args = []
 	for item in items
-		if item["item_type"] == 'forvar'
+		if item["item_type"] == 'ForVariable'
 			let rec = [item['variable'], item['variable'], '', '']
 		elseif has_key(item, 'name')
 			if item["item_type"] == 'ConstantItem'
@@ -456,44 +486,71 @@ function! s:LocalItems() abort "{{{
 	return result
 endfunction "}}}
 
-function! s:ResolveVariableType(name) "{{{
-		let name = s:ShortLocalName(a:name)
-		let ref = s:FindLocalItem(name)
-    if ref != {}
-			return ref
-		else
-			let parts = split(name, '\m\.')
-			" is it in another package?
-			" describe it baby
-			let name_metadata = vorax#sqlplus#NameResolve(name)
-			if name_metadata['type'] == 'PACKAGE'
-				" get rid of the extra field
-				let name_metadata['extra'] = ''
-				" get the source of the package
-				if s:IsCached(name_metadata)
-					let data = s:Cache(name_metadata)
-				else
-					let pkg_source = vorax#sqlplus#GetSource(name_metadata['schema'], 
-								\ name_metadata['object'], 
-								\ name_metadata['type'])
-					let data = vorax#ruby#DescribeDeclare(pkg_source)
-					for item in data
-						if exists('item["item_type"]') && item["item_type"] ==? 'SubtypeItem'
-							let item["defined_in"] = name_metadata['schema'] . '.' . name_metadata['object']
-						endif
-					endfor
-					call s:Cache(name_metadata, data)
-				endif
-				let type = filter(copy(data), 
-							\ 'exists(''v:val["name"]'') && toupper(v:val["name"]) ==? "' . toupper(parts[-1]) . '"')
-				if len(type) > 0
-					return type[0]
-				endif
-			elseif name_metadata['type'] == 'TYPE'
-				return s:OracleObjectItemType(name_metadata)
-			endif
+function! s:ResolveVariableType(name, ...) "{{{
+	if exists('a:1')
+		let global_in = a:1
+	else
+		let global_in = ''
+	endif
+	let name = s:ShortLocalName(a:name)
+	let is_rowtype = 0
+	let is_type = 0
+	if name =~? '%rowtype$'
+		let is_rowtype = 1
+		let name = substitute(name, '%rowtype$', '', '')
+	elseif name =~? '%type$'
+		let name = substitute(name, '%type$', '', '')
+		let is_type = 1
+	endif
+	let ref = s:FindLocalItem(name)
+	if ref != {}
+		return ref
+	else
+		" is it in another package?
+		" describe it baby
+		let parts = split(name, '\m\.')
+		if len(parts) == 1 && !vorax#utils#IsEmpty(global_in)
+			let parts = [global_in, name]
+			let name = global_in . '.' . name
 		endif
-		return {}
+		let name_metadata = vorax#sqlplus#NameResolve(name)
+		if is_rowtype && s:HasColumns(name_metadata)
+			return s:OracleObjectItemType(name_metadata)
+		elseif is_type && len(parts) > 0
+			" find the type of the column
+			let columns = s:Columns(s:OracleObjectItemType(name_metadata))
+			call filter(columns, "v:val['name'] ==? '" . parts[-1] . "'")
+			if len(columns) > 0
+				return columns[0]
+			endif
+		elseif name_metadata['type'] == 'PACKAGE'
+			" get rid of the extra field
+			let name_metadata['extra'] = ''
+			" get the source of the package
+			if s:IsCached(name_metadata)
+				let data = s:Cache(name_metadata)
+			else
+				let pkg_source = vorax#sqlplus#GetSource(name_metadata['schema'], 
+							\ name_metadata['object'], 
+							\ name_metadata['type'])
+				let data = vorax#ruby#DescribeDeclare(pkg_source)
+				for item in data
+					if exists('item["item_type"]') && item["item_type"] ==? 'SubtypeItem'
+						let item["defined_in"] = name_metadata['schema'] . '.' . name_metadata['object']
+					endif
+				endfor
+				call s:Cache(name_metadata, data)
+			endif
+			let type = filter(copy(data), 
+						\ 'exists(''v:val["name"]'') && toupper(v:val["name"]) ==? "' . toupper(parts[-1]) . '"')
+			if len(type) > 0
+				return type[0]
+			endif
+		elseif name_metadata['type'] == 'TYPE'
+			return s:OracleObjectItemType(name_metadata)
+		endif
+	endif
+	return {}
 endfunction "}}}
 
 function! s:OracleObjectItemType(name_metadata) "{{{

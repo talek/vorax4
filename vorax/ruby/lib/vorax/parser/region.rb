@@ -167,7 +167,10 @@ module Vorax
 						self.declare_end_pos = self.end_pos unless self.declare_end_pos
 						content = structure.code[(self.signature_end_pos..self.declare_end_pos)]
 						@items = Parser::Declare.new(content).items
-						@items.each { |i| i.declared_at += signature_end_pos }
+						@items.each do |i| 
+							i.declared_at += signature_end_pos
+							i.global_in = self.name
+						end
           end
           return @items
         end
@@ -205,7 +208,7 @@ module Vorax
 							start_pointer = subregion.end_pos
             end
           end
-				  stop_position = slef.declare_end_pos ? self.declare_end_pos - 1 : content.length
+				  stop_position = self.declare_end_pos ? self.declare_end_pos - 1 : content.length
 					declare_section = content[start_pointer...stop_position]
 					unless declare_section.empty?
 						# find the first "begin" keyword

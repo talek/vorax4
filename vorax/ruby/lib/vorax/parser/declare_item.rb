@@ -9,12 +9,15 @@ module Vorax
 			# @return the absolute position where the item declaration begins
 			attr_accessor :declared_at
 
+			attr_accessor :global_in
+
 			# Create a new declared item.
 			#
 			# @param declared_at [Integer] the absolute position where the
 			#   item is declared
-			def initialize(declared_at)
+			def initialize(declared_at, global_in = nil)
 				@declared_at = declared_at
+				@global_in = nil
 			end
 
       def to_s
@@ -23,7 +26,10 @@ module Vorax
 
       # @return [Hash] the hash representation of this object
       def to_hash
-        {:item_type => item_type, :declared_at => declared_at}
+        {:item_type => item_type, 
+         :declared_at => declared_at,
+         :global_in => global_in
+        }
       end
 
       # @return [String] the item type which consists of the
