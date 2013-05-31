@@ -363,6 +363,70 @@ module Vorax
     # An anonymous block region.
     class AnonymousRegion < Region
     end
+    
+    # An anonymous block region with a declare section.
+    class DeclareRegion < AnonymousRegion
+      
+      # @return [Integer] the absolute position within the entire code where
+      #   the body of the subprogram begins
+      attr_accessor :body_start_pos
+
+      def declared_items
+        if @items
+          return @items
+        else
+          @items = []
+          content = structure.code
+
+          # describe current subprog
+					start_pointer = start_pos + 'DECLARE'.length - 1
+
+					add_items_from_section = lambda do
+						if body_start_pos
+							declare_section = content[start_pointer...body_start_pos-1]
+							named_items = Parser::Declare.new(declare_section).items
+							named_items.each { |i| i.declared_at += start_pointer }
+							@items.push(*named_items)
+						end
+					end
+
+					node.children.each do |child|
+						subregion = child.content 
+						if subregion && subregion.kind_of?(SubprogRegion)
+							if subregion.text =~ /^function/i
+								item = FunctionItem.new(subregion.name_pos, subregion.text, false)
+								item.name = subregion.name
+								@items << item
+							elsif subregion.text =~ /^procedure/i
+								item = ProcedureItem.new(subregion.name_pos, subregion.text, false)
+								item.name = subregion.name
+								@items << item
+							end
+							declare_section = content[start_pointer...subregion.start_pos-1]
+							named_items = Parser::Declare.new(declare_section).items
+							named_items.each { |i| i.declared_at += start_pointer }
+							@items.push(*named_items)
+							start_pointer = subregion.end_pos
+						end
+
+						add_items_from_section.call
+
+					end
+
+					add_items_from_section.call
+
+          return @items
+        end
+      end
+      
+      # @see Parser::Region#to_hash
+      def to_hash
+        super.tap do |h| 
+          h[:body_start_pos] = body_start_pos
+        end
+      end
+
+    end
 
     # A FOR..LOOP block region.
     class ForRegion < Region

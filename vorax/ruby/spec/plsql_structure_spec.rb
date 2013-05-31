@@ -61,5 +61,30 @@ describe 'plsql structure' do
 '
 	end# }}}
 
+	it 'should work for declare blocks' do# {{{
+    text = "declare
+              l_kkt varchar2(100);
+            begin
+              null;
+            end;
+            /
+            begin
+              null;
+            end;
+            /
+            declare
+              l_status boolean;
+            begin
+              l_status := false;
+            end;
+            /"
+    structure = Parser::PlsqlStructure.new(text)
+		structure.dump.should == '[Level: 0] 
+  [Level: 1] DeclareRegion: {:start_pos=>1, :end_pos=>112, :body_start_pos=>56}
+  [Level: 1] AnonymousRegion: {:start_pos=>125, :end_pos=>181}
+  [Level: 1] DeclareRegion: {:start_pos=>194, :end_pos=>300, :body_start_pos=>246}
+'
+	end# }}}
+
 end
 

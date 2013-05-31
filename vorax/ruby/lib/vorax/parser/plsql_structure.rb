@@ -37,6 +37,7 @@ module Vorax
       FOR_STMT = /(?:\bfor\b)/i unless defined?(FOR_STMT)
       LOOP_STMT = /(?:\bloop\b)/i unless defined?(LOOP_STMT)
       IF_STMT = /(?:\bif\b)/i unless defined?(IF_STMT)
+			DECLARE_BLOCK = /(?:\bdeclare\b)/i unless defined?(DECLARE_BLOCK)
 
       # @return [String] the PLSQL code on which the structure was computed
       attr_reader :code
@@ -107,6 +108,7 @@ module Vorax
         register_plsql_spec_spot()
         register_slash_terminator_spot()
         register_subprog_spot()
+        register_declare_spot()
         register_begin_spot()
         register_for_spot()
         register_loop_spot()
@@ -186,18 +188,24 @@ module Vorax
         end
       end
 
+      def register_declare_spot
+        @walker.register_spot(DECLARE_BLOCK) do |scanner|
+					region = DeclareRegion.new(self, :start_pos => scanner.pos - scanner.matched.length + 1)
+					assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
+        end
+			end
+
       def register_begin_spot
         @walker.register_spot(BEGIN_MARKER) do |scanner|
           @begin_level += 1
-          if @begin_level > 1
+          if @begin_level > 1 || (@current_parent && @current_parent.content.nil?)
             # start a new region
             region = AnonymousRegion.new(self, :start_pos => scanner.pos - scanner.matched.length + 1)
             @level += 1
             assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
           else
           	if @current_parent && 
-          		  @current_parent.content && 
-          		  @current_parent.content.kind_of?(SubprogRegion)
+          		  @current_parent.content && has_begin_block?
 							@current_parent.content.body_start_pos = scanner.pos - scanner.matched.length + 1
 						end
           end
@@ -317,6 +325,11 @@ module Vorax
 
 			def on_anonymous?
 				current_region && current_region.kind_of?(AnonymousRegion)
+			end
+
+			def has_begin_block?
+				@current_parent.content.kind_of?(SubprogRegion) || 
+					@current_parent.content.kind_of?(DeclareRegion)
 			end
 
       def assign_parent(node)

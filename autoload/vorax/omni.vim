@@ -18,7 +18,7 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
 			let text_code = vorax#utils#BufferContent(1, line('.')) . a:base
 			if b:sql_type_override ==? 'plsqlvorax'
 				" a plsql buffer
-				call vorax#ruby#ComputePlsqlStructure('plsql_struct', text_code)
+				call vorax#ruby#ComputePlsqlStructure(s:plsql_struct_key, text_code)
 				let s:context.local_items = vorax#ruby#LocalItems(s:plsql_struct_key, 
 							\ s:context.absolute_pos - 1, '')
 			elseif b:sql_type_override ==? 'sqlvorax'
@@ -26,7 +26,7 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
         let stmt = vorax#ruby#CurrentStatement(text_code, 
 							\ s:context.absolute_pos - 1, 
 							\ 1, 0)
-				call vorax#ruby#ComputePlsqlStructure('plsql_struct', stmt.text)
+				call vorax#ruby#ComputePlsqlStructure(s:plsql_struct_key, stmt.text)
 				let s:context.local_items = vorax#ruby#LocalItems(s:plsql_struct_key, 
 							\ s:context.absolute_pos - 1, '')
 			endif
@@ -375,13 +375,13 @@ function! s:ForVariableItems(for_item) "{{{
 	return items
 endfunction "}}}
 
-function! s:CursorColumns(cursor_item)
+function! s:CursorColumns(cursor_item) "{{{
 	let expr = 'select * from (' . 
 				\ a:cursor_item['query'] . ')' . 
 				\ ' vorax$$alias'
 	let items = s:AliasItems('vorax$$alias', '', expr)
 	return items
-endfunction
+endfunction "}}}
 
 function! s:OracleTypeAttributes(item) "{{{
   let items = []

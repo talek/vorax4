@@ -540,5 +540,12 @@ describe 'region' do
 		region.declared_items.should == expected
 	end# }}}
 
+	it 'should get items from declare blocks' do# {{{
+    text = "declare\n\tl_kkt varchar2(100);\nbegin\n\tl_k"
+    structure = Parser::PlsqlStructure.new(text)
+		region = structure.regions.children.first.content
+		region.declared_items.should == [Parser::VariableItem.new(10, "l_kkt", "varchar2")]
+	end# }}}
+
 end
 
