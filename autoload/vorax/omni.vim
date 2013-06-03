@@ -39,6 +39,8 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
       let items = s:WordItems(a:base)
     elseif s:context['completion_type'] == 'dot'
       let items = s:DotItems(a:base)
+    elseif s:context['completion_type'] == 'dblink'
+      let items = s:DbLinksItems(a:base)
     endif
     if g:vorax_omni_sort_items
       call sort(items, "s:CompareOmniItems")
@@ -98,6 +100,16 @@ function! s:ArgumentItems(prefix) abort "{{{
   endif
   return result
 endfunction "}}}
+
+function! s:DbLinksItems(prefix) abort
+  call VORAXDebug("omni s:DbLinksItems a:prefix=" . string(a:prefix))
+  let output = vorax#sqlplus#RunVoraxScript('omni_dblinks.sql',
+        \ toupper(a:prefix))
+  call VORAXDebug('omni s:DbLinksItems: ' . output)
+  let data  = vorax#ruby#ParseResultset(output)
+  let result = s:ResultsetToOmni(data, 0, s:context['text_before'], '')
+  return result
+endfunction
 
 function! s:WordItems(prefix) abort "{{{
   call VORAXDebug("omni s:WordItems a:prefix=" . string(a:prefix))
@@ -758,10 +770,15 @@ function! s:CompletionContext() abort "{{{
     if context['start_from'] != -1
       let context.completion_type = 'dot'
     else
-      let context['start_from'] = s:IdentifierMatch(context['current_line'])
+			let context['start_from'] = s:DbLinkMatch(context['current_line'])
       if context['start_from'] != -1
-        let context.completion_type = 'identifier'
-      endif
+      	let context.completion_type = 'dblink'
+      else
+				let context['start_from'] = s:IdentifierMatch(context['current_line'])
+				if context['start_from'] != -1
+					let context.completion_type = 'identifier'
+				endif
+			endif
     endif
   endif
   return context
@@ -808,6 +825,10 @@ endfunction "}}}
 
 function! s:DotMatch(text) abort "{{{
   return match(a:text, '\m\([.]\)\@<=\w*$')
+endfunction "}}}
+
+function! s:DbLinkMatch(text) abort "{{{
+  return match(a:text, '\m\([@]\)\@<=\w*$')
 endfunction "}}}
 
 function! s:IdentifierMatch(text) abort "{{{
