@@ -127,6 +127,12 @@ function! s:WordItems(prefix) abort "{{{
 		let data['resultset'] = local_items['resultset']
 	endif
   let result = s:ResultsetToOmni(data, 0, s:context['text_before'], '')
+	" add syntax items
+	if exists("*syntaxcomplete#OmniSyntaxList")
+		for item in syntaxcomplete#OmniSyntaxList()
+			call add(result, {'word' : item, 'kind' : 'kyw' })
+		endfor
+	endif
 	call filter(result, 'v:val.word =~ ''^' . a:prefix . '''')
   return result
 endfunction "}}}

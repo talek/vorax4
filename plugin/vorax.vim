@@ -68,7 +68,7 @@ call s:initVariable('g:vorax_sqlplus_options',
       \  'set timing on',
       \  'set echo on',
       \  'set time on',
-      \  'set null "<NULL>"',
+      \  'set null ""',
       \  'set serveroutput on format wrapped',
       \  'set sqlblanklines on'
       \ ])
