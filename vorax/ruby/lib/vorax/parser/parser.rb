@@ -265,7 +265,7 @@ module Vorax
         stmt = "#{stmt.strip}\n/\n" if stmt !~ /\n\s*\/\s*\z/
       else
         # normal statement. It should have a trailing ;
-        stmt = "#{stmt.strip};" if stmt !~ /;\s*\z/
+        stmt = "#{stmt.strip};" if stmt !~ /(\/|;)\s*\z/
       end
       return stmt
     end
