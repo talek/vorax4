@@ -10,15 +10,19 @@ if g:vorax_folding_enable
   function! s:SaveOpenFolds()"{{{
     if exists('b:descriptor')
       for element in b:descriptor
-        if foldlevel(element["start_pos"]) > 0
-          if foldclosed(element["start_pos"]) != -1
-            let element['open'] = 0
-          else
-            let element['open'] = 1
-          endif
+				if !exists('element["open"]') && g:vorax_folding_initial_state ==? 'all_open'
+					let element["open"] = 1
         else
-          let element['open'] = 0
-        endif
+					if foldlevel(element["start_pos"]) > 0
+						if foldclosed(element["start_pos"]) != -1
+							let element['open'] = 0
+						else
+							let element['open'] = 1
+						endif
+					else
+						let element['open'] = 0
+					endif
+				endif
       endfor
     endif
   endfunction"}}}
@@ -41,7 +45,7 @@ if g:vorax_folding_enable
 			if exists('b:descriptor')
 				" remove existing folds
 				normal! zE
-				" remark folding points
+				" redefine folding points
 				for element in b:descriptor
 					if element["start_pos"] < element["end_pos"]
 						try
@@ -65,14 +69,15 @@ if g:vorax_folding_enable
   setlocal foldcolumn=2
 
   call s:CreateFolds(1)
-  "autocmd InsertLeave <buffer> call s:CreateFolds(0)
-  autocmd CursorHold <buffer> call s:CreateFolds(0)
 
   if g:vorax_folding_initial_state ==? 'all_close'
     normal! zM
   elseif g:vorax_folding_initial_state ==? 'all_open'
     normal! zR
   endif
+
+  "autocmd InsertLeave <buffer> call s:CreateFolds(0)
+  autocmd CursorHold <buffer> call s:CreateFolds(0)
 
 endif
 
