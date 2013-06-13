@@ -231,7 +231,7 @@ module Vorax
     # 
     # @param html [String] the html to be parsed
     # @return a hash with the parsed content
-    def self.query_result(html)
+    def self.query_result(html, strip=true)
       nbsp = Nokogiri::HTML("&nbsp;").text
       hash = {:resultset => [], :errors => []}
       doc = Nokogiri::HTML(html)
@@ -242,7 +242,11 @@ module Vorax
           row = []
           # replace nbsp with a plain blank in order to not confuse 
           # the ragel parser, in case it's used
-          tr.xpath('td').each { |td| row << td.text.strip.gsub(nbsp, " ") }
+          tr.xpath('td').each do |td| 
+          	cell_val = td.text
+          	cell_val.strip! if strip
+          	row << cell_val.gsub(nbsp, " ")
+          end
           resultset << row unless row.empty?
         end
         hash[:resultset] << resultset
@@ -265,7 +269,7 @@ module Vorax
         stmt = "#{stmt.strip}\n/\n" if stmt !~ /\n\s*\/\s*\z/
       else
         # normal statement. It should have a trailing ;
-        stmt = "#{stmt.strip};" if stmt !~ /(\/|;)\s*\z/
+        stmt = "#{stmt.strip};" if stmt !~ /(\n\s*\/|;)\s*\z/
       end
       return stmt
     end

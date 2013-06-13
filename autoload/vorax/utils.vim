@@ -74,6 +74,10 @@ function! vorax#utils#SpitWarn(str)"{{{
   let v:warningmsg = a:str
 endfunction"}}}
 
+function! vorax#utils#SpitInfo(str) "{{{
+  echohl Question | echon "INFO: " | echohl None | echon a:str
+endfunction "}}}
+
 function! vorax#utils#Strip(str)"{{{
   return substitute(a:str, '^\_s*\(.\{-}\)\_s*\_$', '\1', '')
 endfunction"}}}

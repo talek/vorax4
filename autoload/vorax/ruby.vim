@@ -102,9 +102,13 @@ function! vorax#ruby#PrepareExec(statement) abort"{{{
 ERC
 endfunction"}}}
 
-function! vorax#ruby#ParseResultset(html) abort"{{{
+function! vorax#ruby#ParseResultset(html, ...) abort"{{{
   ruby <<ERC
-  result = Vorax::Parser.query_result(VIM::evaluate('a:html'))
+  if VIM::evaluate('a:0') == 0
+		result = Vorax::Parser.query_result(VIM::evaluate('a:html'))
+	else
+		result = Vorax::Parser.query_result(VIM::evaluate('a:html'), VIM::evaluate('a:1') == 1 ? true : false)
+	end
   vim_hash = "{'resultset' : #{result[:resultset].inspect}, 'errors' : #{result[:errors].inspect}}"
   VIM::command("return #{vim_hash}")
 ERC

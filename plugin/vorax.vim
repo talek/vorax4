@@ -100,8 +100,19 @@ call s:initVariable('g:vorax_folding_enable', 1)
 "   all_open = all folds are initially openned
 call s:initVariable('g:vorax_folding_initial_state', 'all_open')
 
+" Whenever or not to display a warning when about to edit a db object.
+" two cases: 
+"   1. VORAXEdit an object and a file matching the object name and type
+"   already exists. An warning will inform that just the file was open
+"   and not the actual source from the database.
+"
+"   2. VORAXEdit! an abject and a file matching the object name and type
+"   already exists. An warning will inform that the local file content
+"   was replaced with the actual source from the database.
+call s:initVariable('g:vorax_edit_warning', 1)
+
 " the hash key is the object_type from DBMS_METADATA
-call s:initVariable('g:vorax_file_associations',
+call s:initVariable('g:vorax_plsql_associations',
       \ {'FUNCTION' : 'fnc',
       \  'PROCEDURE' : 'prc',
       \  'TRIGGER' : 'trg',
@@ -112,10 +123,14 @@ call s:initVariable('g:vorax_file_associations',
       \  'TYPE_BODY' : 'tpb',
       \  'TYPE' : 'typ',
       \  'JAVA_SOURCE' : 'jsp'})
-exe 'autocmd BufRead,BufNewFile *.{' . join(values(g:vorax_file_associations), ',') . '} let &ft="sql" | SQLSetType plsqlvorax'
+exe 'autocmd BufRead,BufNewFile *.{' . join(values(g:vorax_plsql_associations), ',') . '} let &ft="sql" | SQLSetType plsqlvorax'
 
 call s:initVariable('g:vorax_sql_script_default_extension', 'sql')
-exe 'autocmd BufRead,BufNewFile *.' . g:vorax_sql_script_default_extension . ' SQLSetType sqlvorax'
+call s:initVariable('g:vorax_sql_associations',
+      \ {'TABLE' : 'tab',
+      \  'VIEW' : 'viw',
+			\  'SQL_DEFAULT' : g:vorax_sql_script_default_extension})
+exe 'autocmd BufRead,BufNewFile *.{' . join(values(g:vorax_sql_associations), ',') . '} let &ft="sql" | SQLSetType sqlvorax'
 " }}}
 
 " Commands {{{
@@ -123,6 +138,7 @@ exe 'autocmd BufRead,BufNewFile *.' . g:vorax_sql_script_default_extension . ' S
 command! -n=1 VORAXConnect :call vorax#sqlplus#Connect(<q-args>)
 command! -n=1 VORAXExec :call vorax#sqlplus#Exec(<q-args>)
 command! -n=0 VORAXOutputToggle :call vorax#output#Toggle()
+command! -n=+ -bang -complete=customlist,vorax#explorer#OpenDbComplete VORAXEdit :call vorax#explorer#OpenDbObject('<bang>', <f-args>)
 
 " }}}
 
