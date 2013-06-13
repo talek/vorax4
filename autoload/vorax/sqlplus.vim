@@ -189,7 +189,10 @@ function! vorax#sqlplus#ExecImmediate(command, ...) abort"{{{
     let output = ""
     while vorax#ruby#SqlplusBusy()
       let output .= vorax#ruby#SqlplusReadOutput()
+			echo 'Busy... ' . vorax#utils#Throbber()
+      redraw
     endwhile
+    echo 'Done.'
     return output
   catch /^VRX-01/
     call VORAXDebug("vorax#sqlplus#Exec: no Sqlplus process running.")
