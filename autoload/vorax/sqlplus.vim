@@ -31,9 +31,14 @@ endfunction
 
 " Connection logic {{{
 
-function! vorax#sqlplus#Connect(cstr) abort"{{{
+function! vorax#sqlplus#Connect(cstr) abort "{{{
   call VORAXDebug("vorax#sqlplus#Connect: cstr=" . string(a:cstr))
   let parts = s:PrepareCstr(a:cstr)
+	" run BeforeConnect hook
+	if exists('*VORAXBeforeConnect')
+		" Execute hook
+		call VORAXBeforeConnect(parts['user'], parts['db'], parts['role'])
+	endif
   " visual feedback to the user please
   redraw
   echo 'Initializing connection...'
@@ -70,11 +75,11 @@ function! vorax#sqlplus#Connect(cstr) abort"{{{
 	" run AfterConnect hook
 	if exists('*VORAXAfterConnect')
 		" Execute hook
-		call VORAXAfterConnect()
+		call VORAXAfterConnect(s:properties['user'], s:properties['db'], s:properties['privilege'])
 	endif
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#Initialize() abort"{{{
+function! vorax#sqlplus#Initialize() abort "{{{
   call vorax#ruby#SqlplusFork()
   sleep 300m " just let sqlplus to warm up
   let pre = extend(
@@ -82,9 +87,9 @@ function! vorax#sqlplus#Initialize() abort"{{{
                      \ 'store set ' . s:properties['store_set'] . ' replace'),
               \ s:properties['sane_options'])
   call vorax#sqlplus#ExecImmediate(join(pre, "\n"))
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#UpdateSessionOwner()"{{{
+function! vorax#sqlplus#UpdateSessionOwner() "{{{
   if g:vorax_update_session_owner
     let s:properties['user'] = ''
     let s:properties['db'] = ''
@@ -105,9 +110,9 @@ function! vorax#sqlplus#UpdateSessionOwner()"{{{
       endif
     endif
   endif
-endfunction"}}}
+endfunction "}}}
 
-function! s:PrintWelcomeBanner() abort"{{{
+function! s:PrintWelcomeBanner() abort "{{{
   if s:properties['user'] != ""
     let banner = s:properties['db_banner'] .
           \ "\n\n" .
@@ -118,9 +123,9 @@ function! s:PrintWelcomeBanner() abort"{{{
           \ (s:properties['privilege'] != '' ? " " . s:properties['privilege'] : "")
     call vorax#output#Spit("\n\n" . banner . "\n")
   endif
-endfunction"}}}
+endfunction "}}}
 
-function! s:PrepareCstr(cstr) abort"{{{
+function! s:PrepareCstr(cstr) abort "{{{
   let cstr = a:cstr
   while 1
     let parts = vorax#ruby#ParseConnectionString(cstr)
@@ -135,20 +140,20 @@ function! s:PrepareCstr(cstr) abort"{{{
     endif
   endwhile
   return parts
-endfunction"}}}
+endfunction "}}}
 
-function! s:MergeCstr(parts)"{{{
+function! s:MergeCstr(parts) "{{{
     return a:parts["user"] . 
           \ "/" . a:parts["password"] .
           \ (a:parts["db"] == "" ? "" : "@" . a:parts["db"]) . 
           \ (a:parts["role"] == "" ? "" : " as " .a:parts["role"])
-endfunction"}}}
+endfunction "}}}
 
 " }}}
 
 " Sqlplus baby {{{
 
-function! vorax#sqlplus#Exec(command, ...) abort"{{{
+function! vorax#sqlplus#Exec(command, ...) abort "{{{
   call VORAXDebug("vorax#sqlplus#Exec: command=" . string(a:command) .
         \ " extra_args=" . string(a:000))
   let pre = ""
@@ -170,9 +175,9 @@ function! vorax#sqlplus#Exec(command, ...) abort"{{{
   catch /^VRX-02/
     call vorax#sqlplus#WarnCrash()
   endtry
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#ExecImmediate(command, ...) abort"{{{
+function! vorax#sqlplus#ExecImmediate(command, ...) abort "{{{
   call VORAXDebug("vorax#sqlplus#Exec: command=" . string(a:command) .
         \ " extra_args=" . string(a:000))
   let pre = ""
@@ -200,9 +205,9 @@ function! vorax#sqlplus#ExecImmediate(command, ...) abort"{{{
   catch /^VRX-02/
     call vorax#sqlplus#WarnCrash()
   endtry
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#Query(command) abort"{{{
+function! vorax#sqlplus#Query(command) abort "{{{
   call VORAXDebug("vorax#sqlplus#Query command=" . string(a:command))
   let prep = join(extend(['store set ' . s:properties['store_set'] . ' replace', 'set markup html on', 'set linesize 10000'],
               \ s:properties['sane_options']), "\n")
@@ -210,9 +215,9 @@ function! vorax#sqlplus#Query(command) abort"{{{
   let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
   let output = vorax#sqlplus#ExecImmediate(a:command, hash)
   return vorax#ruby#ParseResultset(output)
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#DefinedVariable(...) abort"{{{
+function! vorax#sqlplus#DefinedVariable(...) abort "{{{
   call VORAXDebug("vorax#sqlplus#DefinedVariable: " . string(a:000))
   let pre = extend(
         \ ['store set ' . s:properties['store_set'] . ' replace'],
@@ -234,17 +239,17 @@ function! vorax#sqlplus#DefinedVariable(...) abort"{{{
     endif
   endfor
   return result
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#SessionOwner() abort"{{{
+function! vorax#sqlplus#SessionOwner() abort "{{{
   return s:properties['user'] . '@' .
         \ s:properties['db'] .
         \ (s:properties['privilege'] != "" ? 
             \ ' ' . s:properties['privilege'] : 
             \ '')
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#GatherStoreSetOption(...)"{{{
+function! vorax#sqlplus#GatherStoreSetOption(...) "{{{
   let options = readfile(s:properties['store_set'])
   let multi_line = 0
   let optionset = ""
@@ -263,14 +268,14 @@ function! vorax#sqlplus#GatherStoreSetOption(...)"{{{
     endfor
   endfor
   return optionset
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#WarnCrash() abort"{{{
+function! vorax#sqlplus#WarnCrash() abort "{{{
   call VORAXDebug("vorax#sqlplus#WarnCrash: SqlPlus process has unexpectedly died!")
   call vorax#utils#SpitWarn("The buddy SqlPlus process has unexpectedly died! You should :VORAXConnect again!")
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#RunVoraxScript(name, ...) abort"{{{
+function! vorax#sqlplus#RunVoraxScript(name, ...) abort "{{{
   call VORAXDebug("vorax#sqlplus#RunVoraxScript name=" . a:name)
   let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
   let post = "@" . s:properties['store_set']
@@ -283,9 +288,9 @@ function! vorax#sqlplus#RunVoraxScript(name, ...) abort"{{{
   let output = vorax#sqlplus#ExecImmediate('@' . script, hash)
   call VORAXDebug("vorax#sqlplus#RunVoraxScript output=" . output)
   return output
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#NameResolve(name) abort"{{{
+function! vorax#sqlplus#NameResolve(name) abort "{{{
   call VORAXDebug("vorax#sqlplus#NameResolve name=" . a:name)
   let resolve_data = {'schema' : '', 'object' : '', 'type' : '', 'extra' : '', 'id' : ''}
   let output = vorax#sqlplus#RunVoraxScript('name_resolve.sql', a:name)
@@ -300,14 +305,14 @@ function! vorax#sqlplus#NameResolve(name) abort"{{{
   endif
   call VORAXDebug("vorax#sqlplus#NameResolve resolve_data=" . string(resolve_data))
   return resolve_data
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#QuoteScriptParam(param) abort"{{{
+function! vorax#sqlplus#QuoteScriptParam(param) abort "{{{
   let param = substitute(a:param, "'", "''", 'g')
   return "'" . param . "'"
-endfunction"}}}
+endfunction "}}}
 
-function! vorax#sqlplus#GetSource(owner, object, type) abort"{{{
+function! vorax#sqlplus#GetSource(owner, object, type) abort "{{{
   let output = vorax#sqlplus#RunVoraxScript('get_source.sql', a:owner, a:object, a:type)
   let data  = vorax#ruby#ParseResultset(output)
   let content = ''
@@ -318,6 +323,6 @@ function! vorax#sqlplus#GetSource(owner, object, type) abort"{{{
     endfor
   endif
   return content
-endfunction"}}}
+endfunction "}}}
 
 " }}}
