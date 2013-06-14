@@ -155,8 +155,17 @@ module Vorax
       
 		end
 
+		# A spec region: type or package
+		class SpecRegion < CompositeRegion
+		end
+
+		# A type spec regio.
+		class TypeSpecRegion < SpecRegion
+		end
+
+
     # A PLSQL spec region. This applies to packages or types specifications.
-    class SpecRegion < CompositeRegion
+    class PackageSpecRegion < SpecRegion
 
       # @return [Array<Parser::DeclareItem>] an array of declared items: global variables, functions, types etc.
       def declared_items

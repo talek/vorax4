@@ -31,12 +31,16 @@ pkg_body = create_or_replace?
             name ws+ 
             body_start_marker ws+;
 
+typ_spec = create_or_replace?
+            K_TYPE ws+ 
+            name ws+ @{@kind = :type_spec; @name = @name_temp; @pos_name = @pos_name_temp};
+
 typ_body = create_or_replace?
             K_TYPE ws+ K_BODY %{ @kind_temp = :type_body } ws+
             name ws+ 
             body_start_marker ws+;
 
-probe := typ_body | pkg_body | pkg_spec;
+probe := typ_body | pkg_body | typ_spec | pkg_spec;
 
 }%%
 

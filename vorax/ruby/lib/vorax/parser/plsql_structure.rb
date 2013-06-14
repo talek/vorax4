@@ -122,15 +122,22 @@ module Vorax
             text_code = "#{scanner.matched}#{scanner.rest}"
             probe_data = CompositeRegion.probe(text_code)
             if probe_data[:kind]
-              signature_end = scanner.pos - scanner.matched.length + probe_data[:pointer] + 1
+              if probe_data[:pointer]
+								signature_end = scanner.pos - scanner.matched.length + probe_data[:pointer] + 1
+							end
               start_pos = scanner.pos - scanner.matched.length + 1
               name_pos = start_pos + probe_data[:name_pos]
               if probe_data[:kind] == :package_spec
-								region = SpecRegion.new(self, 
-																				:name => probe_data[:name], 
-																				:start_pos => start_pos,
-																				:name_pos => name_pos,
-																				:signature_end_pos => signature_end)
+								region = PackageSpecRegion.new(self, 
+																						:name => probe_data[:name], 
+																						:start_pos => start_pos,
+																						:name_pos => name_pos,
+																						:signature_end_pos => signature_end)
+							elsif probe_data[:kind] == :type_spec
+								region = TypeSpecRegion.new(self, 
+																						:name => probe_data[:name], 
+																						:start_pos => start_pos,
+																						:name_pos => name_pos)
 							elsif probe_data[:kind] == :package_body
 								region = PackageBodyRegion.new(self, 
 																							 :name => probe_data[:name], 
