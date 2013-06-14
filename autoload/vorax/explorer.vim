@@ -92,6 +92,7 @@ function! vorax#explorer#OpenDbObject(bang, ...) "{{{
 				endif
 			endif
 			call append(0, split(rs[0][0], '\n'))
+			normal! gg
 		endif
 	endif
 endfunction "}}}
