@@ -77,6 +77,13 @@ function! vorax#output#Spit(text) abort " {{{
     call remove(lines, 0)
   endif
   if len(lines) > 0
+		if s:first_chunk && g:vorax_output_cursor_on_top
+			if lines[0] == ""
+				let s:current_line = last_line + 1
+			else
+				let s:current_line = last_line 
+			endif
+		endif
     call setline(last_line, getline(last_line) . lines[0])
     call append(last_line, lines[1:])
     normal! G
@@ -120,6 +127,9 @@ endfunction " }}}
 function! vorax#output#SpitterStop() abort " {{{
   call vorax#output#Open()
   au! VoraX CursorHold <buffer>
+  if g:vorax_output_cursor_on_top
+		exe "normal! " . s:current_line . 'G'
+	endif
   if !g:vorax_output_window_sticky_cursor
     exe s:originating_window.'wincmd w'
   endif

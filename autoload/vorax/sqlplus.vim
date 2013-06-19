@@ -102,6 +102,7 @@ function! vorax#sqlplus#UpdateSessionOwner() "{{{
             \ '_CONNECT_IDENTIFIER', 
             \ '_O_VERSION', 
             \ '_PRIVILEGE')
+			call VORAXDebug("vorax#sqlplus#UpdateSessionOwner vars=" . string(vars))
       if vars['_USER'] != ""
         let s:properties['user'] = vars['_USER']
         let s:properties['db'] = vars['_CONNECT_IDENTIFIER']
@@ -109,6 +110,9 @@ function! vorax#sqlplus#UpdateSessionOwner() "{{{
         let s:properties['db_banner'] = vars['_O_VERSION']
       endif
     endif
+		call VORAXDebug("vorax#sqlplus#UpdateSessionOwner s:properties=" . string(s:properties))
+  	" update status bar
+  	let &ro = &ro
   endif
 endfunction "}}}
 
@@ -229,6 +233,7 @@ function! vorax#sqlplus#DefinedVariable(...) abort "{{{
   while vorax#ruby#SqlplusBusy()
     let output .= vorax#ruby#SqlplusReadOutput()
   endwhile
+  call VORAXDebug("vorax#sqlplus#DefinedVariable: output=" . string(output))
   let result = {}
   for var in a:000
     let match = matchlist(output, '\%(^\|\n\)DEFINE ' . var . '\s\+= "\(\_.\{-\}\)"')

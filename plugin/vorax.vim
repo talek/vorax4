@@ -51,6 +51,7 @@ call s:initVariable('g:vorax_output_window_append', 0)
 call s:initVariable('g:vorax_output_window_sticky_cursor', 0)
 call s:initVariable('g:vorax_output_window_hl_error', 'Error')
 call s:initVariable('g:vorax_output_abort_key', '<Esc>')
+call s:initVariable('g:vorax_output_cursor_on_top', 0)
 
 " The type of funnel:
 "   0 = no funnel
