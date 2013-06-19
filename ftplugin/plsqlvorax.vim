@@ -5,7 +5,14 @@
 
 let b:crr_changedtick = 0
 
-if g:vorax_folding_enable
+" key mappings
+if g:vorax_map_keys
+	nnoremap <buffer> <silent> gd :call vorax#plsql#GotoDef()<CR>
+endif
+
+
+" folding logic
+if g:vorax_folding_enable "{{{
 
   function! s:SaveOpenFolds()"{{{
     if exists('b:descriptor')
@@ -79,13 +86,14 @@ if g:vorax_folding_enable
   "autocmd InsertLeave <buffer> call s:CreateFolds(0)
   autocmd CursorHold <buffer> call s:CreateFolds(0)
 
-endif
+endif "}}}
 
 " set Vorax completion function
 if g:vorax_omni_enable
   setlocal omnifunc=vorax#omni#Complete
 endif
 
+" hooks
 if exists('*VORAXAfterPlsqlBufferLoad')
 	" Execute hook
 	call VORAXAfterPlsqlBufferLoad()

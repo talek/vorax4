@@ -157,10 +157,6 @@ if g:vorax_map_keys
         \ nnoremap <buffer> <silent> <Leader>s :VORAXOutputToggleSticky<CR>|
         \ nnoremap <buffer> <silent> <CR> :VORAXOutputAskUser<CR>
 
-  " mappings for SQL files
-  au FileType sql
-        \ nnoremap <buffer> <silent> <Leader>e :call vorax#sqlplus#Exec(vorax#utils#CurrentStatement(1, 1))<CR>|
-        \ xnoremap <buffer> <silent> <Leader>e :VORAXExecSelection<CR>
 endif
 
 "}}}

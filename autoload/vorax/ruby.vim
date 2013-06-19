@@ -213,14 +213,16 @@ function! vorax#ruby#CompositeName(structure_stored_in, position) abort "{{{
 ERC
 endfunction "}}}
 
-function! vorax#ruby#RegionScope(structure_stored_in, position) abort"{{{
+function! vorax#ruby#RegionScope(structure_stored_in, position) abort "{{{
 	ruby <<ERC
 	scope = []
-	structure = VORAX.extra[VIM::evaluate('a:structure_stored_in')]
+	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
   region = structure.region_at(VIM::evaluate('a:position'))
   begin
 	  if region
-      vim_region_hash = region.to_hash.inject({}) { |h,(k,v)| h[k] = (v ? v : ''); h }.to_json
+    	region_hash = region.to_hash
+    	region_hash[:region_type] = region.class.name.split(/::/).last || ''
+      vim_region_hash = region_hash.inject({}) { |h,(k,v)| h[k] = (v ? v : ''); h }.to_json
 	    scope << vim_region_hash
       region = region.node.parent.content
 		else
@@ -229,7 +231,7 @@ function! vorax#ruby#RegionScope(structure_stored_in, position) abort"{{{
 	end while true
   VIM::command("return [#{scope.join(',')}]")
 ERC
-endfunction"}}}
+endfunction "}}}
 
 function! vorax#ruby#LocalItems(structure_stored_in, position, prefix)"{{{
 	ruby <<ERC
@@ -268,7 +270,19 @@ function! vorax#ruby#LocalItems(structure_stored_in, position, prefix)"{{{
 					end
 				end
 			end
-      region = region.node.parent.content
+      if region.kind_of?(Vorax::Parser::PackageBodyRegion)
+        name = region.name
+        spec = structure.regions.find do |r| 
+          r.content.kind_of?(Vorax::Parser::PackageSpecRegion) && r.content.name =~ /^#{name}$/i
+        end
+				if spec
+					region = spec.content
+				else
+					break
+				end
+			else
+				region = region.node.parent.content
+			end
 		else
 			break
 		end
@@ -286,6 +300,7 @@ function! vorax#ruby#PlsqlRegions(source_text) abort"{{{
     if region
       vim_hash = region.to_hash.inject({}) { |h,(k,v)| h[k] = (v ? v : ''); h }
       vim_hash[:level] = node.level
+    	vim_hash[:region_type] = region.class.name.split(/::/).last || ''
     	vim_regions << vim_hash.to_json
     end
   end

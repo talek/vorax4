@@ -4,6 +4,13 @@
 " License:     see LICENSE.txt
 
 command! -n=0 -range -buffer VORAXExecSelection :call vorax#sqlplus#Exec(vorax#utils#CurrentSelection())
+command! -n=0 -range -buffer VORAXExecCurrent :call vorax#sqlplus#Exec(vorax#utils#CurrentStatement(1, 1))
+
+if g:vorax_map_keys
+  " mappings for SQL file
+	nnoremap <buffer> <silent> <Leader>e :VORAXExecCurrent<CR>
+  xnoremap <buffer> <silent> <Leader>e :VORAXExecSelection<CR>
+endif
 
 " set Vorax completion function
 if g:vorax_omni_enable
