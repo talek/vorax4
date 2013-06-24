@@ -42,6 +42,8 @@ function! vorax#explorer#OpenDbComplete(arglead, cmdline, crrpos) "{{{
 endfunction "}}}
 
 function! vorax#explorer#OpenDbObject(bang, ...) "{{{
+  call VORAXDebug("vorax#explorer#OpenDbObject bang=" . string(a:bang) .
+				\ ' rest=' . string(a:000))
 	" expect the first parameter to be the object type and
 	" the second the object name (possibly including the owner)
 	if a:0 == 2
@@ -75,11 +77,18 @@ function! vorax#explorer#OpenDbObject(bang, ...) "{{{
 				\ toupper(owner),
 				\ toupper(object_name),
 				\ type)
+  call VORAXDebug("vorax#explorer#OpenDbObject output=" . string(output))
 	let data  = vorax#ruby#ParseResultset(output)
 	if exists('data["resultset"][0]')
 		let rs = data["resultset"][0]
 		" expect one record only
 		if exists('rs[0][0]')
+			let content = rs[0][0]
+			if vorax#utils#IsEmpty(content)
+				redraw
+				call vorax#utils#SpitWarn('Sorry, the definition is empty! No such database object?')
+				return
+			endif
 			call s:OpenVoraxBuffer(file_name)
 			if a:bang == "!"
 				" clear the buffer content
@@ -91,7 +100,7 @@ function! vorax#explorer#OpenDbObject(bang, ...) "{{{
 								\ "Take care before saving the buffer!")
 				endif
 			endif
-			call append(0, split(rs[0][0], '\n'))
+			call append(0, split(content, '\n'))
 			normal! gg
 		endif
 	endif

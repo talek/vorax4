@@ -53,6 +53,7 @@ declare
 
 begin
 	dbms_lob.createtemporary (lob_loc => :ddl_def, cache => TRUE);
+	:ddl_def := ''; -- just init
 	if '&1' <> user  then
 		-- only if trying to look to a package/type belonging to a diferent user
 		if '&3' = 'TYPE_SPEC' or
