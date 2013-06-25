@@ -33,7 +33,7 @@ set verify off
 declare
   type object_table is table of char(1) index by varchar2(200);
   l_objects     object_table;
-  l_name        varchar2(30) := '&1';
+  l_name        varchar2(500) := '&1';
   l_result      varchar2(32767);
   l_extra       varchar2(300);
   l_part1       varchar2(100);
