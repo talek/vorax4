@@ -13,7 +13,6 @@
 --   1st parameter = the word prefix
 --   2nd parameter = the maximum number of items to be returned
 
-set define off
 set echo off
 set define '&'
 set verify off
