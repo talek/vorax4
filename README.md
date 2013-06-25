@@ -22,15 +22,15 @@ Just have a look here: http://youtu.be/DInsKTZS028
 
 ## Installation
 
-1. ensure you have ruby1.9.3 or ruby2.0
-2. vim 7.3 compiled with ruby support
-3. install vorax.gem to get the dependent gems
+* ensure you have ruby1.9.3 or ruby2.0
+* vim 7.3 compiled with ruby support
+* install vorax.gem to get the dependent gems
 
 ```
 gem install vorax --no-rdoc --no-ri
 ```
 
-4. ensure you have a valid Oracle client with sqlplus available
-5. install Vorax vim plugin: manually, pathogen, vundle... it's up
+* ensure you have a valid Oracle client with sqlplus available
+* install Vorax vim plugin: manually, pathogen, vundle... it's up
 to you.
 
