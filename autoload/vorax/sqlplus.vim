@@ -295,6 +295,20 @@ function! vorax#sqlplus#RunVoraxScript(name, ...) abort "{{{
   return output
 endfunction "}}}
 
+function! vorax#sqlplus#RunVoraxScriptBg(name, ...) abort "{{{
+  call VORAXDebug("vorax#sqlplus#RunVoraxScript name=" . a:name)
+  let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
+  let post = "@" . s:properties['store_set']
+  let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
+  let params = ''
+  for param in a:000
+    let params .= vorax#sqlplus#QuoteScriptParam(param) . ' '
+  endfor
+  let script = s:properties['sql_folder'] . a:name . ' ' . params
+  let output = vorax#sqlplus#Exec('@' . script, hash)
+  call VORAXDebug("vorax#sqlplus#RunVoraxScript output=" . output)
+endfunction "}}}
+
 function! vorax#sqlplus#NameResolve(name) abort "{{{
   call VORAXDebug("vorax#sqlplus#NameResolve name=" . a:name)
   let resolve_data = {'schema' : '', 'object' : '', 'type' : '', 'extra' : '', 'id' : ''}

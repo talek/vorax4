@@ -140,24 +140,15 @@ command! -n=1 VORAXConnect :call vorax#sqlplus#Connect(<q-args>)
 command! -n=1 VORAXExec :call vorax#sqlplus#Exec(<q-args>)
 command! -n=0 VORAXOutputToggle :call vorax#output#Toggle()
 command! -n=+ -bang -complete=customlist,vorax#explorer#OpenDbComplete VORAXEdit :call vorax#explorer#OpenDbObject('<bang>', <f-args>)
+command! -n=1 -bang -complete=customlist,vorax#toolkit#DescComplete VORAXDesc :call vorax#toolkit#Desc(<q-args>, '<bang>')
 
 " }}}
 
 " Key mappings {{{
+
 if g:vorax_map_keys
   " global mappings
   nnoremap <silent> <Leader>o :VORAXOutputToggle<CR>
-
-  " output window mappings
-  au BufNew *__VORAX_OUTPUT__ 
-        \ nnoremap <buffer> <silent> <Leader>cl :VORAXOutputClear<CR>|
-        \ nnoremap <buffer> <silent> <Leader>v :VORAXOutputVertical<CR>|
-        \ nnoremap <buffer> <silent> <Leader>p :VORAXOutputPagezip<CR>|
-        \ nnoremap <buffer> <silent> <Leader>t :VORAXOutputTablezip<CR>|
-        \ nnoremap <buffer> <silent> <Leader>a :VORAXOutputToggleAppend<CR>|
-        \ nnoremap <buffer> <silent> <Leader>s :VORAXOutputToggleSticky<CR>|
-        \ nnoremap <buffer> <silent> <CR> :VORAXOutputAskUser<CR>
-
 endif
 
 "}}}

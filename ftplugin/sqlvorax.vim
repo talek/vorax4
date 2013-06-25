@@ -6,6 +6,8 @@
 command! -n=0 -range -buffer VORAXExecSelection :call vorax#sqlplus#Exec(vorax#utils#CurrentSelection())
 command! -n=0 -range -buffer VORAXExecCurrent :call vorax#sqlplus#Exec(vorax#utils#CurrentStatement(1, 1))
 
+call vorax#toolkit#InitCommonBuffers()
+
 if g:vorax_map_keys
   " mappings for SQL file
 	nnoremap <buffer> <silent> <Leader>e :VORAXExecCurrent<CR>

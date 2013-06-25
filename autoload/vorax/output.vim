@@ -90,6 +90,12 @@ function! vorax#output#Spit(text) abort " {{{
   endif
 endfunction " }}}
 
+function! vorax#output#SpitAll(text) abort "{{{
+  call vorax#output#PrepareSpit()
+  call vorax#output#Spit(a:text)
+  call vorax#output#PostSpit()
+endfunction "}}}
+
 function! vorax#output#Clear() abort " {{{
   let outputBufNo = bufnr(s:name)
   if outputBufNo != -1 
@@ -109,10 +115,7 @@ function! vorax#output#IsWaitingForData() abort"{{{
 	return s:vorax_executing
 endfunction"}}}
 
-function! vorax#output#SpitterStart() abort " {{{
-  let s:vorax_executing = 1
-  let s:save_ut = &ut
-  set ut=50
+function! vorax#output#PrepareSpit() abort "{{{
   if !g:vorax_output_window_sticky_cursor
     let s:originating_window = winnr()
   endif
@@ -121,18 +124,30 @@ function! vorax#output#SpitterStart() abort " {{{
   if !g:vorax_output_window_append
     call vorax#output#Clear()
   endif
+endfunction "}}}
+
+function! vorax#output#SpitterStart() abort " {{{
+  let s:vorax_executing = 1
+  let s:save_ut = &ut
+  set ut=50
+  call vorax#output#PrepareSpit()
   au VoraX CursorHold <buffer> call vorax#output#FetchAndSpit()
 endfunction " }}}
 
-function! vorax#output#SpitterStop() abort " {{{
+function! vorax#output#PostSpit() abort
   call vorax#output#Open()
-  au! VoraX CursorHold <buffer>
   if g:vorax_output_cursor_on_top
 		exe "normal! " . s:current_line . 'G'
 	endif
   if !g:vorax_output_window_sticky_cursor
     exe s:originating_window.'wincmd w'
   endif
+endfunction
+
+function! vorax#output#SpitterStop() abort " {{{
+  call vorax#output#Open()
+  au! VoraX CursorHold <buffer>
+  call vorax#output#PostSpit()
   call vorax#sqlplus#UpdateSessionOwner()
   if exists("s:save_ut")
 		let &ut = s:save_ut
@@ -291,6 +306,7 @@ function! vorax#output#StatusLine() abort"{{{
 endfunction"}}}
 
 function! s:ConfigureBuffer() abort " {{{
+  let &ft="outputvorax"
   setlocal winfixheight
   setlocal hidden
   setlocal winfixheight
@@ -308,15 +324,6 @@ function! s:ConfigureBuffer() abort " {{{
   setlocal isk+=#
   exe 'setlocal statusline=' . g:vorax_output_window_statusline
   
-  " set local commands
-  command! -n=0 -bar VORAXOutputClear :call vorax#output#Clear()
-  command! -n=0 -bar VORAXOutputVertical :call vorax#output#ToggleFunnel(1)
-  command! -n=0 -bar VORAXOutputPagezip :call vorax#output#ToggleFunnel(2)
-  command! -n=0 -bar VORAXOutputTablezip :call vorax#output#ToggleFunnel(3)
-  command! -n=0 -bar VORAXOutputToggleAppend :call vorax#output#ToggleAppend()
-  command! -n=0 -bar VORAXOutputToggleSticky :call vorax#output#ToggleSticky()
-  command! -n=0 -bar VORAXOutputAskUser :call vorax#output#AskUser()
-  command! -n=0 -bar VORAXOutputAbort :call vorax#output#Abort()
 
   " highlight errors
   exe 'match ' . g:vorax_output_window_hl_error . ' /^\(ORA-\|SP[0-9]\?-\).*/'

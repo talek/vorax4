@@ -5,6 +5,8 @@
 
 let b:crr_changedtick = 0
 
+call vorax#toolkit#InitCommonBuffers()
+
 " key mappings
 if g:vorax_map_keys
 	nnoremap <buffer> <silent> gd :call vorax#plsql#GotoDef()<CR>

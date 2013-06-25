@@ -337,6 +337,15 @@ function! vorax#ruby#DescribeRecordType(text) abort"{{{
 ERC
 endfunction"}}}
 
+function! vorax#ruby#IdentifierAt(line, crrpos) abort "{{{
+	ruby <<ERC
+	data = VIM::evaluate("a:line")
+	crrpos = VIM::evaluate('a:crrpos')
+	identifier = Vorax::Parser.identifier_at(data, crrpos)
+	VIM::command("return #{identifier.inspect}")
+ERC
+endfunction "}}}
+
 " }}}
 
 " SqlPlus Interaction {{{

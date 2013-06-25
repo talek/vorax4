@@ -4,6 +4,12 @@ include Vorax
 
 describe 'Parser' do
 
+	it 'should detect identifiers' do# {{{
+		text = 'muci buci 23 "owner"."object".function(abc)'
+    Parser.identifier_at(text, 3).should == "muci"
+    Parser.identifier_at(text, 13).should == '"owner"."object".function'
+	end# }}}
+
 	it 'should parse a basic record type' do# {{{
 		text = <<-STRING
 			type Employee is record (
