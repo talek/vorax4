@@ -8,7 +8,6 @@
 --   1st parameter = owner
 --   2nd parameter = the prefix
 
-set define off
 set echo off
 set define '&'
 set verify off
