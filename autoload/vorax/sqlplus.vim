@@ -280,33 +280,30 @@ function! vorax#sqlplus#WarnCrash() abort "{{{
   call vorax#utils#SpitWarn("The buddy SqlPlus process has unexpectedly died! You should :VORAXConnect again!")
 endfunction "}}}
 
-function! vorax#sqlplus#RunVoraxScript(name, ...) abort "{{{
-  call VORAXDebug("vorax#sqlplus#RunVoraxScript name=" . a:name)
+function! vorax#sqlplus#PrepareVoraxScript(name, params)
   let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
   let post = "@" . s:properties['store_set']
   let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
   let params = ''
-  for param in a:000
+  for param in a:params
     let params .= vorax#sqlplus#QuoteScriptParam(param) . ' '
   endfor
   let script = s:properties['sql_folder'] . a:name . ' ' . params
-  let output = vorax#sqlplus#ExecImmediate('@' . script, hash)
+	return {'script': script, 'hash': hash}
+endfunction
+
+function! vorax#sqlplus#RunVoraxScript(name, ...) abort "{{{
+  call VORAXDebug("vorax#sqlplus#RunVoraxScript name=" . a:name)
+  let handler = vorax#sqlplus#PrepareVoraxScript(a:name, a:000)
+  let output = vorax#sqlplus#ExecImmediate('@' . handler.script, handler.hash)
   call VORAXDebug("vorax#sqlplus#RunVoraxScript output=" . output)
   return output
 endfunction "}}}
 
 function! vorax#sqlplus#RunVoraxScriptBg(name, ...) abort "{{{
-  call VORAXDebug("vorax#sqlplus#RunVoraxScript name=" . a:name)
-  let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
-  let post = "@" . s:properties['store_set']
-  let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
-  let params = ''
-  for param in a:000
-    let params .= vorax#sqlplus#QuoteScriptParam(param) . ' '
-  endfor
-  let script = s:properties['sql_folder'] . a:name . ' ' . params
-  let output = vorax#sqlplus#Exec('@' . script, hash)
-  call VORAXDebug("vorax#sqlplus#RunVoraxScript output=" . output)
+  call VORAXDebug("vorax#sqlplus#RunVoraxScriptBg name=" . a:name)
+  let handler = vorax#sqlplus#PrepareVoraxScript(a:name, a:000)
+  call vorax#sqlplus#Exec('@' . handler.script, handler.hash)
 endfunction "}}}
 
 function! vorax#sqlplus#NameResolve(name) abort "{{{
