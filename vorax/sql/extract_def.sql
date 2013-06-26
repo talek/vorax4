@@ -65,7 +65,7 @@ begin
 		  :ddl_def := :ddl_def || get_plsql_source('&1', '&2', '&3. BODY');
 		end if;
 	end if;
-	if length(:ddl_def) = 0 then
+	if :ddl_def is null or length(:ddl_def) = 0 then
 		-- not populated above
 		dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'SEGMENT_ATTRIBUTES', FALSE);
 		dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'STORAGE', FALSE);
