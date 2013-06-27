@@ -287,7 +287,7 @@ endfunction "}}}
 function! vorax#sqlplus#PrepareVoraxScript(name, params) "{{{
   let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
   let post = "@" . s:properties['store_set']
-  let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
+  let hash = {'prep' : prep, 'post' : post, 'funnel' : 0, 'pack_file' : s:properties['sql_pack']}
   let params = ''
   for param in a:params
     let params .= vorax#sqlplus#QuoteScriptParam(param) . ' '
