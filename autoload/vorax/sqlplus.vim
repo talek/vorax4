@@ -91,10 +91,6 @@ endfunction "}}}
 
 function! vorax#sqlplus#UpdateSessionOwner() "{{{
   if g:vorax_update_session_owner
-    let s:properties['user'] = ''
-    let s:properties['db'] = ''
-    let s:properties['privilege'] = ''
-    let s:properties['db_banner'] = ''
     if vorax#ruby#SqlplusIsInitialized() &&
           \ vorax#ruby#SqlplusIsAlive()
       let vars = vorax#sqlplus#DefinedVariable(
@@ -108,8 +104,16 @@ function! vorax#sqlplus#UpdateSessionOwner() "{{{
         let s:properties['db'] = vars['_CONNECT_IDENTIFIER']
         let s:properties['privilege'] = vars['_PRIVILEGE']
         let s:properties['db_banner'] = vars['_O_VERSION']
+				call VORAXDebug("vorax#sqlplus#UpdateSessionOwner s:properties=" . string(s:properties))
+				" update status bar
+				let &ro = &ro
+      	return
       endif
     endif
+    let s:properties['user'] = ''
+    let s:properties['db'] = ''
+    let s:properties['privilege'] = ''
+    let s:properties['db_banner'] = ''
 		call VORAXDebug("vorax#sqlplus#UpdateSessionOwner s:properties=" . string(s:properties))
   	" update status bar
   	let &ro = &ro
@@ -280,7 +284,7 @@ function! vorax#sqlplus#WarnCrash() abort "{{{
   call vorax#utils#SpitWarn("The buddy SqlPlus process has unexpectedly died! You should :VORAXConnect again!")
 endfunction "}}}
 
-function! vorax#sqlplus#PrepareVoraxScript(name, params)
+function! vorax#sqlplus#PrepareVoraxScript(name, params) "{{{
   let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
   let post = "@" . s:properties['store_set']
   let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
@@ -290,7 +294,7 @@ function! vorax#sqlplus#PrepareVoraxScript(name, params)
   endfor
   let script = s:properties['sql_folder'] . a:name . ' ' . params
 	return {'script': script, 'hash': hash}
-endfunction
+endfunction "}}}
 
 function! vorax#sqlplus#RunVoraxScript(name, ...) abort "{{{
   call VORAXDebug("vorax#sqlplus#RunVoraxScript name=" . a:name)
