@@ -69,9 +69,9 @@ function! vorax#toolkit#Explain(statement, bang) abort "{{{
   let content = split(stmt, '\n')
 	call writefile(content, s:sql_pack)
 	if a:bang == '!'
-		call vorax#sqlplus#RunVoraxScriptBg('explain.sql', 
+		call vorax#sqlplus#RunVoraxScriptBg('xplan.sql', 
 					\ s:sql_pack,
-					\ 'STATISTICS')
+					\ g:vorax_xplan_format)
 		call vorax#output#SpitterStart()
 	else
 		let output = vorax#sqlplus#RunVoraxScript('explain.sql', 

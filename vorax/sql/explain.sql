@@ -6,15 +6,11 @@
 -- to be explained. All current sqlplus options are saved before
 -- and restore after, therefore you may set whatever sqlplus
 -- option you want.
---
--- The &2 parameter must be '' for a traceonly explain plan, or
--- 'STATISTICS' if the statement must be executed and statistics
--- should be displayed.
 
 set termout on
 set linesize 10000
 set define '&'
 set timing off
 set verify off
-set autotrace traceonly &2 explain
+set autotrace traceonly explain
 @&1
