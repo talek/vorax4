@@ -93,4 +93,7 @@ print :ddl_def
 prompt </td></tr></table>
 
 undefine clob_len
+undefine 1
+undefine 2
+undefine 3
 column clob_len clear

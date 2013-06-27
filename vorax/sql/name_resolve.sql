@@ -140,3 +140,8 @@ begin
 end;
 /
 
+undefine 1
+undefine 2
+undefine 3
+undefine 4
+undefine 5

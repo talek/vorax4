@@ -30,3 +30,6 @@ select column_name word,
  where owner = '&1'
    and table_name = '&2'
  order by column_id;
+
+undefine 1
+undefine 2

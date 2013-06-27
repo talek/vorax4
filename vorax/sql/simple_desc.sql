@@ -13,3 +13,4 @@ prompt
 prompt [&1.] object description below:
 desc &1
 
+undefine 1

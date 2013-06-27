@@ -43,3 +43,5 @@ from
 ) t;
 
 
+undefine 1
+undefine 2

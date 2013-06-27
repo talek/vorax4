@@ -28,3 +28,6 @@ order by line;
 
 column vorax_line_$$ clear
 
+undefine 1
+undefine 2
+undefine 3

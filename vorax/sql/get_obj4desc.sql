@@ -23,3 +23,5 @@ select decode('&1', '', '', '&1..') || object_name word
    and object_name like replace(replace('&2', '_', '"_'), '%', '"%') || '%' escape '"'
 /
 
+undefine 1
+undefine 2

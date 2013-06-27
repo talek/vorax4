@@ -280,3 +280,6 @@ begin
 end;
 /
 prompt
+
+undefine 1
+undefine 2

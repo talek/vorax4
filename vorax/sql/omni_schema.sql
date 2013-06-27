@@ -58,3 +58,7 @@ begin
   end if;
 end;
 /
+
+undefine 1
+undefine 2
+undefine 3

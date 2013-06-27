@@ -24,3 +24,7 @@ select decode('&2', '', '', '&2..') || object_name word
    and owner = nvl('&2', user)
    and object_name like replace(replace('&3', '_', '"_'), '%', '"%') || '%' escape '"'
 /
+
+undefine 1
+undefine 2
+undefine 3

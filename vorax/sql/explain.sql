@@ -14,3 +14,5 @@ set timing off
 set verify off
 set autotrace traceonly explain
 @&1
+
+undefine 1

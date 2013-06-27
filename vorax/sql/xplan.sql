@@ -41,3 +41,7 @@ set termout on
 prompt
 print :plan
 column clob_len clear
+
+undefine 1
+undefine 2
+undefine clog_len

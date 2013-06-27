@@ -21,3 +21,5 @@ select db_link,
        '' menu
   from all_db_links
  where db_link like replace(replace('&1', '_', '"_'), '%', '"%') || '%' escape '"';
+
+undefine 1

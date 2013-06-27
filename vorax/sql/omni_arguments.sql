@@ -27,3 +27,6 @@ select argument_name || ' => '  word,
    and argument_name is not null
    and data_level = 0
 order by overload, position;
+
+undefine 1
+undefine 2

@@ -29,3 +29,4 @@ select distinct procedure_name word,
  where object_id = '&1'
    and procedure_name is not null;
 
+undefine 1

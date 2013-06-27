@@ -59,3 +59,6 @@ select *
   ) 
  where rownum <= &2
 order by 1;
+
+undefine 1
+undefine 2

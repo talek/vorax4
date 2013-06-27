@@ -134,7 +134,7 @@ function! vorax#output#SpitterStart() abort " {{{
   au VoraX CursorHold <buffer> call vorax#output#FetchAndSpit()
 endfunction " }}}
 
-function! vorax#output#PostSpit() abort
+function! vorax#output#PostSpit() abort "{{{
   call vorax#output#Open()
   if g:vorax_output_cursor_on_top
 		exe "normal! " . s:current_line . 'G'
@@ -142,7 +142,7 @@ function! vorax#output#PostSpit() abort
   if !g:vorax_output_window_sticky_cursor
     exe s:originating_window.'wincmd w'
   endif
-endfunction
+endfunction "}}}
 
 function! vorax#output#SpitterStop() abort " {{{
   call vorax#output#Open()
