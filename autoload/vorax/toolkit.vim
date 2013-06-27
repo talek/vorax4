@@ -72,13 +72,11 @@ function! vorax#toolkit#Explain(statement, bang) abort "{{{
 		call vorax#sqlplus#RunVoraxScriptBg('xplan.sql', 
 					\ s:sql_pack,
 					\ g:vorax_xplan_format)
-		call vorax#output#SpitterStart()
 	else
-		let output = vorax#sqlplus#RunVoraxScript('explain.sql', 
-					\ s:sql_pack,
-					\ (a:bang == '!' ? 'STATISTICS' : '') )
-		call vorax#output#SpitAll(output)
+		call vorax#sqlplus#RunVoraxScriptBg('explain.sql', 
+					\ s:sql_pack)
 	endif
+	call vorax#output#SpitterStart()
 endfunction "}}}
 
 function! vorax#toolkit#InitCommonBuffers() abort "{{{
