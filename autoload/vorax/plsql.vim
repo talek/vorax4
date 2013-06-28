@@ -62,7 +62,7 @@ function! s:ShowErrors(bufnr, winnr) abort "{{{
 	call setloclist(a:winnr, err_list, 'r')
 	exe a:winnr.'wincmd w'
 	exe 'lwindow ' . g:vorax_errwin_height
-	if g:vorax_errwin_goto_first
+	if g:vorax_errwin_goto_first && len(err_list) > 0
 		lr
 	endif
 endfunction "}}}
