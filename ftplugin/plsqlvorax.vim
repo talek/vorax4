@@ -5,11 +5,14 @@
 
 let b:crr_changedtick = 0
 
+command! -n=0 -range -buffer VORAXCompile :call vorax#plsql#CompileCurrentBuffer()
+
 call vorax#toolkit#InitCommonBuffers()
 
 " key mappings
 if g:vorax_map_keys
 	nnoremap <buffer> <silent> gd :call vorax#plsql#GotoDef()<CR>
+	nnoremap <buffer> <silent> <Leader>c :VORAXCompile<CR>
 endif
 
 

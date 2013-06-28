@@ -200,9 +200,14 @@ function! vorax#sqlplus#ExecImmediate(command, ...) abort "{{{
   try
     call vorax#ruby#SqlplusExec(a:command, hash)
     let output = ""
+    if has_key(hash, 'message')
+    	let message = hash['message']
+    else
+    	let message = 'Busy...'
+    endif
     while vorax#ruby#SqlplusBusy()
       let output .= vorax#ruby#SqlplusReadOutput()
-			echo 'Busy... ' . vorax#utils#Throbber()
+			echo message . ' ' . vorax#utils#Throbber()
       redraw
     endwhile
     echo 'Done.'
@@ -215,12 +220,15 @@ function! vorax#sqlplus#ExecImmediate(command, ...) abort "{{{
   endtry
 endfunction "}}}
 
-function! vorax#sqlplus#Query(command) abort "{{{
+function! vorax#sqlplus#Query(command, ...) abort "{{{
   call VORAXDebug("vorax#sqlplus#Query command=" . string(a:command))
   let prep = join(extend(['store set ' . s:properties['store_set'] . ' replace', 'set markup html on', 'set linesize 10000'],
               \ s:properties['sane_options']), "\n")
   let post = "@" . s:properties['store_set']
   let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
+  if exists('a:1')
+    let hash['message'] = a:1
+	endif
   let output = vorax#sqlplus#ExecImmediate(a:command, hash)
   return vorax#ruby#ParseResultset(output)
 endfunction "}}}

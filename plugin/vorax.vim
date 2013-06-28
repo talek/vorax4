@@ -97,6 +97,10 @@ call s:initVariable('g:vorax_omni_too_many_items_warn_delay', 500)
 " The format for xplan
 call s:initVariable('g:vorax_xplan_format', 'ALLSTATS LAST')
 
+" The size of the error window
+call s:initVariable('g:vorax_errwin_height', 5)
+call s:initVariable('g:vorax_errwin_goto_first', 1)
+
 " Settings related to folding
 call s:initVariable('g:vorax_folding_enable', 1)
 " The initial state can be:
