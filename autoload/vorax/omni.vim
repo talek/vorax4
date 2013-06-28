@@ -101,7 +101,7 @@ function! s:ArgumentItems(prefix) abort "{{{
   return result
 endfunction "}}}
 
-function! s:DbLinksItems(prefix) abort
+function! s:DbLinksItems(prefix) abort "{{{
   call VORAXDebug("omni s:DbLinksItems a:prefix=" . string(a:prefix))
   let output = vorax#sqlplus#RunVoraxScript('omni_dblinks.sql',
         \ toupper(a:prefix))
@@ -109,7 +109,7 @@ function! s:DbLinksItems(prefix) abort
   let data  = vorax#ruby#ParseResultset(output)
   let result = s:ResultsetToOmni(data, 0, s:context['text_before'], '')
   return result
-endfunction
+endfunction "}}}
 
 function! s:WordItems(prefix) abort "{{{
   call VORAXDebug("omni s:WordItems a:prefix=" . string(a:prefix))
