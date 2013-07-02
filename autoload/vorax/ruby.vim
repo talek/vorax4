@@ -47,15 +47,14 @@ function! vorax#ruby#InitLogging(file)
     Vorax::logger = Logger.new(VIM::evaluate("a:file"), "daily")
     Vorax::logger.level = Logger::DEBUG
     Vorax::logger.formatter = proc do |severity, datetime, progname, msg|
-      "#{datetime.strftime('%Y-%m-%d %H:%M:%S.%3N')} [#{progname}] - #{msg}\n"
+      "\n#{datetime.strftime('%Y-%m-%d %H:%M:%S.%3N')} [#{progname}] - #{msg}\n"
     end
-  	Vorax::logger.debug(Vorax::VERSION)
   end
 ERC
 endfunction
 
 function! vorax#ruby#Log(level, message)
-  ruby Vorax::logger.add(VIM::evaluate("a:level"), nil, 'vim') { VIM::evaluate("a:message").gsub(/\n/, '\n') }
+  ruby Vorax::logger.add(VIM::evaluate("a:level"), nil, 'vim') { VIM::evaluate("a:message") }
 endfunction
 
 " }}}

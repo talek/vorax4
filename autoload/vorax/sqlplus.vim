@@ -80,13 +80,14 @@ function! vorax#sqlplus#Connect(cstr) abort "{{{
 endfunction "}}}
 
 function! vorax#sqlplus#Initialize() abort "{{{
+  call VORAXDebug("vorax#sqlplus#Initialize()...")
   call vorax#ruby#SqlplusFork()
   sleep 300m " just let sqlplus to warm up
-  let pre = extend(
-              \ add(g:vorax_sqlplus_options,
-                     \ 'store set ' . s:properties['store_set'] . ' replace'),
-              \ s:properties['sane_options'])
-  call vorax#sqlplus#ExecImmediate(join(pre, "\n"))
+  let opts = add(g:vorax_sqlplus_options, 
+				\ 'store set ' . s:properties['store_set'] . ' replace')
+  let opts = extend(opts, s:properties['sane_options'])
+  call vorax#sqlplus#ExecImmediate(join(opts, "\n"))
+  call VORAXDebug("vorax#sqlplus#Initialize(): done!")
 endfunction "}}}
 
 function! vorax#sqlplus#UpdateSessionOwner() "{{{
@@ -162,8 +163,6 @@ endfunction "}}}
 " Sqlplus baby {{{
 
 function! vorax#sqlplus#Exec(command, ...) abort "{{{
-  call VORAXDebug("vorax#sqlplus#Exec: command=" . string(a:command) .
-        \ " extra_args=" . string(a:000))
   let pre = ""
   let post = ""
   let hash = {'pack_file' : s:properties['sql_pack'],
@@ -186,8 +185,6 @@ function! vorax#sqlplus#Exec(command, ...) abort "{{{
 endfunction "}}}
 
 function! vorax#sqlplus#ExecImmediate(command, ...) abort "{{{
-  call VORAXDebug("vorax#sqlplus#Exec: command=" . string(a:command) .
-        \ " extra_args=" . string(a:000))
   let pre = ""
   let post = ""
   let hash = {'pack_file' : s:properties['sql_pack']}
@@ -239,6 +236,7 @@ function! vorax#sqlplus#DefinedVariable(...) abort "{{{
         \ ['store set ' . s:properties['store_set'] . ' replace'],
         \ s:properties['sane_options'])
   call vorax#sqlplus#ExecImmediate(join(pre, "\n"))
+  call VORAXDebug('vorax#sqlplus#DefinedVariable: sp_options='.string(readfile(s:properties['store_set'], 'b')))
   let post = vorax#sqlplus#GatherStoreSetOption('pause', 'define', 'termout')
   call vorax#ruby#SqlplusExec("define", {'post' : post})
   let output = ""

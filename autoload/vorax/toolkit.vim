@@ -76,7 +76,6 @@ function! vorax#toolkit#Explain(statement, bang) abort "{{{
 		call vorax#sqlplus#RunVoraxScriptBg('explain.sql', 
 					\ s:sql_pack)
 	endif
-	call vorax#output#SpitterStart()
 endfunction "}}}
 
 function! vorax#toolkit#InitCommonBuffers() abort "{{{

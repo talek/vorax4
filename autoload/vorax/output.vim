@@ -65,7 +65,9 @@ function! vorax#output#Spit(text) abort " {{{
   call vorax#output#Open()
   normal! G
   let lines = split(a:text, '\n', 1)
-  call VORAXDebug("vorax#output#Spit: " . string(lines))
+  if len(lines) > 1 && lines[0] != ''
+		call VORAXDebug("vorax#output#Spit: " . string(lines))
+  endif
   let last_line = line('$')
   if s:first_chunk && 
         \ len(lines) > 1 && 
@@ -148,6 +150,8 @@ function! vorax#output#SpitterStop() abort " {{{
   call vorax#output#Open()
   au! VoraX CursorHold <buffer>
   call vorax#output#PostSpit()
+  let prop = vorax#sqlplus#Properties()
+  call VORAXDebug('vorax#output#SpitterStop(): sp_options='.string(readfile(prop['store_set'], 'b')))
   call vorax#sqlplus#UpdateSessionOwner()
   if exists("s:save_ut")
 		let &ut = s:save_ut
