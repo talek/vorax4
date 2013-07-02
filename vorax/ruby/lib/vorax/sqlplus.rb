@@ -84,7 +84,7 @@ module Vorax
     #                   not provided then the command is sent directly
     #                   to the input IO of the sqlplus process.
     def exec(command, params = {})
-      Vorax.debug("exec: command=#{command.inspect} params=#{params.inspect}")
+      Vorax.debug("exec: command=[\n#{command}\n]\nparams=#{params.inspect}")
       raise AnotherExecRunning if busy?
       opts = {
         :prep => nil,
@@ -114,6 +114,7 @@ module Vorax
     #
     # @param text [String] the text to be sent to sqlplus
     def send_text(text)
+      Vorax.debug("sent to sqlplus: #{text}")
       @process.io.stdin.print(text)
     end
 
@@ -236,10 +237,10 @@ module Vorax
     end
 
     def capture
-      @process.io.stdin.puts("#pro #{@start_marker}")
+      send_text("#pro #{@start_marker}\n")
       yield
-      @process.io.stdin.puts("#pro #{@end_marker}")
-      @process.io.stdin.puts(".")
+      send_text("#{@end_marker}\n")
+      send_text("#pro #{@end_marker}\n")
     end
 
     def mark_cancel
@@ -264,6 +265,7 @@ module Vorax
           f.puts opts[:post]
         end
       end
+      Vorax.debug("pack_file #{pack_file}:\n#{File.open(pack_file, 'rb') { |f| f.read }}")
       pack_file
     end
 
