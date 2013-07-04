@@ -151,7 +151,9 @@ function! vorax#output#SpitterStop() abort " {{{
   au! VoraX CursorHold <buffer>
   call vorax#output#PostSpit()
   let prop = vorax#sqlplus#Properties()
-  call VORAXDebug('vorax#output#SpitterStop(): sp_options='.string(readfile(prop['store_set'], 'b')))
+  if filereadable(prop['store_set'])
+		call VORAXDebug('vorax#output#SpitterStop(): sp_options='.string(readfile(prop['store_set'], 'b')))
+	endif
   call vorax#sqlplus#UpdateSessionOwner()
   if exists("s:save_ut")
 		let &ut = s:save_ut
