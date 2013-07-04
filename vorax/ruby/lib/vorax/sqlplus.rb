@@ -40,7 +40,7 @@ module Vorax
 			# may happen. This is also a workaround to mark the end of
 			# output when the "echo" setting of sqlplus is "on". See the
 			# implementation of pack().
-      send_text("set blockterm \"#@end_marker\"\n")
+      send_text("\n#set blockterm \"#@end_marker\"\n")
     end
 
     # Set the default convertor for the output returned by sqlplus.
