@@ -830,7 +830,7 @@ function! s:ShouldCompleteArgument(text) abort "{{{
 endfunction "}}}
 
 function! s:DotMatch(text) abort "{{{
-  return match(a:text, '\m\([.]\)\@<=\w*$')
+  return match(a:text, '\m\(\w[.]\)\@<=\w*$')
 endfunction "}}}
 
 function! s:DbLinkMatch(text) abort "{{{
