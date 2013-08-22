@@ -72,6 +72,7 @@ function! vorax#cmanager#AddProfile(...) "{{{
 		endif
 		let category = input('Assign to catgory: ', default_category)
 		let parts = vorax#ruby#ParseConnectionString(profile)
+		echom string(parts)
 		if !vorax#utils#IsEmpty(parts['password'])
 			if !s:PmUnlock()
 				call vorax#utils#SpitWarn("\nSorry! Invalid password")
@@ -80,8 +81,13 @@ function! vorax#cmanager#AddProfile(...) "{{{
 		endif
 	  if s:IsWalletConnection(parts)
 	  	let profile_id = '/@' . parts['db']
+	  elseif s:IsOsConnection(parts)
+	  	let profile_id = '/'
 	  else
 			let profile_id = parts['user'] . '@' . parts['db']
+	  endif
+	  if parts['role'] != ''
+	  	let profile_id .= ' ' . parts['role']
 	  endif
 	  call vorax#ruby#PmAdd(profile_id,
 					\ parts['password'],
@@ -311,7 +317,19 @@ function! s:ProfileMenu() "{{{
 	return s:conn_menu
 endfunction "}}}
 
-function! s:IsWalletConnection(parts)
+function! s:IsOsConnection(parts) "{{{
+	let parts = a:parts
+	if parts['user'] == '' &&
+				\ parts['password'] == '' &&
+				\ parts['db'] == '' &&
+				\ parts['role'] != ''
+		return 1
+	else
+		return 0
+	endif
+endfunction "}}}
+
+function! s:IsWalletConnection(parts) "{{{
 	let parts = a:parts
 	if parts['prompt_for'] == '' &&
 				\ parts['user'] == '' &&
@@ -321,4 +339,4 @@ function! s:IsWalletConnection(parts)
 	else
 		return 0
 	endif
-endfunction
+endfunction "}}}
