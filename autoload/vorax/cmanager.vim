@@ -78,7 +78,11 @@ function! vorax#cmanager#AddProfile(...) "{{{
 				return
 			endif
 		endif
-	  let profile_id = parts['user'] . '@' . parts['db']
+	  if s:IsWalletConnection(parts)
+	  	let profile_id = '/@' . parts['db']
+	  else
+			let profile_id = parts['user'] . '@' . parts['db']
+	  endif
 	  call vorax#ruby#PmAdd(profile_id,
 					\ parts['password'],
 					\ category,
@@ -307,3 +311,14 @@ function! s:ProfileMenu() "{{{
 	return s:conn_menu
 endfunction "}}}
 
+function! s:IsWalletConnection(parts)
+	let parts = a:parts
+	if parts['prompt_for'] == '' &&
+				\ parts['user'] == '' &&
+				\ parts['password'] == '' &&
+				\ parts['db'] != ''
+		return 1
+	else
+		return 0
+	endif
+endfunction
