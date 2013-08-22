@@ -406,11 +406,11 @@ function! vorax#ruby#SqlplusFork(...) abort"{{{
 ERC
 endfunction"}}}
 
-function! vorax#ruby#SqlplusIsInitialized() abort"{{{
+function! vorax#ruby#SqlplusIsInitialized() abort "{{{
   ruby VIM::command("return #{Vorax::sqlplus_initialized? ? 1 : 0}")
-endfunction
+endfunction "}}}
 
-function! vorax#ruby#SqlplusIsAlive() abort
+function! vorax#ruby#SqlplusIsAlive() abort "{{{
   if vorax#ruby#SqlplusIsInitialized()
     ruby VIM::command("return #{Vorax::sqlplus_alive? ? 1 : 0}")
   else
@@ -575,6 +575,137 @@ function! s:ShouldKill() abort"{{{
   endif
   return 1
 endfunction"}}}
+
+" }}}
+
+" Connection Profiles Management {{{
+
+function! vorax#ruby#PmInit(config_dir)
+	ruby <<ERC
+	Vorax.extra['pm'] = Vorax::ProfilesManager.new(VIM::evaluate('a:config_dir'))
+ERC
+endfunction
+
+function! vorax#ruby#PmHasKeys(config_dir)
+	ruby <<ERC
+	if Vorax::ProfilesManager.initialized?(VIM::evaluate('a:config_dir'))
+		VIM::command("return 1")
+	else
+		VIM::command("return 0")
+	end
+ERC
+endfunction
+
+function! vorax#ruby#PmSecure(config_dir, master_pwd)
+	ruby <<ERC
+	Vorax::ProfilesManager.create(VIM::evaluate('a:config_dir'), VIM::evaluate('a:master_pwd'))
+ERC
+endfunction
+
+function! vorax#ruby#PmChangePwd(config_dir, old_pwd, new_pwd)
+	ruby <<ERC
+	Vorax::ProfilesManager.change_master_pwd(
+		VIM::evaluate('a:config_dir'), 
+		VIM::evaluate('a:old_pwd'),
+		VIM::evaluate('a:new_pwd')
+	)
+ERC
+endfunction
+
+function! vorax#ruby#PmCategories()
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	VIM::command("return #{pm.categories.inspect}")
+ERC
+endfunction
+
+function! vorax#ruby#PmProfiles(category)
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	VIM::command("return #{pm.profiles(VIM::evaluate('a:category')).inspect}")
+ERC
+endfunction
+
+function! vorax#ruby#PmSetMasterPassword(pwd)
+	ruby <<ERC
+	begin
+	  pm = Vorax.extra['pm']
+	  pm.master_password = VIM::evaluate('a:pwd')
+	rescue OpenSSL::PKey::RSAError => e
+    # invalide password... ignore it
+  end
+ERC
+endfunction
+
+function! vorax#ruby#PmSave()
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	pm.save
+ERC
+endfunction
+
+function! vorax#ruby#PmGetPassword(profile)
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	pwd = pm.password(VIM::evaluate('a:profile'))
+	VIM::command("return #{pwd.inspect}")
+ERC
+endfunction
+
+function! vorax#ruby#IsPmUnlocked()
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	if pm.unlocked
+		VIM::command('return 1')
+	else
+		VIM::command('return 0')
+	end
+ERC
+endfunction
+
+function! vorax#ruby#IsPmProfileWithPassword(profile)
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	if pm.attribute(VIM::evaluate('a:profile'), 'password')
+		VIM::command('return 1')
+	else
+		VIM::command('return 0')
+	end
+ERC
+endfunction
+
+function! vorax#ruby#PmAdd(profile, password, category, important)
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	pm.add(VIM::evaluate('a:profile'), 
+	  :password => VIM::evaluate('a:password'),
+	  :category => VIM::evaluate('a:category'),
+	  :important => VIM::evaluate('a:important'))
+ERC
+endfunction
+
+function! vorax#ruby#PmRemove(profile)
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	pm.remove(VIM::evaluate('a:profile'))
+ERC
+endfunction
+
+function! vorax#ruby#PmEdit(profile, property_name, property_value)
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	pm.edit(VIM::evaluate('a:profile'),
+		VIM::evaluate('a:property_name'),
+		VIM::evaluate('a:property_value'))
+ERC
+endfunction
+
+function! vorax#ruby#PmMasterPwd()
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	VIM::command("return #{pm.master_password.inspect}")
+ERC
+endfunction
 
 " }}}
 

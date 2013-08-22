@@ -108,6 +108,12 @@ call s:initVariable('g:vorax_folding_enable', 1)
 "   all_open = all folds are initially openned
 call s:initVariable('g:vorax_folding_initial_state', 'all_open')
 
+" Settings related to connection profiles
+" where to open the cmanager: right, left
+call s:initVariable('g:vorax_cmanager_side', 'right')
+" the size of the cmanager window
+call s:initVariable('g:vorax_cmanager_size', 30)
+
 " Whenever or not to display a warning when about to edit a db object.
 " two cases: 
 "   1. VORAXEdit an object and a file matching the object name and type
@@ -148,6 +154,7 @@ command! -n=1 VORAXExec :call vorax#sqlplus#Exec(<q-args>)
 command! -n=0 VORAXOutputToggle :call vorax#output#Toggle()
 command! -n=+ -bang -complete=customlist,vorax#explorer#OpenDbComplete VORAXEdit :call vorax#explorer#OpenDbObject('<bang>', <f-args>)
 command! -n=1 -bang -complete=customlist,vorax#toolkit#DescComplete VORAXDesc :call vorax#toolkit#Desc(<q-args>, '<bang>')
+command! -n=0 VORAXConnectionsToggle :call vorax#cmanager#Toggle()
 
 " }}}
 
@@ -156,6 +163,7 @@ command! -n=1 -bang -complete=customlist,vorax#toolkit#DescComplete VORAXDesc :c
 if g:vorax_map_keys
   " global mappings
   nnoremap <silent> <Leader>o :VORAXOutputToggle<CR>
+	nnoremap <silent> <Leader>pr :VORAXConnectionsToggle<CR>
 endif
 
 "}}}

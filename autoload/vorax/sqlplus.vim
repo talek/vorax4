@@ -50,7 +50,7 @@ function! vorax#sqlplus#Connect(cstr) abort "{{{
               \ s:properties['sane_options'])
   let post = vorax#sqlplus#GatherStoreSetOption('echo', 'sqlprompt', 
         \ 'time', 'pause', 'define', 'termout')
-  let s:properties['connstr'] = s:MergeCstr(parts)
+  let s:properties['connstr'] = vorax#sqlplus#MergeCstr(parts)
   call vorax#ruby#SqlplusExec("connect " . s:properties['connstr'],
         \ {'prep': join(prep, "\n"), 'post' : post})
   let output = ""
@@ -145,13 +145,13 @@ function! s:PrepareCstr(cstr) abort "{{{
       let cstr = input("Username: ")
     elseif parts.prompt_for == 'password'
       let parts['password'] = inputsecret("Password: ")
-      let cstr = s:MergeCstr(parts)
+      let cstr = vorax#sqlplus#MergeCstr(parts)
     endif
   endwhile
   return parts
 endfunction "}}}
 
-function! s:MergeCstr(parts) "{{{
+function! vorax#sqlplus#MergeCstr(parts) "{{{
     return a:parts["user"] . 
           \ "/" . a:parts["password"] .
           \ (a:parts["db"] == "" ? "" : "@" . a:parts["db"]) . 

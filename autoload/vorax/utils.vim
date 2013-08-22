@@ -226,6 +226,68 @@ function! vorax#utils#IsEmpty(str) abort "{{{
 	endif
 endfunction "}}}
 
+function! vorax#utils#CloseWin(name)"{{{
+  let bufNo = bufnr(a:name)
+  if bufNo != -1 
+    let winnr = bufwinnr(bufNo)
+    if winnr != -1
+      exec winnr . 'wincmd w'
+      try
+				close!
+      catch /^Vim\%((\a\+)\)\=:E444/
+				echo 'Last window baby!'
+			endtry
+      wincmd p
+    endif
+  endif
+endfunction"}}}
+
+function! vorax#utils#MergeOptions(target, source) "{{{
+	for item in items(a:source)
+		if has_key(a:target, item[0])
+			let a:target[item[0]] = item[1]
+		endif
+	endfor
+endfunction "}}}
+
+function! vorax#utils#GetState(...) "{{{
+	let opts = {}
+	for item in a:000
+    let opts[item] = eval("&" . item)
+	endfor
+	return opts
+endfunction "}}}
+
+function! vorax#utils#SetState(options) "{{{
+	for item in items(a:options)
+		exe "let &" .item[0] . "=" . item[1]
+	endfor
+endfunction "}}}
+
+function! vorax#utils#LiteralRegexp(text) "{{{
+  return escape(a:text, '^$.*\[]~')
+endfunction "}}}
+
+function! vorax#utils#PromptPassword(msg) "{{{
+	let pwd = inputsecret(a:msg)
+	let r_pwd = inputsecret('Retype ' . a:msg)
+	if pwd != r_pwd
+		call vorax#utils#SpitWarn("Passwords don't match!")
+		return ''
+	endif
+	return pwd
+endfunction "}}}
+
+function! vorax#utils#StringFiller(char, width) "{{{
+	let spacer = ""
+	let width = a:width
+	while width > 0
+		let spacer = spacer . a:char
+		let width = width - 1
+	endwhile
+	return spacer
+endfunction "}}}
+
 function! s:ParseOffset(line, column) abort"{{{
   if g:vorax_parse_min_lines > 0
     let offset = a:line - g:vorax_parse_min_lines
