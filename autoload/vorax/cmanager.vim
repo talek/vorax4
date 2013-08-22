@@ -72,7 +72,6 @@ function! vorax#cmanager#AddProfile(...) "{{{
 		endif
 		let category = input('Assign to catgory: ', default_category)
 		let parts = vorax#ruby#ParseConnectionString(profile)
-		echom string(parts)
 		if !vorax#utils#IsEmpty(parts['password'])
 			if !s:PmUnlock()
 				call vorax#utils#SpitWarn("\nSorry! Invalid password")
