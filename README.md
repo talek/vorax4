@@ -15,6 +15,8 @@ page level (by page we mean what is configured by "set pagesize"
 SqlPlus command).
 * A better/faster code completion.
 * Code folding for PLSQL packages.
+* Connection profiles management
+* Support for PL/SQL editing/compilation.
 
 ## Demo
 
@@ -33,4 +35,6 @@ gem install vorax --no-rdoc --no-ri
 * ensure you have a valid Oracle client with sqlplus available
 * install Vorax vim plugin: manually, pathogen, vundle... it's up
 to you.
+
+For details don't hesitate to have a look at the project wiki.
 
