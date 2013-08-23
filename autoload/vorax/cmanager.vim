@@ -63,6 +63,10 @@ function! vorax#cmanager#AddProfile(...) "{{{
 	if vorax#utils#IsEmpty(profile)
 		return
 	else
+		if s:IsDuplicateProfile(profile)
+			call vorax#utils#SpitWarn("\nSorry! A profile with the same name already exists!")
+			return
+		endif
 		" ask for category
 		if !exists('default_category')
 			let default_category = split(s:tree.GetPathUnderCursor(), s:tree.path_separator)[-1]
@@ -338,4 +342,13 @@ function! s:IsWalletConnection(parts) "{{{
 	else
 		return 0
 	endif
+endfunction "}}}
+
+function! s:IsDuplicateProfile(profile) "{{{
+	for item in vorax#ruby#PmAllProfiles()
+		if item == a:profile
+			return 1
+		endif
+	endfor
+	return 0
 endfunction "}}}

@@ -626,6 +626,13 @@ function! vorax#ruby#PmProfiles(category)
 ERC
 endfunction
 
+function! vorax#ruby#PmAllProfiles()
+	ruby <<ERC
+	pm = Vorax.extra['pm']
+	VIM::command("return #{pm.profiles(nil).inspect}")
+ERC
+endfunction
+
 function! vorax#ruby#PmSetMasterPassword(pwd)
 	ruby <<ERC
 	begin
