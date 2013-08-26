@@ -74,7 +74,7 @@ function! vorax#cmanager#AddProfile(...) "{{{
 				let default_category = ''
 			endif
 		endif
-		let category = input('Assign to catgory: ', default_category)
+		let category = input('Assign to category: ', default_category)
 		let parts = vorax#ruby#ParseConnectionString(profile)
 		if !vorax#utils#IsEmpty(parts['password'])
 			if !s:PmUnlock()
