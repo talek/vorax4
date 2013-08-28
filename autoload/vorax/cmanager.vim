@@ -190,6 +190,8 @@ endfunction "}}}
 function! s:tree.ConfigureOptions() "{{{
 	setlocal nonu
 	setlocal cursorline
+  setlocal nolist
+  setlocal nobuflisted
 endfunction "}}}
 
 function! s:tree.ConfigureKeys() "{{{
