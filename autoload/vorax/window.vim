@@ -74,6 +74,20 @@ function! s:window.Toggle() "{{{
   endif
 endfunction "}}}
 
+function! s:window.IsOpen() "{{{
+  let bufNo = bufnr(self.name)
+  if bufNo == -1 
+    return 0
+  else
+    let winnr = bufwinnr(bufNo)
+    if winnr == -1
+      return 0
+    else
+      return 1
+    endif
+  endif
+endfunction "}}}
+
 function! s:window.Close() "{{{
   let bufNo = bufnr(self.name)
   if bufNo != -1 
