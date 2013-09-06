@@ -192,6 +192,11 @@ function! s:tree.ConfigureOptions() "{{{
 	setlocal cursorline
   setlocal nolist
   setlocal nobuflisted
+	setlocal hidden
+	setlocal noswapfile
+  setlocal buftype=nofile
+	setlocal nowrap
+	setlocal nospell
 endfunction "}}}
 
 function! s:tree.ConfigureKeys() "{{{

@@ -58,6 +58,9 @@ function! s:tree.Toggle() "{{{
   else
 		" toggle just the window
 		call self._window.Toggle()
+		if self._window.IsOpen()
+			call self.ConfigureOptions()
+		end
 	endif
 endfunction "}}}
 
