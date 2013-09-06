@@ -337,11 +337,11 @@ function! s:tree._onClick() "{{{
 	let ypos = line('.')
 	let path = self._getPathName(xpos, ypos)
 	if self.IsLeaf(path)
+		call setpos('.', save_pos)
 		call self.OpenNode(path)
 	else
 		call self._treeNodeAction(xpos, ypos)
 	end
-	call setpos('.', save_pos)
 endfunction "}}}
 
 function! s:OpenNode(instance)"{{{
