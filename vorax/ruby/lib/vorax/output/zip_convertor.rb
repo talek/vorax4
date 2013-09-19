@@ -84,7 +84,9 @@ module Vorax
             layout.length.times do |i|
               @io << "\n" if record[i][:is_column] && i == 0 && @first_spit == false
               @first_spit = false
-              @io << HTMLConvertor.ml_segment(record[i][:text], j).send(layout[i][:align], layout[i][:width])
+              col_value = HTMLConvertor.ml_segment(record[i][:text], j).send(layout[i][:align], layout[i][:width])
+              col_value.rstrip! if i == layout.length - 1
+              @io << col_value
               @io << (i == layout.size - 1 ? "\n" : " ")
               separator(layout) if i == layout.size - 1 && record[i][:is_column]
             end
