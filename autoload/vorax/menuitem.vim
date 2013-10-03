@@ -28,45 +28,25 @@ function! vorax#menuitem#Create(options)
 
     if has_key(a:options, 'parent')
         call add(a:options['parent'].children, newMenuItem)
-    else
-        call add(s:MenuItem.All(), newMenuItem)
     endif
 
     return newMenuItem
 endfunction
 
-
-function! s:MenuItem.All()
-    if !exists("s:menuItems")
-        let s:menuItems = []
-    endif
-    return s:menuItems
-endfunction
-
-function! s:MenuItem.AllEnabled()
-    let toReturn = []
-    for i in s:MenuItem.All()
-        if i.enabled()
-            call add(toReturn, i)
-        endif
-    endfor
-    return toReturn
-endfunction
-
-function! s:MenuItem.CreateSeparator(options)
+function! vorax#menuitem#CreateSeparator(options)
     let standard_options = { 'text': '--------------------',
                 \ 'shortcut': -1,
                 \ 'callback': -1 }
     let options = extend(a:options, standard_options, "force")
 
-    return s:MenuItem.Create(options)
+    return vorax#menuitem#Create(options)
 endfunction
 
-function! s:MenuItem.CreateSubmenu(options)
+function! vorax#menuitem#CreateSubmenu(options)
     let standard_options = { 'callback': -1 }
     let options = extend(a:options, standard_options, "force")
 
-    return s:MenuItem.Create(options)
+    return vorax#menuitem#Create(options)
 endfunction
 
 function! s:MenuItem.enabled()

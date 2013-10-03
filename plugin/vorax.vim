@@ -120,10 +120,12 @@ call s:initVariable('g:vorax_cmanager_size', 30)
 "   already exists. An warning will inform that just the file was open
 "   and not the actual source from the database.
 "
-"   2. VORAXEdit! an abject and a file matching the object name and type
+"   2. VORAXEdit! an object and a file matching the object name and type
 "   already exists. An warning will inform that the local file content
 "   was replaced with the actual source from the database.
 call s:initVariable('g:vorax_edit_warning', 1)
+call s:initVariable('g:vorax_dbexplorer_exclude', '')
+call s:initVariable('g:vorax_dbexplorer_force_edit', 0)
 
 " the hash key is the object_type from DBMS_METADATA
 call s:initVariable('g:vorax_plsql_associations',
@@ -155,6 +157,7 @@ command! -n=0 VORAXOutputToggle :call vorax#output#Toggle()
 command! -n=+ -bang -complete=customlist,vorax#explorer#OpenDbComplete VORAXEdit :call vorax#explorer#OpenDbObject('<bang>', <f-args>)
 command! -n=1 -bang -complete=customlist,vorax#toolkit#DescComplete VORAXDesc :call vorax#toolkit#Desc(<q-args>, '<bang>')
 command! -n=0 VORAXConnectionsToggle :call vorax#cmanager#Toggle()
+command! -n=0 VORAXExplorerToggle :call vorax#explorer#Toggle()
 
 " }}}
 
@@ -164,6 +167,7 @@ if g:vorax_map_keys
   " global mappings
   nnoremap <silent> <Leader>o :VORAXOutputToggle<CR>
 	nnoremap <silent> <Leader>pr :VORAXConnectionsToggle<CR>
+	nnoremap <silent> <Leader>ve :VORAXExplorerToggle<CR>
 endif
 
 "}}}

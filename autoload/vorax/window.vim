@@ -1,4 +1,4 @@
-" File:        voraxlib/tree.vim
+" File:        voraxlib/window.vim
 " Author:      Alexandru Tică
 " Description: provides logic for handling Vim windows.
 " License:     see LICENSE.txt
@@ -117,4 +117,13 @@ endfunction "}}}
 
 function! s:window.Unlock() "{{{
 	setlocal modifiable
+endfunction "}}}
+
+function! s:window.Focus() "{{{
+  if self.IsOpen()
+		let wnr = bufwinnr(self.name)
+    exe wnr . 'wincmd w'
+  else
+  	call self.Open()
+  endif
 endfunction "}}}

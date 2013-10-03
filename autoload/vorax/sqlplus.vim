@@ -71,6 +71,8 @@ function! vorax#sqlplus#Connect(cstr) abort "{{{
   echom ""
   " reset the omni cache
   call vorax#omni#ResetCache()
+  " refresh dbexplorer
+	call vorax#explorer#RefreshRoot()
   redraw
 	" run AfterConnect hook
 	if exists('*VORAXAfterConnect')
@@ -171,6 +173,10 @@ function! vorax#sqlplus#Exec(command, ...) abort "{{{
     let hash = a:1
   endif
   try
+    if a:command =~ '\m^\s*$'
+			" just an empty string... fuck it!
+    	return
+		end
     let stmt = vorax#ruby#PrepareExec(a:command)
     call vorax#ruby#SqlplusExec(stmt, hash)
     if vorax#ruby#SqlplusIsInitialized() && vorax#ruby#SqlplusIsAlive()

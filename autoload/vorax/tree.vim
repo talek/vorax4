@@ -68,9 +68,9 @@ function! s:tree.Close() "{{{
 	call self._window.Close()
 endfunction "}}}
 
-function! s:tree.ResetState()
+function! s:tree.ResetState() "{{{
 	let self._state = []
-endfunction
+endfunction "}}}
 
 function! s:tree.RevealNode(path) "{{{
   " split the provided path
@@ -115,11 +115,22 @@ function! s:tree.RevealNode(path) "{{{
   exe 'normal!' . (ypos - 1) . 'G'
 endfunction!"}}}
 
-function! s:tree.RebuildTree() "{{{
+function! s:tree.GetWindow() "{{{
+	return self._window
+endfunction "}}}
+
+function! s:tree.RebuildTree(...) "{{{
+	if a:0 > 0 && a:1 == 1
+		call self.ResetState()
+	endif
 	call self._buildTree(getline(1))
 endfunction "}}}
 
-function! s:tree.SetPath(path) "{{{
+function! s:tree.SetPath(path, ...) "{{{
+	if a:0 > 0 && a:1 == 1
+		call self.ResetState()
+	endif
+	let self.root = a:path
 	call self._buildTree(a:path)
 endfunction "}}}
 
@@ -157,6 +168,7 @@ endfunction "}}}
 " Private methods
 function! s:tree._buildTree(initialPath) "{{{
 	let path = a:initialPath
+	call self._window.Focus()
 	call self._window.Unlock()
 	
 	" clean up
@@ -183,7 +195,7 @@ function! s:tree._restoreState() "{{{
   endfor
 endfunction "}}}
 
-function! s:tree._removeOrphans()
+function! s:tree._removeOrphans() "{{{
   let state = copy(self._state)
   " remove all invalid nodes from the state
   for idx in range(len(state))
@@ -191,7 +203,7 @@ function! s:tree._removeOrphans()
     	call remove(self._state, idx)
     endif
 	endfor
-endfunction
+endfunction "}}}
 
 function! s:tree._treeExpand(xpos, ypos) "{{{
 	let path = self._getPathName(a:xpos, a:ypos)

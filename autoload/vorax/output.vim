@@ -137,6 +137,9 @@ function! vorax#output#SpitterStart() abort " {{{
 endfunction " }}}
 
 function! vorax#output#PostSpit() abort "{{{
+  call vorax#sqlplus#UpdateSessionOwner()
+	" update dbexplorer
+	call vorax#explorer#RefreshRoot()
   call vorax#output#Open()
   if g:vorax_output_cursor_on_top
 		exe "normal! " . s:current_line . 'G'
@@ -154,7 +157,6 @@ function! vorax#output#SpitterStop() abort " {{{
   if filereadable(prop['store_set'])
 		call VORAXDebug('vorax#output#SpitterStop(): sp_options='.string(readfile(prop['store_set'], 'b')))
 	endif
-  call vorax#sqlplus#UpdateSessionOwner()
   if exists("s:save_ut")
 		let &ut = s:save_ut
 	endif

@@ -197,6 +197,7 @@ function! s:tree.ConfigureOptions() "{{{
   setlocal buftype=nofile
 	setlocal nowrap
 	setlocal nospell
+  let &ft="connvorax"
 endfunction "}}}
 
 function! s:tree.ConfigureKeys() "{{{

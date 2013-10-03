@@ -288,6 +288,19 @@ function! vorax#utils#StringFiller(char, width) "{{{
 	return spacer
 endfunction "}}}
 
+function! vorax#utils#FocusCandidateWindow() "{{{
+  let winlist = []
+  " iterate through all windows and get info from them
+  windo let winlist += [[winnr(), &buftype]]
+  for w in winlist
+    if w[1] == ""
+      " great! we just found a suitable window... focus it please
+      exe w[0] . 'wincmd w'
+      return
+    endif
+  endfor
+endfunction "}}}
+
 function! s:ParseOffset(line, column) abort"{{{
   if g:vorax_parse_min_lines > 0
     let offset = a:line - g:vorax_parse_min_lines

@@ -23,6 +23,17 @@ select decode('&2', '', '', '&2..') || object_name word
  where object_type = '&1'
    and owner = nvl('&2', user)
    and object_name like replace(replace('&3', '_', '"_'), '%', '"%') || '%' escape '"'
+union 
+select decode('&2', '', '', '&2..') || db_link word
+  from all_db_links
+ where owner = nvl('&2', user)
+   and '&1' = 'DB_LINK'
+   and db_link like replace(replace('&3', '_', '"_'), '%', '"%') || '%' escape '"'
+union
+select username
+  from all_users
+ where '&1' = 'USER'
+   and username like replace(replace('&3', '_', '"_'), '%', '"%') || '%' escape '"'
 /
 
 undefine 1
