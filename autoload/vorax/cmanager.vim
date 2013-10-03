@@ -6,7 +6,7 @@
 " Define the connections tree
 let s:tree = vorax#tree#New(
 			\ {'root' : 'CONNECT PROFILES',
-			\  'name' : '__VORAX_CONNECTIONS__',
+			\  'name' : '/__VORAX_CONNECTIONS__',
 			\  'style': 'vertical', 
 			\  'side': g:vorax_cmanager_side, 
 			\  'size': g:vorax_cmanager_size, 

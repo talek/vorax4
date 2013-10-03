@@ -6,7 +6,7 @@
 " Define the dbexplorer tree
 let s:tree = vorax#tree#New(
 			\ {'root' : '@',
-			\  'name' : '__VORAX_DBEXPLORER__',
+			\  'name' : '/__VORAX_DBEXPLORER__',
 			\  'style': 'vertical', 
 			\  'side': 'left', 
 			\  'size': 30, 
