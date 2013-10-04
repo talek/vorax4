@@ -3,7 +3,7 @@
 " Description: Implements the output window of Vorax.
 " License:     see LICENSE.txt
 
-let s:name = "__VORAX_OUTPUT__"
+let s:name = "/__VORAX_OUTPUT__"
 let s:read_chunk_size = 30000
 let s:first_chunk = 0
 let s:vorax_executing = 0
