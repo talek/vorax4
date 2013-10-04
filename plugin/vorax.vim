@@ -126,6 +126,10 @@ call s:initVariable('g:vorax_cmanager_size', 30)
 call s:initVariable('g:vorax_edit_warning', 1)
 call s:initVariable('g:vorax_dbexplorer_exclude', '')
 call s:initVariable('g:vorax_dbexplorer_force_edit', 0)
+" where to open the db explorer: right, left
+call s:initVariable('g:vorax_dbexplorer_side', 'left')
+" the size of the db explorer window
+call s:initVariable('g:vorax_dbexplorer_size', 30)
 
 " the hash key is the object_type from DBMS_METADATA
 call s:initVariable('g:vorax_plsql_associations',

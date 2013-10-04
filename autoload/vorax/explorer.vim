@@ -8,8 +8,8 @@ let s:tree = vorax#tree#New(
 			\ {'root' : '@',
 			\  'name' : '/__VORAX_DBEXPLORER__',
 			\  'style': 'vertical', 
-			\  'side': 'left', 
-			\  'size': 30, 
+			\  'side': g:vorax_dbexplorer_side, 
+			\  'size': g:vorax_dbexplorer_size, 
 			\  'min_size': 10,
 			\  'span': 1})
 
