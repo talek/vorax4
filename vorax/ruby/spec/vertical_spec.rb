@@ -25,7 +25,7 @@ describe 'vertical layout' do
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
  : 1
  : Bookkeeping
@@ -43,7 +43,8 @@ SQL>
  :  
 ------------------------------------------------------------
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     @result.should eq(expected)
   end# }}}
@@ -53,7 +54,7 @@ OUTPUT
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
 ID            : 1
 NAME          : Tică Șerban
@@ -61,7 +62,8 @@ SALARY        : 570
 DEPARTMENT_ID : 1
 ------------------------------------------------------------
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     #puts @result
     @result.should eq(expected)
@@ -72,14 +74,15 @@ OUTPUT
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
 ID          : 2
 NAME        : Marketing
 DESCRIPTION :  
 ------------------------------------------------------------
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     @result.should eq(expected)
   end# }}}
@@ -89,7 +92,7 @@ OUTPUT
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
 ID          : 1
 NAME        : Bookkeeping
@@ -99,7 +102,8 @@ DESCRIPTION : This department is responsible for:
               - other boring tasks
 ------------------------------------------------------------
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     @result.should eq(expected)
   end# }}}
@@ -109,7 +113,7 @@ OUTPUT
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
 ID          : 1
 NAME        : Bookkeeping
@@ -123,7 +127,8 @@ NAME        : Marketing
 DESCRIPTION :  
 ------------------------------------------------------------
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     @result.should eq(expected)
   end# }}}
@@ -133,7 +138,7 @@ it 'should work with accept prompts' do# {{{
     pack_file = Tempfile.new(['vorax', '.sql'])
     @sp.exec("accept var prompt \"Enter var: \"\nprompt &var", :prep => @prep, :pack_file => pack_file.path)
     Timeout::timeout(10) {
-      @result << @sp.read_output(32767) while @result !~ /Enter var:\z/
+      @result << @sp.read_output(32767) while @result !~ /Enter var: \z/
       @sp.send_text("muci\n")
       @result << @sp.read_output(32767) while @result !~ /muci\n\z/
     }

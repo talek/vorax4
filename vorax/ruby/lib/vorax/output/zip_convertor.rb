@@ -19,13 +19,26 @@ module Vorax
 
       # @see HTMLConvertor.start_hook
       def start_hook name, attrs = []
+				@io << "\n" if name == 'table' && @nl
         @last_open_tag[:name] = name
         @last_open_tag[:attrs] = attrs
       end
 
       # @see HTMLConvertor.end_hook
       def end_hook name
-        @io << "\n" if ['br', 'p'].include?(name)
+				# @nl logic: whenever or not a new table
+				# will add an new line at the beginning. If a
+				# br or p is already issued before, then NO! This
+				# is needed when sqlplus adds extra <br>s before
+				# a <table>.
+        if ['br', 'p'].include?(name)
+					@io << "\n" 
+        	@nl = false
+				elsif name == "s"
+        	# simply ignore, it'a ping
+        else
+        	@nl = true
+        end
         @record << {:text => text.strip, 
                     :is_column => ("th" == name), 
                     :align => get_align(@last_open_tag)} if ["td", "th"].include?(name)
@@ -37,6 +50,7 @@ module Vorax
           spit
           @rows.clear
         end
+        #io << text if name == 'b'
         text.clear unless HTMLConvertor.ping_tag == name
         @last_close_tag.clear
         @last_close_tag << name
@@ -108,6 +122,7 @@ module Vorax
         @last_open_tag = {:name => '', :attrs => []}
         @last_close_tag = ''
         @first_spit = true
+        @nl = true
       end
 
     end

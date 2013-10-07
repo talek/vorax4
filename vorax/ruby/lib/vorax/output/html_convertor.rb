@@ -84,7 +84,7 @@ module Vorax
       def should_spit_text?
         @tags_chain.size > 0 && 
           #(not @text.empty?) &&
-          ["body", "p", "br", HTMLConvertor.ping_tag].include?(@tags_chain.last[:name])
+          ["body", "p", "br", "b", HTMLConvertor.ping_tag].include?(@tags_chain.last[:name])
       end
 
       # The text accumulated within the current tag. This is automatically
@@ -99,7 +99,8 @@ module Vorax
         @tags_chain.push({:name => name.downcase, :attrs => attrs})
         if should_spit_text?
           chunk = @text
-          chunk.strip! unless @tags_chain.last[:name] == 'pre'
+          #chunk.strip! unless @tags_chain.last[:name] == 'pre'
+          chunk.gsub!(/^(\r\n?|\n)|(\r\n?|\n)$/, '') unless @tags_chain.last[:name] == 'pre'
           @io << chunk unless chunk.empty?
           @text.clear
         end
@@ -107,9 +108,8 @@ module Vorax
       end
 
       def end_element name
-        if name == 'pre'
-          @io << @text
-        end
+        @io << @text if name == 'pre'
+				@io << @text.strip if name == 'b'
         end_hook(name.downcase)
         @tags_chain.pop
       end

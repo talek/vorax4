@@ -25,18 +25,19 @@ describe 'pagezip layout' do
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
-ID NAME        DESCRIPTION                        
+ID NAME        DESCRIPTION
 -- ----------- -----------------------------------
  1 Bookkeeping This department is responsible for:
-               - financial reporting              
-               - analysis                         
-               - other boring tasks               
- 2 Marketing                                      
- 6 Management  The bad guys department            
+               - financial reporting
+               - analysis
+               - other boring tasks
+ 2 Marketing    
+ 6 Management  The bad guys department
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     @result.should eq(expected)
   end# }}}
@@ -46,13 +47,14 @@ OUTPUT
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
 ID NAME      DESCRIPTION
 -- --------- -----------
- 2 Marketing            
+ 2 Marketing  
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     @result.should eq(expected)
   end# }}}
@@ -62,17 +64,18 @@ OUTPUT
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
 1 Bookkeeping This department is responsible for:
-              - financial reporting              
-              - analysis                         
-              - other boring tasks               
-2 Marketing                                      
-3 Deliveries                                     
-4 CRM                                            
+              - financial reporting
+              - analysis
+              - other boring tasks
+2 Marketing    
+3 Deliveries   
+4 CRM          
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     @result.should eq(expected)
   end# }}}
@@ -82,13 +85,14 @@ OUTPUT
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
 ID NAME        SALARY DEPARTMENT_ID
 -- ----------- ------ -------------
  1 Tică Șerban    570             1
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     @result.should eq(expected)
   end# }}}
@@ -98,33 +102,34 @@ OUTPUT
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 
-SQL>
+SQL> 
 
-ID NAME        DESCRIPTION                        
+ID NAME        DESCRIPTION
 -- ----------- -----------------------------------
  1 Bookkeeping This department is responsible for:
-               - financial reporting              
-               - analysis                         
-               - other boring tasks               
- 2 Marketing                                      
- 3 Deliveries                                     
- 4 CRM                                            
+               - financial reporting
+               - analysis
+               - other boring tasks
+ 2 Marketing    
+ 3 Deliveries   
+ 4 CRM          
 
-ID NAME             DESCRIPTION            
+ID NAME             DESCRIPTION
 -- ---------------- -----------------------
- 5 Legal Stuff                             
+ 5 Legal Stuff       
  6 Management       The bad guys department
- 7 Cooking                                 
- 8 Public Relations                        
+ 7 Cooking           
+ 8 Public Relations  
 
 ID NAME        DESCRIPTION
 -- ----------- -----------
- 9 Aquisitions            
-10 Cleaning               
+ 9 Aquisitions  
+10 Cleaning     
 
 10 rows selected.
 
-SQL>
+SQL> 
+SQL> 
 OUTPUT
     #puts @result
     @result.should eq(expected)
@@ -134,11 +139,11 @@ it 'should work with accept prompts' do# {{{
   begin
     pack_file = Tempfile.new(['vorax', '.sql'])
     @sp.exec("accept var prompt \"Enter var: \"\nprompt &var", :prep => @prep, :pack_file => pack_file.path)
-    Timeout::timeout(10) {
-      @result << @sp.read_output(32767) while @result !~ /Enter var:\z/
-      @sp.send_text("muci\n")
-      @result << @sp.read_output(32767) while @result !~ /muci\n\z/
-    }
+		Timeout::timeout(10) {
+			@result << @sp.read_output(32767) while @result !~ /Enter var: \z/
+			@sp.send_text("muci\n")
+			@result << @sp.read_output(32767) while @result !~ /muci\n\z/
+		}
   ensure
     pack_file.unlink
   end

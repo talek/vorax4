@@ -27,7 +27,7 @@ NAME
 --------------------
 Tică Șerban
 
-SQL> "
+SQL> SQL> "
     @result.should eq(expected)
   end# }}}
 
