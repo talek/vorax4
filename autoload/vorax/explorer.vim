@@ -95,8 +95,8 @@ function! vorax#explorer#OpenDbObject(bang, ...) "{{{
 		endif
 	endif
 	let output = vorax#sqlplus#RunVoraxScript('extract_def.sql',
-				\ toupper(owner),
-				\ toupper(object_name),
+				\ owner,
+				\ object_name,
 				\ type)
   call VORAXDebug("vorax#explorer#OpenDbObject output=" . string(output))
 	let data  = vorax#ruby#ParseResultset(output)
@@ -321,9 +321,9 @@ function! s:OpenCurrentNode(bang) "{{{
 		let dbtype = s:Category2DbmsMetadata(descriptor['category'])
 		if !vorax#utils#IsEmpty(descriptor['object'])
 			if descriptor['category'] == 'Users' || descriptor['category'] == 'DB Links'
-				let dbobject = toupper(descriptor['object'])
+				let dbobject = descriptor['object']
 			else
-				let dbobject = toupper(descriptor['owner'] . '.' . descriptor['object'])
+				let dbobject = descriptor['owner'] . '.' . descriptor['object']
 			endif
 			if exists('dbobject')
 				call vorax#explorer#OpenDbObject(a:bang, dbtype, dbobject)
