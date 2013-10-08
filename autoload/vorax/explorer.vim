@@ -220,6 +220,13 @@ function! s:tree.GetSubNodes(path) "{{{
 		let user_categories = s:GetRootCategories()
 		" remove the last [Users] item
 		call remove(user_categories, -1)
+		" remove the DB links category because their defs can't be fetched
+		for index in range(len(user_categories))
+			if user_categories[index] ==? 'DB Links'
+				call remove(user_categories, index)
+				break
+			endif
+		endfor
 		return user_categories
 	else
 		let descriptor = s:DescribeNode(a:path)
@@ -289,33 +296,11 @@ function! s:DbmsMetadata2AllObjects(type) "{{{
 endfunction "}}}
 
 function! s:Category2DbmsMetadata(category) abort "{{{
-	if a:category == 'Tables'
-		return 'TABLE'
-	elseif a:category == 'Views'
-		return 'VIEW'
-	elseif a:category == 'MViews'
-		return 'MATERIALIZED VIEW'
-	elseif a:category == 'Sequences'
-		return 'SEQUENCE'
-	elseif a:category == 'Synonyms'
-		return 'SYNONYM'
-	elseif a:category == 'Packages'
-		return 'PACKAGE'
-	elseif a:category == 'Types'
-		return 'TYPE'
-	elseif a:category == 'Procedures'
-		return 'PROCEDURE'
-	elseif a:category == 'Functions'
-		return 'FUNCTION'
-	elseif a:category == 'Triggers'
-		return 'TRIGGER'
-	elseif a:category == 'Java Sources'
-		return 'JAVA SOURCE'
-	elseif a:category == 'DB Links'
-		return 'DB_LINK'
-	elseif a:category == 'Users'
-		return 'USER'
-	endif
+	for item in s:base_categories
+		if item['label'] ==? a:category
+			return item['object_type']
+		endif
+	endfor
 	return ''
 endfunction "}}}
 
@@ -335,7 +320,7 @@ function! s:OpenCurrentNode(bang) "{{{
 	if descriptor != {}
 		let dbtype = s:Category2DbmsMetadata(descriptor['category'])
 		if !vorax#utils#IsEmpty(descriptor['object'])
-			if descriptor['category'] == 'Users'
+			if descriptor['category'] == 'Users' || descriptor['category'] == 'DB Links'
 				let dbobject = toupper(descriptor['object'])
 			else
 				let dbobject = toupper(descriptor['owner'] . '.' . descriptor['object'])
