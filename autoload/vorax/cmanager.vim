@@ -90,7 +90,7 @@ function! vorax#cmanager#AddProfile(...) "{{{
 			let profile_id = parts['user'] . '@' . parts['db']
 	  endif
 	  if parts['role'] != ''
-	  	let profile_id .= ' ' . parts['role']
+	  	let profile_id .= ' as ' . parts['role']
 	  endif
 	  call vorax#ruby#PmAdd(profile_id,
 					\ parts['password'],
