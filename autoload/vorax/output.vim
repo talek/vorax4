@@ -257,8 +257,12 @@ function! vorax#output#Abort() abort"{{{
       call vorax#sqlplus#ExecImmediate("connect " . sqlplus_session_props['connstr'])
       let reconnected = " and reconnected "
     endif
-    call vorax#output#Spit("\n*** Session aborted" . reconnected . "! ***")
     call vorax#sqlplus#UpdateSessionOwner()
+    if vorax#sqlplus#SessionOwner() == '@'
+    	" reconnected my ass
+    	let reconnected = ''
+    endif
+    call vorax#output#Spit("\n*** Session aborted" . reconnected . "! ***")
     echo
   endtry
 endfunction"}}}

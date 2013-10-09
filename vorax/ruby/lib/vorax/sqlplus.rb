@@ -206,10 +206,10 @@ module Vorax
         until raw_output =~ /#{@cancel_marker}/
           begin
             raw_output = @io_read.read_nonblock(1024)
-            yield if block_given?
           rescue Errno::EAGAIN
             sleep 0.1
           end
+				  yield if block_given?
         end
         @busy = false
       end
