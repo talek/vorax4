@@ -181,8 +181,38 @@ function! vorax#explorer#IsNodeEditable() "{{{
 	return 1
 endfunction "}}}
 
-function! vorax#explorer#DescribeCurrentNode() "{{{
+function! vorax#explorer#NodeSupportsDesc() "{{{
 	let path = s:tree.GetPathUnderCursor()
+	let descriptor = s:DescribeNode(path)
+	if vorax#utils#IsEmpty(descriptor['object'])
+		return 0
+	endif
+	if descriptor['category'] == 'Tables' ||
+				\ descriptor['category'] == 'Views' ||
+				\ descriptor['category'] == 'Packages' ||
+				\ descriptor['category'] == 'Types' ||
+				\ descriptor['category'] == 'Functions' ||
+				\ descriptor['category'] == 'Procedures'
+		return 1
+	else
+		return 0
+	endif
+endfunction "}}}
+
+function! vorax#explorer#NodeSupportsVerboseDesc() "{{{
+	let path = s:tree.GetPathUnderCursor()
+	let descriptor = s:DescribeNode(path)
+	if vorax#utils#IsEmpty(descriptor['object'])
+		return 0
+	endif
+	if descriptor['category'] == 'Tables'
+		return 1
+	else
+		return 0
+	endif
+endfunction "}}}
+
+function! vorax#explorer#DescribeCurrentNode() "{{{ let path = s:tree.GetPathUnderCursor()
 	return s:DescribeNode(path)
 endfunction "}}}
 
@@ -209,6 +239,8 @@ endfunction "}}}
 function! s:tree.ConfigureKeys() "{{{
 	noremap <silent> <buffer> R :call vorax#explorer#Refresh()<CR>
 	noremap <silent> <buffer> m :call vorax#explorer#OpenContextMenu()<CR>
+	noremap <silent> <buffer> <Leader>d :call vorax#explorer#DescribeCurrentNode()<CR>
+	noremap <silent> <buffer> <Leader>D :call vorax#explorer#VerboseDescribeCurrentNode()<CR>
 endfunction "}}}
 
 function! s:tree.GetSubNodes(path) "{{{
@@ -460,6 +492,8 @@ function! vorax#explorer#Menu() "{{{
 		let items = []
 		call add(items, s:OpenDefMenuItem())
 		call add(items, s:ForceOpenDefMenuItem())
+		call add(items, s:DescribeMenuItem())
+		call add(items, s:VerboseDescribeMenuItem())
 		let s:explorer_menu = vorax#menu#Create(items, 'Explorer menu. ')
 	endif
 	return s:explorer_menu
@@ -500,6 +534,67 @@ function! s:ForceOpenDefMenuItem() "{{{
 				\  'callback' : 'vorax#explorer#ForceOpenCurrentNode',
 				\  'isActiveCallback' : 'vorax#explorer#IsNodeEditable'})
 	return open_def
+endfunction "}}}
+
+"}}}
+
+" Describe object item "{{{
+function! s:DescCurrentItem(bang)
+	let path = s:tree.GetPathUnderCursor()
+	let descriptor = s:DescribeNode(path)
+	if descriptor != {}
+		let dbtype = s:Category2DbmsMetadata(descriptor['category'])
+		if !vorax#utils#IsEmpty(descriptor['object'])
+			if descriptor['category'] == 'Users' || descriptor['category'] == 'DB Links'
+				let dbobject = descriptor['object']
+			else
+				let dbobject = descriptor['owner'] . '.' . descriptor['object']
+			endif
+			if exists('dbobject')
+				call vorax#toolkit#Desc(dbobject, a:bang)
+			endif
+		endif
+	endif
+endfunction
+
+function! vorax#explorer#DescribeCurrentNode(...) "{{{
+	if a:0 == 1
+		if !vorax#explorer#NodeSupportsDesc()
+			return
+		endif
+	endif
+	call s:DescCurrentItem('')
+endfunction "}}}
+
+function! s:DescribeMenuItem() "{{{
+	let desc_def = vorax#menuitem#Create(
+				\ {'text': '(D)escribe object', 
+				\  'shortcut' : 'd', 
+				\  'callback' : 'vorax#explorer#DescribeCurrentNode',
+				\  'isActiveCallback' : 'vorax#explorer#NodeSupportsDesc'})
+	return desc_def
+endfunction "}}}
+
+"}}}
+
+" Verbose Describe object item "{{{
+
+function! vorax#explorer#VerboseDescribeCurrentNode(...) "{{{
+	if a:0 == 1
+		if !vorax#explorer#NodeSupportsVerboseDesc()
+			return
+		endif
+	endif
+	call s:DescCurrentItem('!')
+endfunction "}}}
+
+function! s:VerboseDescribeMenuItem() "{{{
+	let desc_def = vorax#menuitem#Create(
+				\ {'text': '(V)erbose describe object', 
+				\  'shortcut' : 'v', 
+				\  'callback' : 'vorax#explorer#VerboseDescribeCurrentNode',
+				\  'isActiveCallback' : 'vorax#explorer#NodeSupportsVerboseDesc'})
+	return desc_def
 endfunction "}}}
 
 "}}}
