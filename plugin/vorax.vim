@@ -162,6 +162,7 @@ command! -n=+ -bang -complete=customlist,vorax#explorer#OpenDbComplete VORAXEdit
 command! -n=1 -bang -complete=customlist,vorax#toolkit#DescComplete VORAXDesc :call vorax#toolkit#Desc(<q-args>, '<bang>')
 command! -n=0 VORAXConnectionsToggle :call vorax#cmanager#Toggle()
 command! -n=0 VORAXExplorerToggle :call vorax#explorer#Toggle()
+command! -n=0 VORAXScratch :call vorax#toolkit#NewSqlScratch()
 
 " }}}
 
@@ -172,6 +173,7 @@ if g:vorax_map_keys
   nnoremap <silent> <Leader>o :VORAXOutputToggle<CR>
 	nnoremap <silent> <Leader>pr :VORAXConnectionsToggle<CR>
 	nnoremap <silent> <Leader>ve :VORAXExplorerToggle<CR>
+	nnoremap <silent> <Leader>ss :VORAXScratch<CR>
 endif
 
 "}}}

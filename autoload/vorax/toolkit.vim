@@ -86,3 +86,17 @@ function! vorax#toolkit#InitCommonBuffers() abort "{{{
 	endif
 endfunction "}}}
 
+function! vorax#toolkit#NewSqlScratch() abort"{{{
+  call vorax#utils#FocusCandidateWindow()
+  if exists('s:scratch_no')
+  	let s:scratch_no += 1
+  else
+    let s:scratch_no = 1
+  endif
+  silent! exe 'edit ' . g:vorax_homedir . '/__scratch' . string(s:scratch_no) . '__.sql'
+  setlocal hidden
+  setlocal noswapfile
+  setlocal noreadonly
+  setlocal nowrap
+endfunction "}}}
+
