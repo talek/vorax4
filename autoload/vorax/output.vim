@@ -343,6 +343,9 @@ function! s:ConfigureBuffer() abort " {{{
   " ESC for cancelling the currently executing statement
   exe 'nnoremap <buffer> <silent>' . g:vorax_output_abort_key . ' :VORAXOutputAbort<CR>'
 
+	" Oradoc keymap
+	nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
+
 endfunction " }}}
 
 function! s:DiscardLastSqlprompt() abort " {{{

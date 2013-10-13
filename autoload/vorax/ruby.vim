@@ -716,3 +716,38 @@ endfunction
 
 " }}}
 
+" Oradoc {{{
+
+function! vorax#ruby#AllBooks(folder)
+	ruby <<EOR
+	books = Vorax::Oradoc.all_books(VIM::evaluate('a:folder'))
+	VIM::command("return #{books.inspect}")
+EOR
+endfunction
+
+function! vorax#ruby#DisplayBooks(folder)
+	ruby <<EOR
+	Vorax::Oradoc.all_books(VIM::evaluate('a:folder')) do |book, file|
+    VIM::command("echo #{book.inspect}")
+  end
+EOR
+endfunction
+
+function! vorax#ruby#CreateDocIndex(doc_folder, index_folder, only_books)
+	ruby <<EOR
+	Vorax::Oradoc.create_index(VIM::evaluate('a:doc_folder'),
+														 VIM::evaluate('a:index_folder'),
+														 VIM::evaluate('a:only_books'))
+EOR
+endfunction
+
+function! vorax#ruby#OradocSearch(index_folder, what)
+	ruby <<EOR
+	results = Vorax::Oradoc.search(
+		VIM::evaluate('a:index_folder'),
+		VIM::evaluate('a:what'))
+  VIM::command("return #{results.to_json}")
+EOR
+endfunction
+
+" }}}

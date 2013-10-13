@@ -151,6 +151,16 @@ call s:initVariable('g:vorax_sql_associations',
       \  'VIEW' : 'viw',
 			\  'SQL_DEFAULT' : g:vorax_sql_script_default_extension})
 exe 'autocmd BufRead,BufNewFile *.{' . join(values(g:vorax_sql_associations), ',') . '} let &ft="sql" | SQLSetType sqlvorax'
+
+" Oradoc selective books
+call s:initVariable('g:vorax_oradoc_index_only', [
+			\ "Database SQL Language Reference",
+			\ "Database Reference",
+			\ "Database PL/SQL Packages and Types Reference",
+			\ "Database Error Messages"])
+call s:initVariable('g:vorax_oradoc_win_style', 'horizontal')
+call s:initVariable('g:vorax_oradoc_win_side', 'top')
+call s:initVariable('g:vorax_oradoc_win_size', 5)
 " }}}
 
 " Commands {{{
@@ -163,6 +173,9 @@ command! -n=1 -bang -complete=customlist,vorax#toolkit#DescComplete VORAXDesc :c
 command! -n=0 VORAXConnectionsToggle :call vorax#cmanager#Toggle()
 command! -n=0 VORAXExplorerToggle :call vorax#explorer#Toggle()
 command! -n=0 VORAXScratch :call vorax#toolkit#NewSqlScratch()
+command! -n=1 -complete=file VORAXDocBooks :call vorax#oradoc#Books(<q-args>)
+command! -n=1 -complete=file VORAXDocIndex :call vorax#oradoc#CreateIndex(<q-args>)
+command! -n=? -complete=file VORAXDocSearch :call vorax#oradoc#Search(<f-args>)
 
 " }}}
 
@@ -174,6 +187,7 @@ if g:vorax_map_keys
 	nnoremap <silent> <Leader>pr :VORAXConnectionsToggle<CR>
 	nnoremap <silent> <Leader>ve :VORAXExplorerToggle<CR>
 	nnoremap <silent> <Leader>ss :VORAXScratch<CR>
+	nnoremap <silent> <Leader>k :VORAXDocSearch<CR>
 endif
 
 "}}}

@@ -11,6 +11,7 @@ call vorax#toolkit#InitCommonBuffers()
 
 " key mappings
 if g:vorax_map_keys
+	nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
 	nnoremap <buffer> <silent> gd :call vorax#plsql#GotoDef()<CR>
 	nnoremap <buffer> <silent> <Leader>c :VORAXCompile<CR>
 endif
