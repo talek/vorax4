@@ -58,6 +58,10 @@ function! s:window.Open() "{{{
 	if exists('state')
 		exec vorax#utils#SetState(state)
 	endif
+	call self.AfterOpen()
+endfunction "}}}
+
+function! s:window.AfterOpen() "{{{
 endfunction "}}}
 
 function! s:window.Toggle() "{{{
