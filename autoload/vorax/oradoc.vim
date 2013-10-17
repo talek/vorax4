@@ -65,6 +65,7 @@ function! vorax#oradoc#Search(...)
 		if !s:oradoc_win.IsOpen()
 			call s:oradoc_win.Open()
 		endif
+		call s:oradoc_win.Focus()
 		call s:oradoc_win.Clear()
 		call s:oradoc_win.Unlock()
 		" populate
