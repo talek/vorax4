@@ -95,7 +95,7 @@ function! s:OpenDoc()
 			echo "Don't know how to open the doc file. Please define the g:vorax_oradoc_open_cmd variable."
 		else
 			let cmd = substitute(g:vorax_oradoc_open_cmd, '%u', doc_file, 'g')
-			call VoraxDebug('open oradoc with: ' . cmd)
+			call VORAXDebug('open oradoc with: ' . cmd)
 			exe "silent! !" . cmd
 			redraw!
 		endif
