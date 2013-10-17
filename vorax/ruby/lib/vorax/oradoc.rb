@@ -4,6 +4,7 @@ require 'ferret'
 require 'find'
 require 'nokogiri'
 require 'cgi'
+require 'pathname'
 
 include Ferret
 
@@ -12,8 +13,9 @@ module Vorax
 	module Oradoc
 
 		def self.all_books(doc_folder)
+			folder = Pathname.new(doc_folder).realpath
 			books_list = []
-			Dir["#{doc_folder}/**/index.htm"].each do |index_file|
+			Dir["#{folder}/**/index.htm"].each do |index_file|
 				File.open(index_file) do |file|
 					doc = Nokogiri::HTML(file)
 					book = doc.at("meta[@name='doctitle']/@content").to_s
@@ -28,6 +30,7 @@ module Vorax
 		end
 
 		def self.create_index(doc_folder, index_folder, selective_books = nil)
+			folder = Pathname.new(doc_folder).realpath
 			filter = "."
 			if selective_books && !selective_books.empty?
 				filter = selective_books.map { |b| "^(#{Regexp.escape(b)})" }.join('|')
@@ -35,7 +38,7 @@ module Vorax
 			index = Index::Index.new(:path => index_folder,
 															 :id_field => 'content',
 															 :create => true)
-			all_books(doc_folder) do |book, index_file|
+			all_books(folder) do |book, index_file|
 				VIM::command "redraw | echo vorax#utils#Throbber() . ' Searching... <q> to abort.'"
 				return if Oradoc::abort?
 				if book =~ /^#{filter}/ 
