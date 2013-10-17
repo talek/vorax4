@@ -66,7 +66,7 @@ module Vorax
 															:id_field => 'content',
 															:create => false)
 			results = []
-			index.search_each(what) do |doc, score| 
+			index.search_each(what, :limit => :all) do |doc, score| 
 				results << {:title => index[doc]['title'],
 					:book => index[doc]['book'],
 					:file => index[doc]['file'],
