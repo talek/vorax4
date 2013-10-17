@@ -17,6 +17,8 @@ SqlPlus command).
 * Code folding for PLSQL packages.
 * Connection profiles management
 * Support for PL/SQL editing/compilation.
+* Database explorer tree
+* Search into Oracle documentation feature
 
 ## Demo
 
