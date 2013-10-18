@@ -57,8 +57,9 @@ function! vorax#oradoc#Search(...)
 	if a:0 == 0
 		let what = input('Oradoc search: ')
 	else
-		let what = a:1
+		let what = join(a:000, " ")
 	endif
+	echo 'Searching... '
 	if exists('g:vorax_oradoc_max_results')
 		let results = vorax#ruby#OradocSearch(s:index_location, what,
 					\ g:vorax_oradoc_max_results)

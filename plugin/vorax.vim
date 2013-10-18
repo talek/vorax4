@@ -176,7 +176,7 @@ command! -n=0 VORAXExplorerToggle :call vorax#explorer#Toggle()
 command! -n=0 VORAXScratch :call vorax#toolkit#NewSqlScratch()
 command! -n=1 -complete=file VORAXDocBooks :call vorax#oradoc#Books(<q-args>)
 command! -n=1 -complete=file VORAXDocIndex :call vorax#oradoc#CreateIndex(<q-args>)
-command! -n=? -complete=file VORAXDocSearch :call vorax#oradoc#Search(<f-args>)
+command! -n=* -complete=file VORAXDocSearch :call vorax#oradoc#Search(<f-args>)
 
 " }}}
 
