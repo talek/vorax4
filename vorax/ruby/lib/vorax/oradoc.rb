@@ -65,13 +65,14 @@ module Vorax
 			VIM::command "redraw | echo 'Done!'"
 		end
 
-		def self.search(index_folder, what)
+		def self.search(index_folder, what, max_results = nil)
 			nbsp = Nokogiri::HTML("&nbsp;").text
 			index = Index::Index.new(:path => index_folder, 
 															:id_field => 'content',
 															:create => false)
 			results = []
-			index.search_each(what, :limit => :all) do |doc, score| 
+			maxr = max_results || :all
+			index.search_each(what, :limit => maxr) do |doc, score| 
 				title = index[doc]['title'].force_encoding(Encoding::UTF_8)
 				book = index[doc]['book'].force_encoding(Encoding::UTF_8)
 				results << {:title => title.gsub(nbsp, " "),

@@ -741,11 +741,18 @@ function! vorax#ruby#CreateDocIndex(doc_folder, index_folder, only_books)
 EOR
 endfunction
 
-function! vorax#ruby#OradocSearch(index_folder, what)
+function! vorax#ruby#OradocSearch(index_folder, what, ...)
 	ruby <<EOR
-	results = Vorax::Oradoc.search(
-		VIM::evaluate('a:index_folder'),
-		VIM::evaluate('a:what'))
+  if VIM::evaluate('a:0') == 0
+		results = Vorax::Oradoc.search(
+			VIM::evaluate('a:index_folder'),
+			VIM::evaluate('a:what'))
+  else
+		results = Vorax::Oradoc.search(
+			VIM::evaluate('a:index_folder'),
+			VIM::evaluate('a:what'),
+			VIM::evaluate('a:1'))
+	end
   VIM::command("return #{results.to_json}")
 EOR
 endfunction

@@ -158,6 +158,7 @@ call s:initVariable('g:vorax_oradoc_index_only', [
 			\ "Database Reference",
 			\ "Database PL/SQL Packages and Types Reference",
 			\ "Database Error Messages"])
+call s:initVariable('g:vorax_oradoc_max_results', 30)
 call s:initVariable('g:vorax_oradoc_win_style', 'horizontal')
 call s:initVariable('g:vorax_oradoc_win_side', 'top')
 call s:initVariable('g:vorax_oradoc_win_size', 5)

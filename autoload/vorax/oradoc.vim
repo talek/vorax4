@@ -59,7 +59,12 @@ function! vorax#oradoc#Search(...)
 	else
 		let what = a:1
 	endif
-	let results = vorax#ruby#OradocSearch(s:index_location, what)
+	if exists('g:vorax_oradoc_max_results')
+		let results = vorax#ruby#OradocSearch(s:index_location, what,
+					\ g:vorax_oradoc_max_results)
+  else		
+		let results = vorax#ruby#OradocSearch(s:index_location, what)
+	endif
 	if len(results) > 0
 		" we have something to display
 		if !s:oradoc_win.IsOpen()
