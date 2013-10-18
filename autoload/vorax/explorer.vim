@@ -498,6 +498,7 @@ function! vorax#explorer#Menu() "{{{
 		call add(items, s:ForceOpenDefMenuItem())
 		call add(items, s:DescribeMenuItem())
 		call add(items, s:VerboseDescribeMenuItem())
+		call add(items, s:DropMenuItem())
 		let s:explorer_menu = vorax#menu#Create(items, 'Explorer menu. ')
 	endif
 	return s:explorer_menu
@@ -599,6 +600,54 @@ function! s:VerboseDescribeMenuItem() "{{{
 				\  'callback' : 'vorax#explorer#VerboseDescribeCurrentNode',
 				\  'isActiveCallback' : 'vorax#explorer#NodeSupportsVerboseDesc'})
 	return desc_def
+endfunction "}}}
+
+"}}}
+
+" Drop object item "{{{
+
+function! vorax#explorer#DropCurrentNode(...) "{{{
+	let path = s:tree.GetPathUnderCursor()
+	let descriptor = s:DescribeNode(path)
+	if descriptor != {}
+		let dbtype = s:Category2DbmsMetadata(descriptor['category'])
+		if !vorax#utils#IsEmpty(descriptor['object'])
+			if descriptor['category'] == 'Users' || descriptor['category'] == 'DB Links'
+				let dbobject = '"' . descriptor['object'] . '"'
+			else
+				let dbobject = '"' . descriptor['owner'] . '"."' . descriptor['object'] . '"'
+			endif
+			if exists('dbobject')
+				let cmd = 'DROP '
+				if descriptor['dbtype'] == 'DB_LINK'
+					let cmd .= 'DATABASE LINK '
+				else
+					let cmd .= substitute(descriptor['dbtype'], '_', ' ', 'g') . ' '
+				end
+				let cmd .= dbobject . ' '
+				if descriptor['dbtype'] == 'TABLE'
+					let cmd .= 'CASCADE CONSTRAINTS;'
+				elseif descriptor['dbtype'] == 'USER'
+					let cmd .= 'CASCADE;'
+				else
+					let cmd .= ';'
+				endif
+				if confirm("Confirm you want to run: \n" . cmd, "&Yes\n&No", 2) == 1
+					let output = vorax#sqlplus#ExecImmediate(cmd)
+					call vorax#output#SpitAll(output)
+					call vorax#explorer#Refresh()
+				endif
+			endif
+		endif
+	endif
+endfunction "}}}
+
+function! s:DropMenuItem() "{{{
+   return vorax#menuitem#Create(
+				\ {'text': 'D(r)op object', 
+				\  'shortcut' : 'r', 
+				\  'callback' : 'vorax#explorer#DropCurrentNode',
+				\  'isActiveCallback' : 'vorax#explorer#IsNodeEditable'})
 endfunction "}}}
 
 "}}}
