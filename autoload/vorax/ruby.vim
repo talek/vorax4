@@ -42,6 +42,7 @@ endif
 
 function! vorax#ruby#InitLogging(file)
   ruby <<ERC
+# encoding: UTF-8
   if Vorax::logger.nil?
     require 'logger'
     Vorax::logger = Logger.new(VIM::evaluate("a:file"), "daily")
@@ -63,6 +64,7 @@ endfunction
 
 function! vorax#ruby#ParseConnectionString(cstr) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   parts = Vorax::Parser::ConnString.new.parse(VIM::evaluate("a:cstr"))
   vim_hash = "{" + parts.inject([]) do |a, (k, v)| 
     a << "#{k.to_s.inspect} : #{(v.nil? ? "" : v).to_s.inspect}" 
@@ -73,6 +75,7 @@ endfunction"}}}
 
 function! vorax#ruby#CurrentStatement(sql_script, position, plsql_blocks, sqlplus_commands) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   crr_statement = Vorax::Parser.current_statement(
                         VIM::evaluate('a:sql_script'), 
                         VIM::evaluate('a:position'), 
@@ -89,6 +92,7 @@ endfunction"}}}
 
 function! vorax#ruby#StatementType(statement) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   stmt_type = "#{Vorax::Parser.statement_type(VIM::evaluate('a:statement'))}"
   VIM::command("return #{stmt_type.inspect}")
 ERC
@@ -96,6 +100,7 @@ endfunction"}}}
 
 function! vorax#ruby#PrepareExec(statement) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   stmt = Vorax::Parser.prepare_exec(VIM::evaluate('a:statement'))
   VIM::command("return #{stmt.inspect}")
 ERC
@@ -103,6 +108,7 @@ endfunction"}}}
 
 function! vorax#ruby#ParseResultset(html, ...) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   if VIM::evaluate('a:0') == 0
 		result = Vorax::Parser.query_result(VIM::evaluate('a:html'))
 	else
@@ -115,6 +121,7 @@ endfunction"}}}
 
 function! vorax#ruby#ArgumentBelongsTo(statement, position) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   argument = Vorax::Parser.argument_belongs_to(VIM::evaluate('a:statement'), VIM::evaluate('a:position'))
   VIM::command("return #{argument.inspect}")
 ERC
@@ -125,6 +132,7 @@ function! vorax#ruby#GetAlias(statement, alias_name, position)"{{{
 				\ ' a:alias_name = ' . string(a:alias_name) .
 				\ ' a:position = ' . a:position)
   ruby <<ERC
+# encoding: UTF-8
   vim_alias = {}
   inspector = Vorax::Parser::StmtInspector.new(VIM::evaluate('a:statement'))
   target_alias = inspector.find_alias(VIM::evaluate('a:alias_name'), 
@@ -138,6 +146,7 @@ endfunction"}}}
 
 function! vorax#ruby#IsAliasVisible(statement, alias_name, position) "{{{
   ruby <<ERC
+# encoding: UTF-8
   status = 0
   inspector = Vorax::Parser::StmtInspector.new(VIM::evaluate('a:statement'))
   target_alias = inspector.find_alias(VIM::evaluate('a:alias_name'), 
@@ -152,6 +161,7 @@ function! vorax#ruby#AliasColumns(statement, alias_name, position) abort"{{{
         \ " alias_name=" . string(a:alias_name) .
         \ " position=" . string(a:position))
   ruby <<ERC
+# encoding: UTF-8
   columns = []
   inspector = Vorax::Parser::StmtInspector.new(VIM::evaluate('a:statement'))
   target_alias = inspector.find_alias(VIM::evaluate('a:alias_name'), 
@@ -165,6 +175,7 @@ function! vorax#ruby#DescribeDeclare(source_text) abort"{{{
   call VORAXDebug("vorax#ruby#DescribeDeclare source_text=" . string(a:source_text))
   let result = []
   ruby <<ERC
+# encoding: UTF-8
     structure = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
 		region = structure.regions.children.first.content
 		items = []
@@ -188,12 +199,14 @@ endfunction"}}}
 
 function! vorax#ruby#ComputePlsqlStructure(stored_as, source_text) abort"{{{
 	ruby <<ERC
+# encoding: UTF-8
 	Vorax.extra[VIM::evaluate('a:stored_as')] = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
 ERC
 endfunction"}}}
 
 function! vorax#ruby#CompositeName(structure_stored_in, position) abort "{{{
 	ruby <<ERC
+# encoding: UTF-8
 	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
   region = structure.region_at(VIM::evaluate('a:position'))
   package_name = ''
@@ -214,6 +227,7 @@ endfunction "}}}
 
 function! vorax#ruby#RegionScope(structure_stored_in, position) abort "{{{
 	ruby <<ERC
+# encoding: UTF-8
 	scope = []
 	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
   region = structure.region_at(VIM::evaluate('a:position'))
@@ -234,6 +248,7 @@ endfunction "}}}
 
 function! vorax#ruby#LocalItems(structure_stored_in, position, prefix)"{{{
 	ruby <<ERC
+# encoding: UTF-8
 	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
   region = structure.region_at(VIM::evaluate('a:position'))
   items = []
@@ -292,6 +307,7 @@ endfunction"}}}
 
 function! vorax#ruby#PlsqlRegions(source_text) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   vim_regions = []
   structure = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
   structure.regions.breadth_each do |node|
@@ -309,6 +325,7 @@ endfunction"}}}
 
 function! vorax#ruby#RemoveAllComments(text) abort"{{{
 	ruby <<ERC
+# encoding: UTF-8
 	clear_text = Vorax::Parser.remove_all_comments(VIM::evaluate('a:text'))
 	VIM::command("return #{clear_text.inspect}")
 ERC
@@ -316,6 +333,7 @@ endfunction"}}}
 
 function! vorax#ruby#DescribeRecordType(text) abort"{{{
 	ruby <<ERC
+# encoding: UTF-8
     items = []
     rec_items = Vorax::Parser.describe_record(VIM::evaluate('a:text'))
 		rec_items.each do |i|
@@ -338,6 +356,7 @@ endfunction"}}}
 
 function! vorax#ruby#IdentifierAt(line, crrpos) abort "{{{
 	ruby <<ERC
+# encoding: UTF-8
 	data = VIM::evaluate("a:line")
 	crrpos = VIM::evaluate('a:crrpos')
 	identifier = Vorax::Parser.identifier_at(data, crrpos)
@@ -351,6 +370,7 @@ endfunction "}}}
 
 " add some helper methods to Vorax module"{{{
 ruby <<ERC
+# encoding: UTF-8
   module Vorax
 
     def self.sqlplus=(sp)
@@ -394,6 +414,7 @@ ERC
 function! vorax#ruby#SqlplusFork(...) abort"{{{
   call VORAXDebug("vorax#ruby#SqlplusFork() extra params=" . string(a:000))
   ruby <<ERC
+# encoding: UTF-8
   begin 
     Vorax::sqlplus.terminate
   rescue 
@@ -420,6 +441,7 @@ endfunction"}}}
 
 function! vorax#ruby#SqlplusExec(command, ...) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   Vorax::with_sqlplus do |sp|
     params = {}
     if VIM::evaluate("exists('a:1')") == 1
@@ -452,6 +474,7 @@ endfunction"}}}
 
 function! vorax#ruby#SqlplusReadOutput(...) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   output = ""
   Vorax::with_sqlplus do |sp|
     if VIM::evaluate("a:0") == 1
@@ -471,6 +494,7 @@ endfunction"}}}
 
 function! vorax#ruby#SqlplusBusy() abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   Vorax::with_sqlplus do |sp|
     status = (sp.busy? ? 1 : 0)
     VIM::command("return #{status}")
@@ -480,6 +504,7 @@ endfunction"}}}
 
 function! vorax#ruby#SqlplusEofOutput() abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   Vorax::with_sqlplus do |sp|
     status = (sp.eof? ? 1 : 0)
     VIM::command("return #{status}")
@@ -489,6 +514,7 @@ endfunction"}}}
 
 function! vorax#ruby#SqlplusSetFunnel(type) abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   Vorax::with_sqlplus do |sp|
     if VIM::evaluate("a:type") == 1
       sp.default_convertor = :vertical
@@ -505,6 +531,7 @@ endfunction"}}}
 
 function! vorax#ruby#SqlplusHasFunnel() abort"{{{
   ruby <<ERC
+# encoding: UTF-8
   Vorax::with_sqlplus do |sp|
     if sp.default_convertor_name.nil?
       VIM::command("return 0")
@@ -518,6 +545,7 @@ endfunction"}}}
 function! vorax#ruby#SqlplusCancel() abort"{{{
   call VORAXDebug("vorax#ruby#SqlplusCancel() invoked")
   ruby <<ERC
+# encoding: UTF-8
   cancelled = 0
   Vorax::with_sqlplus do |sp| 
     begin
@@ -588,6 +616,7 @@ endfunction
 
 function! vorax#ruby#PmHasKeys(config_dir)
 	ruby <<ERC
+# encoding: UTF-8
 	if Vorax::ProfilesManager.initialized?(VIM::evaluate('a:config_dir'))
 		VIM::command("return 1")
 	else
@@ -598,12 +627,14 @@ endfunction
 
 function! vorax#ruby#PmSecure(config_dir, master_pwd)
 	ruby <<ERC
+# encoding: UTF-8
 	Vorax::ProfilesManager.create(VIM::evaluate('a:config_dir'), VIM::evaluate('a:master_pwd'))
 ERC
 endfunction
 
 function! vorax#ruby#PmChangePwd(config_dir, old_pwd, new_pwd)
 	ruby <<ERC
+# encoding: UTF-8
 	Vorax::ProfilesManager.change_master_pwd(
 		VIM::evaluate('a:config_dir'), 
 		VIM::evaluate('a:old_pwd'),
@@ -614,6 +645,7 @@ endfunction
 
 function! vorax#ruby#PmCategories()
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	VIM::command("return #{pm.categories.inspect}")
 ERC
@@ -621,6 +653,7 @@ endfunction
 
 function! vorax#ruby#PmProfiles(category)
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	VIM::command("return #{pm.profiles(VIM::evaluate('a:category')).inspect}")
 ERC
@@ -628,6 +661,7 @@ endfunction
 
 function! vorax#ruby#PmAllProfiles()
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	VIM::command("return #{pm.profiles(nil).inspect}")
 ERC
@@ -635,6 +669,7 @@ endfunction
 
 function! vorax#ruby#PmSetMasterPassword(pwd)
 	ruby <<ERC
+# encoding: UTF-8
 	begin
 	  pm = Vorax.extra['pm']
 	  pm.master_password = VIM::evaluate('a:pwd')
@@ -646,6 +681,7 @@ endfunction
 
 function! vorax#ruby#PmSave()
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	pm.save
 ERC
@@ -653,6 +689,7 @@ endfunction
 
 function! vorax#ruby#PmGetPassword(profile)
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	pwd = pm.password(VIM::evaluate('a:profile'))
 	VIM::command("return #{pwd.inspect}")
@@ -661,6 +698,7 @@ endfunction
 
 function! vorax#ruby#IsPmUnlocked()
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	if pm.unlocked
 		VIM::command('return 1')
@@ -672,6 +710,7 @@ endfunction
 
 function! vorax#ruby#IsPmProfileWithPassword(profile)
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	if pm.attribute(VIM::evaluate('a:profile'), 'password')
 		VIM::command('return 1')
@@ -683,6 +722,7 @@ endfunction
 
 function! vorax#ruby#PmAdd(profile, password, category, important)
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	pm.add(VIM::evaluate('a:profile'), 
 	  :password => VIM::evaluate('a:password'),
@@ -693,6 +733,7 @@ endfunction
 
 function! vorax#ruby#PmRemove(profile)
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	pm.remove(VIM::evaluate('a:profile'))
 ERC
@@ -700,6 +741,7 @@ endfunction
 
 function! vorax#ruby#PmEdit(profile, property_name, property_value)
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	pm.edit(VIM::evaluate('a:profile'),
 		VIM::evaluate('a:property_name'),
@@ -709,6 +751,7 @@ endfunction
 
 function! vorax#ruby#PmMasterPwd()
 	ruby <<ERC
+# encoding: UTF-8
 	pm = Vorax.extra['pm']
 	VIM::command("return #{pm.master_password.inspect}")
 ERC
@@ -720,6 +763,7 @@ endfunction
 
 function! vorax#ruby#AllBooks(folder)
 	ruby <<EOR
+# encoding: UTF-8
 	books = Vorax::Oradoc.all_books(VIM::evaluate('a:folder'))
 	VIM::command("return #{books.inspect}")
 EOR
@@ -727,6 +771,7 @@ endfunction
 
 function! vorax#ruby#DisplayBooks(folder)
 	ruby <<EOR
+# encoding: UTF-8
 	Vorax::Oradoc.all_books(VIM::evaluate('a:folder')) do |book, file|
     VIM::command("echo #{book.inspect}")
   end
@@ -735,6 +780,7 @@ endfunction
 
 function! vorax#ruby#CreateDocIndex(doc_folder, index_folder, only_books)
 	ruby <<EOR
+# encoding: UTF-8
 	Vorax::Oradoc.create_index(VIM::evaluate('a:doc_folder'),
 														 VIM::evaluate('a:index_folder'),
 														 VIM::evaluate('a:only_books'))
@@ -743,6 +789,7 @@ endfunction
 
 function! vorax#ruby#OradocSearch(index_folder, what, ...)
 	ruby <<EOR
+# encoding: UTF-8
   if VIM::evaluate('a:0') == 0
 		results = Vorax::Oradoc.search(
 			VIM::evaluate('a:index_folder'),

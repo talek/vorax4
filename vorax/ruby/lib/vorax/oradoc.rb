@@ -73,8 +73,8 @@ module Vorax
 			results = []
 			maxr = max_results || :all
 			index.search_each(what, :limit => maxr) do |doc, score| 
-				title = index[doc]['title'].force_encoding(Encoding::UTF_8)
-				book = index[doc]['book'].force_encoding(Encoding::UTF_8)
+				title = index[doc]['title']
+				book = index[doc]['book']
 				results << {:title => title.gsub(nbsp, " "),
 					:book => book.gsub(nbsp, " "),
 					:file => index[doc]['file'],
