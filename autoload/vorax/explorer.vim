@@ -421,7 +421,8 @@ function! s:DescribeNode(path) "{{{
 	let descriptor = {'object': '', 
 				\ 'category': '', 
 				\ 'owner': '',
-				\ 'dbtype': ''}
+				\ 'dbtype': '',
+				\ 'status': 'VALID'}
 	let parts = split(a:path, s:tree.path_separator)
   if len(parts) >= 2
 		let category = parts[1]
@@ -451,7 +452,10 @@ function! s:DescribeNode(path) "{{{
 			break
 		endif
 	endfor
-	let descriptor.object = substitute(descriptor.object, '\m \[INVALID\]$', '', 'g')
+	if descriptor.object =~ '\m \[INVALID\]$'
+		let descriptor.status = 'INVALID'
+		let descriptor.object = substitute(descriptor.object, '\m \[INVALID\]$', '', 'g')
+	endif
 	return descriptor
 endfunction "}}}
 
