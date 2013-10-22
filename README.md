@@ -1,28 +1,16 @@
 # Vorax, an Oracle IDE for Geeks
 
-Hi guys! This is the next major version of Vorax. It's in an early
-stage, I know, but is ready for testing. So if you are willing to 
-contribute or to test this beta version, you are very welcome to
-do so.
+Vorax is a simple yet powerful IDE for Oracle databases, built 
+on top of the widely known Vim editor and Oracle SqlPLUS.
 
-What we have so far:
+Features:
 
-* An improved cancel operation for an executing statement.
-* The compressed output is now smarter and the user is prompted 
-for substitution variables even in this mode. In addition, a new 
-"pagezip" mode was added, which provides compression on the
-page level (by page we mean what is configured by "set pagesize"
-SqlPlus command).
-* A better/faster code completion.
-* Code folding for PLSQL packages.
-* Connection profiles management
-* Support for PL/SQL editing/compilation.
-* Database explorer tree
-* Search into Oracle documentation feature
-
-## Demo
-
-Just have a look here: http://youtu.be/DInsKTZS028
+* Advanced code completion
+* A nice database explorer
+* Connections manager
+* Formatted output
+* PL/SQL support
+* Integrated Oracle documentation search
 
 ## Installation
 
