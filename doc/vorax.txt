@@ -14,13 +14,10 @@
 	   Connecting to a database ............... |vorax-connect|
 	   Executing statements ................... |vorax-exec|
 	   The output window  ..................... |vorax-output|
-	   The code completion system ............. |vorax-omni|
 	   The database explorer .................. |vorax-expolorer|
 	   Describing objects ..................... |vorax-describe|
 	   Working with Explain Plans ............. |vorax-explainplan|
 	   The Oracle HTML Documentation .......... |vorax-oradoc|
-	   VoraX Options .......................... |vorax-options|
-
 
 ==============================================================================
 WHAT IS VORAX                                                   *vorax-whatis*
@@ -80,24 +77,23 @@ Below are some of the features Vorax is endowed with:
 	- Folding PL/SQL code;
 
 	- A database objects browser. You may browse tables, views, packages
-	  and so on. The options available for every type of object may be
-	  extended through custom plugins; ** IN WORK **
+	  and so on. 
 
 	- Connection profiles. VoraX allows to store various connection
 	  strings, including the corresponding passwords. All these passwords
-	  are protected using a master password. ** IN WORK **
+	  are protected using a master password.
 	
 	- Support for editing and compiling PL/SQL modules like packages,
-	  types, procedures and functions. ** IN WORK **
+	  types, procedures and functions.
 
 	- Convenient key mappings for: describe object under cursor, execute
-	  current statement, etc. ** IN WORK **
+	  current statement, etc.
 	
-	- Pretty print output. You may switch to a vertical columns layout or
+	- Formatted output. You may switch to a vertical columns layout or
 	  to a compressed format. In a compressed layout all columns width are
 	  resized according to the length of the contained data.
 
-	- Built-in HTML Oracle documentation search. ** IN WORK **
+	- Built-in HTML Oracle documentation search.
 
 ==============================================================================
 ARCHITECTURE                                              *vorax-architecture*
@@ -159,17 +155,69 @@ However, you need to take care of some dependencies VoraX relies on:
 ==============================================================================
 CONNECTING TO A DATABASE                                       *vorax-connect* 
 
-The first thing you'll usually do after you start Vorax is to connect to a
+The first thing you'll usually do after you start Vorax is to connect to a 
 target database. There is a simple command just for this:
 
-  :VORAXConnect <connect_string>
+	:VORAXConnect <connect_string>
 
 For example, you may use:
 
-  :VORAXConnect scott/tiger@db
+	:VORAXConnect scott/tiger@db
 
-If you don't provide the password or the database you want to connect to, Vorax 
-will ask for the missing information.
+If you don't provide the password or the database you want to connect to, 
+Vorax will ask for the missing information.
+
+In Vorax4 you can also define the VORAXBeforeConnect() and VORAXAfterConnect() 
+hooks. These are just functions which are usually defined in your .vimrc and 
+they are called right before/after a :VORAXConnect command was invoked. In 
+these functions you may embed logic relevant for various connection profiles. 
+For example, if you want to display a confirmation message for every 
+connection which is made using an ADMIN user, you may use the following hook:
+
+	function! VORAXAfterConnect(user, db, role)
+		if a:user ==? 'ADMIN'
+			call confirm("Do you promise you'll be a nice guy?", "&Yes")
+		endif
+	endfunction
+
+Here, we used the VORAXAfterConnect hook because it is invoked only if the 
+connection succeeds.
+
+However, there are cases when we need to do something just before connecting. 
+For example, one might want to CD to a specific folder before connecting to 
+a database. Why before and not after? Well, because if we CD before, the 
+SqlPlus buddy process will be started from that directory, so you'll have 
+easy access to the SQL files from that directory. Niceee, isn't it?
+
+Pay attention to the following differences between the BEFORE and AFTER 
+hooks:
+
+* in the BEFORE hook, the "user", "db" and "role" arguments are computed 
+  from the provided connection string.
+* in the AFTER hook, the "user", "db" and "role" arguments are computed 
+  after the connection is made and they are provided by the SqlPlus session 
+  itself.
+* if you are using OS authentication (e.g. / as sysdba) the "user" and the 
+  "db" arguments within the BEFORE hook will be empty. However, they will be 
+  accessible into the "AFTER" hook.
+* the BEFORE hook is always executed, the AFTER hook just for successful 
+  connections.
+* in a BEFORE hook you can't access the database since you're not connected yet. 
+  However, this is allowed in an AFTER hook.
+
+For example:
+
+	function! VORAXAfterConnect(user, db, role)
+		let data = vorax#sqlplus#Query(
+		  \ "select sys_context('userenv', 'instance_name') from dual;")
+		call vorax#output#Spit("Hey! You're on " . data.resultset[0][0][0])
+	endfunction
+
+Another interesting thing you'll notice is that Vorax status-line will display 
+the USER@DB info in a different color, taking into consideration the type of 
+connection: regular or as SYSDBA. Usually, the SYSDBA connections are shown in 
+red. Of course, this may be changed if one choose to implement it's own Vorax 
+status-line, via g:vorax_output_window_statusline.
 
 ==============================================================================
 EXECUTING STATEMENTS                                              *vorax-exec* 
@@ -290,48 +338,215 @@ The output spit by various commands may be funneled through some predefined
 formatters which are very handy quite often. These formatters are:
 
   * VERTICAL: displays every column from the output of a query, line by
-    line.
+    line. The default mapping to switch to this mode is <Leader>v.
   * PAGEZIP: compress every page spit by the execution of a query. By
     compressing, we mean that the column width is adjusted so that to fit
     to the width of the largest value of that column, within the defined
-    SQLPLUS pagesize.
+    SQLPLUS pagesize. The default key mapping to switch to this mode is
+    <Leader>p.
   * TABLEZIP: like the PAGEZIP, but it does compression for the entire
-    table.
-
-You can toggle the above modes using:
-
-  Command                 Default local mapping
-  ----------------------  -----------------------------
-  :VORAXOutputPagezip     <Leader>p
-
-==============================================================================
-THE CODE COMPLETION SYSTEM                                        *vorax-omni* 
-
-TODO: add documentation
+    table. The default key mapping to switch to this mode is <Leader>t.
 
 ==============================================================================
 THE DATABASE EXPLORER                                         *vorax-explorer* 
 
-TODO: add documentation
+Every decent Oracle IDE has a database explorer which may be used to navigate 
+through the database objects in an hierarchical way. Vorax provides such a 
+feature as well.
+
+The following key mappings are relevant in the context of the database 
+explorer:
+
+	* <Leader>ve - Toggle the explorer window. ve stands for "Vorax Explorer".
+	* m - Invokes the contextual menu for an explorer node.
+	* o or ENTER - Edit the object definition or expand/collapse a category
+	* R - Refresh the database explorer.
+	* <Leader>d - describe the selected database object
+	* <Leader>D - verbose describe the selected table
+
+The database explorer may be configured using the following global variables:
+
+	* g:vorax_dbexplorer_force_edit: whenever or not to get the object 
+	  definition directly from the database or, if a local file matching the 
+	  object name exists, to open that file instead (default value). Please 
+	  see VORAXEdit vs. VORAXEdit!.
+	
+	* g:vorax_dbexplorer_exclude: a Vim style regular expression which may be 
+	  used to filter the categories some might not be interested in.
+
+	* g:vorax_db_explorer_side: where to layout the database explorer window: 
+	  left or right. By default it's left.
+	
+	* g:vorax_db_explorer_size: the size of the explorer window. The default 
+	  value is 30.
+
+Support for registering custom explorer plugins is under development.
 
 ==============================================================================
 DESCRIBING OBJECTS                                            *vorax-describe* 
 
-TODO: add documentation
+In order to describe a database object, Vorax provides the following methods:
+
+	* the BASIC describe (the output from the SqlPlus DESC command): applies 
+	  to tables, views, procedures, functions, packages and types.
+	
+	* a VERBOSE describe: applies just to tables and it gets a lot of information 
+	  about: comments, constraints, indexes, parent-child relationships, the 
+	  tablespace the table belongs to, etc.
+
+The default key mappings are:
+
+	* <Leader>d for a BASIC describe
+	* <Leader>D for a VERBOSE describe
+
+"D" stands for "Describe" therefore it shouldn't be a problem to memorize it. 
+By default, these mappings are available in all SQL and PLSQL buffers, as 
+well as into the Vorax output window. They describe the identifier under 
+the cursor.
+
+The describe feature is also available via the :VORAXDesc command which 
+expects as argument the object name to be described. The bang version, 
+:VORAXDesc!, may be used to get the verbose description of a table. Both 
+:versions supports completion for the object name.
 
 ==============================================================================
 WORKING WITH EXPLAIN PLANS                                 *vorax-explainplan* 
 
-TODO: add documentation
+It's hard to imagine any tuning tasks without having the possibility to peek 
+at the explain plan of a long running query. Usually it is the first thing 
+we are looking at in order to grasp an idea of how the statement is actually 
+executed.
+
+When it comes to explaining a SQL statement, there are two main approaches:
+
+	* get a detailed plan which involves executing the statement. This would be 
+		the real execution plan which is usually obtained using DBMS_XPLAN 
+		package.
+
+	* get an estimated plan which may or may not be the real execution plan, 
+	  with information about how the optimizer is intending to execute the 
+	  statement, but without actually running it. It's the typical case of 
+	  "AUTOTRACE TRACEONLY EXPLAIN" SqlPlus command.
+
+Taking into consideration the above use cases, Vorax implements the two 
+approaches. Basically you can get:
+
+  * the real execution plan. The default keymap is <Leader>x
+  * the estimated execution plan. The default keymap is <Leader>X
+
+"X" stands for "eXplain".
+
+You may further adjust the real execution plan obtained via DBMS_XPLAN by 
+providing your own format, specified into the g:vorax_xplan_format variable. 
+Its value should match a valid value of the "format" argument of the 
+DBMS_XPLAN.DISPLAY_CURSOR function. The default value is ALLSTATS LAST.
 
 ==============================================================================
 THE ORACLE HTML DOCUMENTATION                                   *vorax-oradoc* 
 
-TODO: add documentation
+Does it happen to find yourself looking at a column from a dictionary table, 
+or maybe at a system package name, etc. and not to know what does it mean? 
+If the answer is YES then keep reading.
 
-==============================================================================
-VORAX OPTIONS                                                  *vorax-options* 
+One of the best things of Oracle is its extensive documentation. When you're 
+in doubt about something related to your Oracle code, the next natural move 
+is to go straight to the Oracle official documentation. Every good DBA or 
+database developer knows exactly where to look into. There are a few "books" 
+which are the most frequently used like "The Oracle Database Reference", 
+"The SQL Reference", "The Database PL/SQL Packages and Types Reference", etc. 
+Without knowing exactly where to search into, it's quite easy to get lost 
+in all that documentation. Of course, Oracle provides an online search feature, 
+which gives you the exact spots where the term you're interested in is located. 
+However, it doesn't work without an internet connection and it may be slow 
+at times. Without an offline search capability the whole Oracle Documentation 
+package stored on your disk doesn't help so much, really!
 
-TODO: add documentation
+In order to bring more speed and efficiency, Vorax provides an easy way to 
+look-up for something within your offline HTML documentation.
+
+First of all, you need to download the documentation package from the Oracle 
+web page. Currently these documentation packs can be downloaded from:
+
+http://www.oracle.com/technetwork/database/enterprise-edition/documentation/index.html
+
+Nevertheless, pay attention that Oracle is not very consistent with these 
+links and it may happen to change them without any notice. However, usually 
+it is a big archive with all the documentation for a particular version. 
+You may also need to have a valid OTN account in order to have permission 
+to download it.
+
+As soon as you have the archive, unzip it somewhere on your disk. Then all 
+these HTML files must be indexed using the following command:
+
+	:VORAXDocIndex [path_to_your_oracle_html_doc]
+
+Usually, the documentation pack is huge and I doubt is anybody interested 
+in all that content. That's why, Vorax will index just the books provided 
+in the g:vorax_oradoc_index_only variable. By default, this variable is 
+initialized as an array having the following elements:
+
+	- "Database SQL Language Reference"
+	- "Database Reference"
+	- "Database PL/SQL Packages and Types Reference"
+	- "Database Error Messages"
+
+All above are in fact prefixes used by Vorax indexer to match the book 
+name. So, in short, only those books with names starting with one of the 
+elements in the g:vorax_oradoc_index_only array are indexed.
+
+If you want to add more titles, you need to know what other books are 
+available in your documentation pack. You may use the following command 
+to find this:
+
+	:VORAXDocBooks [path_to_your_oracle_html_doc]
+
+If you need to index all the content, then it's enough to unlet the 
+g:vorax_oradoc_index_only variable.
+
+As soon as the documentation is indexed we can start searching directly 
+from Vorax. You can manually provide a term using the :VORAXDocSearch 
+command. If you do not provide any argument to this command, Vorax will 
+ask you what do you want to search for, otherwise the provided parameter 
+will be used as a search term. Another way of searching is using the word 
+under cursor, when the K key is pressed. The K mapping is available only 
+in Vorax sql/plsql buffers, or into the output window.
+
+The result of your search is displayed in a special window along with the 
+containing book. Within this window you can:
+
+	- navigate to the item you think is the most relevant
+	- opening the documentation for a found item using Enter or o.
+	- closing the window using q.
+
+The maximum number of search results is configurable via the 
+g:vorax_oradoc_max_results variable. By default it's 30.
+
+You may control the layout of the Oracle documentation window with the 
+following variables:
+
+	- g:vorax_oradoc_win_style: can be horizontal or vertical
+	- g:vorax_oradoc_win_side: if the window style was defined as "horizontal" 
+	  then the valid values are top or bottom. If the window style is "vertical", 
+	  then you may choose between right or left
+	- g:vorax_oradoc_win_size: the size of the documentation window
+
+By default, Vorax doesn't know how to open the target documentation file 
+because this is done differently based on the OS platform and user preferences: 
+some prefer Firefox, others Chrome and some freaks, IE. So, Vorax will let the 
+user to tell how the documentation file is supposed to be opened, by defining 
+the g:vorax_oradoc_open_cmd. The %u substitution variable is used to merge the 
+documentation file path into the defined command. For example:
+
+	let g:vorax_oradoc_open_cmd='"C:\Program Files (x86)\Chrome\chrome.exe" file://%u'
+
+will open the documentation file using Chrome.
+
+Or, if you are in tmux (my favorite):
+
+	let g:vorax_oradoc_open_cmd='tmux new-window "w3m %u"'
+
+This means, a new tmux window will be created with a w3m browser having the 
+documentation file loaded. That's very convenient because you don't have to leave 
+the terminal window.
 
 "vim:ts=8 sw=8 noexpandtab tw=78 ft=help:
