@@ -84,6 +84,7 @@ function! vorax#oradoc#Search(...)
 		let b:results = results
 		normal! gg
 		call s:oradoc_win.Lock()
+		redraw | echo 'Done.'
 	else
 		echo 'Sorry, no doc references found!'
 	endif
