@@ -88,9 +88,18 @@ function! s:ArgumentItems(prefix) abort "{{{
 				let data = s:Cache(module_metadata)
 			else
         " successfully resolved, go on
+				if module_metadata['type'] == 'FUNCTION' ||
+							\ module_metadata['type'] == 'PROCEDURE'
+					let package = ''
+					let obj = module_metadata['object']
+				else
+					let package = module_metadata['object']
+					let obj = module_metadata['extra']
+				end
         let output = vorax#sqlplus#RunVoraxScript('omni_arguments.sql',
-              \ module_metadata['id'],
-              \ module_metadata['extra'])
+              \ module_metadata['schema'],
+              \ package,
+              \ obj)
         let data  = vorax#ruby#ParseResultset(output)
 				call s:Cache(module_metadata, data)
 			endif
