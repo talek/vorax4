@@ -246,6 +246,11 @@ function! vorax#output#Abort() abort"{{{
         throw 'VRX-02'
       end
       if cancelled
+        " it's a good thing to revert to default options
+        let sp_props = vorax#sqlplus#Properties()
+				if filereadable(sp_props['store_set'])
+					call vorax#sqlplus#ExecImmediate('@' . sp_props['store_set'])
+        endif
         call vorax#output#Spit("\n*** Cancelled! ***")
       endif
     endif
