@@ -8,6 +8,7 @@ command! -n=0 -bar VORAXOutputVertical :call vorax#output#ToggleFunnel(1)
 command! -n=0 -bar VORAXOutputPagezip :call vorax#output#ToggleFunnel(2)
 command! -n=0 -bar VORAXOutputTablezip :call vorax#output#ToggleFunnel(3)
 command! -n=0 -bar VORAXOutputToggleAppend :call vorax#output#ToggleAppend()
+command! -n=0 -bar VORAXOutputToggleFullHeading :call vorax#output#ToggleFullHeading()
 command! -n=0 -bar VORAXOutputToggleSticky :call vorax#output#ToggleSticky()
 command! -n=0 -bar VORAXOutputAskUser :call vorax#output#AskUser()
 command! -n=0 -bar VORAXOutputAbort :call vorax#output#Abort()
@@ -20,6 +21,7 @@ if g:vorax_map_keys
 	nnoremap <buffer> <silent> <Leader>p :VORAXOutputPagezip<CR>
 	nnoremap <buffer> <silent> <Leader>t :VORAXOutputTablezip<CR>
 	nnoremap <buffer> <silent> <Leader>a :VORAXOutputToggleAppend<CR>
+	nnoremap <buffer> <silent> <Leader>h :VORAXOutputToggleFullHeading<CR>
 	nnoremap <buffer> <silent> <Leader>s :VORAXOutputToggleSticky<CR>
 	nnoremap <buffer> <silent> <CR> :VORAXOutputAskUser<CR>
 endif

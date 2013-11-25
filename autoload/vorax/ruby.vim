@@ -90,6 +90,17 @@ function! vorax#ruby#CurrentStatement(sql_script, position, plsql_blocks, sqlplu
 ERC
 endfunction"}}}
 
+function! vorax#ruby#SqlStatements(sql_script, plsql_blocks, sqlplus_commands) "{{{
+  ruby <<ERC
+# encoding: UTF-8
+  statements = Vorax::Parser.statements(
+                        VIM::evaluate('a:sql_script'), 
+                        :plsql_blocks => (VIM::evaluate('a:plsql_blocks') == 1 ? true : false),
+                        :sqlplus_commands => (VIM::evaluate('a:sqlplus_commands') == 1 ? true : false)) 
+	VIM::command("return #{statements.inspect}")
+ERC
+endfunction "}}}
+
 function! vorax#ruby#StatementType(statement) abort"{{{
   ruby <<ERC
 # encoding: UTF-8

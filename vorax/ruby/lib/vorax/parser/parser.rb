@@ -370,6 +370,70 @@ module Vorax
 
     end
 
+    def self.statements(script_content, params = {})
+      
+      statements = []
+      opts = {
+        :plsql_blocks => true,
+        :sqlplus_commands => true
+      }.merge(params)
+      start_pos = 0
+
+      walker = PlsqlWalker.new(script_content)
+
+      walker.register_spot(Parser::SEMI_COLON_TERMINATOR) do |scanner|
+        type = Parser.statement_type(scanner.string[(start_pos..scanner.pos)])
+        if type
+          if opts[:plsql_blocks] && type != 'SQLPLUS'
+            #this is a plsql block, eat till the slash terminator
+            unless scanner.scan_until(Parser::SLASH_TERMINATOR)
+              #it's an invalid statement
+              scanner.terminate
+            end
+          end
+        end
+        statements << script_content[(start_pos...scanner.pos)]
+				start_pos = scanner.pos
+      end
+
+      walker.register_spot(Parser::SLASH_TERMINATOR) do |scanner|
+        statements << script_content[(start_pos...scanner.pos)]
+				start_pos = scanner.pos
+      end
+
+      if opts[:sqlplus_commands]
+        walker.register_spot(Parser::SQLPLUS_TERMINATOR) do |scanner|
+          type = Parser.statement_type(scanner.string[(start_pos..scanner.pos)])
+          if type
+          	if type == 'SQLPLUS'
+							statements << script_content[(start_pos...scanner.pos)]
+							start_pos = scanner.pos
+						else
+							if opts[:plsql_blocks]
+								#this is a plsql block, eat till the slash terminator
+								if scanner.scan_until(Parser::SLASH_TERMINATOR)
+									statements << script_content[(start_pos...scanner.pos)]
+									start_pos = scanner.pos
+								else
+									#it's an invalid statement
+									scanner.terminate
+								end
+							end
+						end
+					#else
+            #start_pos = scanner.pos
+          end
+        end
+      end
+
+      walker.walk
+			if start_pos < script_content.length
+				statements << script_content[(start_pos...script_content.length)]
+			end
+			return statements
+
+    end
+
   end
 
 end

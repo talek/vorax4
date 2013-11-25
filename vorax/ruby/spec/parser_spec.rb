@@ -331,4 +331,23 @@ STRING
 		Parser.next_argument(text).should == 0 
 	end# }}}
 
+	it 'should split statements' do
+    text = <<STRING
+select /* comment: ; */ 'muci;buci''s yea' from dual; -- interesting ha;ha?
+set serveroutput on
+begin
+dbms_output.put_line('xxx');
+end;
+/
+select * from cat;
+select * from dual
+STRING
+		Parser.statements(text).should ==
+			["select /* comment: ; */ 'muci;buci''s yea' from dual;",
+				" -- interesting ha;ha?\nset serveroutput on\n",
+				"begin\ndbms_output.put_line('xxx');\nend;\n/\n",
+				"select * from cat;",
+				"\nselect * from dual"]
+	end
+
 end

@@ -226,6 +226,15 @@ function! vorax#output#ToggleAppend() abort"{{{
   endif
 endfunction"}}}
 
+function! vorax#output#ToggleFullHeading() abort"{{{
+  let g:vorax_output_full_heading = !g:vorax_output_full_heading
+  if g:vorax_output_full_heading
+    echo 'Full heading mode ON'
+  else
+    echo 'Full heading mode OFF'
+  endif
+endfunction"}}}
+
 function! vorax#output#ToggleSticky() abort"{{{
   let g:vorax_output_window_sticky_cursor = !g:vorax_output_window_sticky_cursor
   if g:vorax_output_window_sticky_cursor
@@ -251,6 +260,10 @@ function! vorax#output#Abort() abort"{{{
 				if filereadable(sp_props['store_set'])
 					call vorax#sqlplus#ExecImmediate('@' . sp_props['store_set'])
         endif
+        if !vorax#utils#IsEmpty(sp_props['cols_clear'])
+					" clear columns if previous formatting was in place
+					call vorax#sqlplus#ExecImmediate(sp_props['cols_clear'])
+				endif
         call vorax#output#Spit("\n*** Cancelled! ***")
       endif
     endif
@@ -310,6 +323,8 @@ function! vorax#output#StatusLine() abort"{{{
   elseif s:funnel == 3
     let format = 'TABLEZIP'
   endif
+  " column heading
+  let col_head = (g:vorax_output_full_heading ? 'HEADING' : '')
   " append mode
   let append = (g:vorax_output_window_append ? 'APPEND' : '')
   " sticky mode
@@ -317,6 +332,7 @@ function! vorax#output#StatusLine() abort"{{{
   return throbber .
         \ session_owner . 
         \ '%= ' . format . 
+        \ ' ' . col_head .
         \ ' ' . append .
         \ ' ' . sticky .
         \ ' '

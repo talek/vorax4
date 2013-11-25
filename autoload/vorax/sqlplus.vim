@@ -19,6 +19,7 @@ let s:properties = {'store_set'     : tempname() . ".opts",
                   \ 'connstr'       : '',
                   \ 'sql_folder'    : fnamemodify(expand('<sfile>:p:h') . '/../../vorax/sql/', ':p:8'),
                   \ 'db_banner'     : '',
+									\ 'cols_clear'    : '',
                   \ 'sane_options'  : ['set define "&"',
                   \                    'set pause off',
                   \                    'set termout on']}
@@ -177,6 +178,24 @@ function! vorax#sqlplus#Exec(command, ...) abort "{{{
 			" just an empty string... fuck it!
     	return
 		end
+    if g:vorax_output_full_heading
+			let format_cols = s:FormatColumns(a:command)
+			if has_key(hash, 'prep')
+				let hash['prep'] .= "\n" . format_cols['format']
+			else
+				let hash['prep'] = format_cols['format']
+			endif
+			if has_key(hash, 'post')
+				let hash['post'] .= "\n" . format_cols['clear']
+			else
+				let hash['post'] = format_cols['clear']
+			endif
+			" need to save them in this global namespace in order
+			" to cleanup if the query is cancelled
+			let s:properties['cols_clear'] = format_cols['clear']
+		else
+			let s:properties['cols_clear'] = ''
+		endif
     let stmt = vorax#ruby#PrepareExec(a:command)
     call vorax#ruby#SqlplusExec(stmt, hash)
     if vorax#ruby#SqlplusIsInitialized() && vorax#ruby#SqlplusIsAlive()
@@ -358,3 +377,53 @@ function! vorax#sqlplus#GetSource(owner, object, type) abort "{{{
 endfunction "}}}
 
 " }}}
+
+function! s:FormatColumns(script) "{{{
+  let stmts = vorax#ruby#SqlStatements(a:script, 1, 1)
+	echom string(stmts)
+	let column_format = ""
+	let column_clear = ""
+	for stmt in stmts
+		let query = vorax#ruby#RemoveAllComments(stmt)
+		if query =~ '\m\c^\_s*\(SELECT\|WITH\)'
+			for column in s:ColumnsLayout(query)
+				let column_format .= "column " . column[0] .
+							\ " format a" . column[1] . "\n"
+				let column_clear .= "column " . column[0] .
+							\ " clear" . "\n"
+			endfor
+		end
+	endfor
+	return {'format': column_format, 'clear': column_clear}
+endfunction "}}}
+
+function! s:ColumnsLayout(query) "{{{
+	" get rid of the last terminator
+	let query = substitute(a:query, '\m\_s*\(;\|\/\)\_s*$', '', 'g')
+	" compose the statement init template
+	let stmt_init = ""
+	let index = 1
+	for line in split(query, "\n")
+		let stmt_init .= "l_stmt(" . index . ") := '" . 
+					\ substitute(line, "'", "''", 'g') . 
+					\ "';\n"
+		let index += 1
+	endfor
+	" get the format columns script
+	let script_name = s:properties['sql_folder'] . 'columns_layout.sql' 
+	if filereadable(script_name)
+		let script_content = join(readfile(script_name), "\n")
+		let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
+		let post = "@" . s:properties['store_set']
+		let hash = {'prep' : prep, 'post' : post, 'funnel' : 0, 'pack_file' : s:properties['sql_pack']}
+		let exec_code=substitute(script_content, '\m\s*\/\* l_stmt initialize \*\/\s*', 
+					\ stmt_init,
+					\ '')
+		let output=vorax#sqlplus#ExecImmediate(exec_code, hash)
+		let result  = vorax#ruby#ParseResultset(output)
+		if exists("result['resultset'][0]")
+			return result['resultset'][0]
+	  endif
+	endif
+	return []
+endfunction "}}}
