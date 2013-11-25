@@ -6,7 +6,7 @@
 --
 -- Note: this is a wrapper script. It is not supposed to
 --       work like it is. Vorax will substitute the
---       /* l_stmt initialize */ marker with the actual
+--       "l_stmt initialize" marker with the actual
 --       statement to be parsed.
 --
 
@@ -26,8 +26,7 @@ declare
 	l_col_num number;
 	l_stmt dbms_sql.varchar2s;
 begin
-	/* l_stmt initialize */
-	l_stmt(1) := '&1';
+	-- l_stmt initialize
 	l_c := dbms_sql.open_cursor;
 	dbms_sql.parse(l_c, l_stmt, 1, l_stmt.count, true, DBMS_SQL.NATIVE);
 	DBMS_SQL.DESCRIBE_COLUMNS(l_c, l_col_cnt, l_rec_tab);

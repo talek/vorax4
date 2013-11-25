@@ -410,13 +410,12 @@ function! s:ColumnsLayout(query) "{{{
 		let index += 1
 	endfor
 	" get the format columns script
-	let script_name = s:properties['sql_folder'] . 'columns_layout.sql' 
-	if filereadable(script_name)
-		let script_content = join(readfile(script_name), "\n")
+	let script_content = s:ColumnsLayoutScript()
+	if !vorax#utils#IsEmpty(script_content)
 		let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
 		let post = "@" . s:properties['store_set']
 		let hash = {'prep' : prep, 'post' : post, 'funnel' : 0, 'pack_file' : s:properties['sql_pack']}
-		let exec_code=substitute(script_content, '\m\s*\/\* l_stmt initialize \*\/\s*', 
+		let exec_code=substitute(script_content, '\m\s*-- l_stmt initialize\s*', 
 					\ stmt_init,
 					\ '')
 		let output=vorax#sqlplus#ExecImmediate(exec_code, hash)
@@ -427,3 +426,15 @@ function! s:ColumnsLayout(query) "{{{
 	endif
 	return []
 endfunction "}}}
+
+function! s:ColumnsLayoutScript()
+	if exists('s:cl_script_content')
+		return copy(s:cl_script_content)
+	else
+		let script_name = s:properties['sql_folder'] . 'columns_layout.sql' 
+		if filereadable(script_name)
+			let s:cl_script_content = join(readfile(script_name), "\n")
+		endif
+	endif
+	return ""
+endfunction
