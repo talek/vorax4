@@ -311,3 +311,17 @@ function! s:ParseOffset(line, column) abort"{{{
   return 0
 endfunction"}}}
 
+function! vorax#utils#IsVoraxManagedFile(file) "{{{
+  let ext = fnamemodify(a:file, ':e')
+  if ext ==? 'sql'
+  	return 1
+  else
+    for managed_ext in values(g:vorax_plsql_associations)
+      if ext ==? managed_ext
+        return 1
+      endif
+    endfor
+    return 0
+  endif
+endfunction "}}}
+

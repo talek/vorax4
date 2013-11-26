@@ -315,6 +315,13 @@ function! vorax#sqlplus#WarnCrash() abort "{{{
   call vorax#utils#SpitWarn("The buddy SqlPlus process has unexpectedly died! You should :VORAXConnect again!")
 endfunction "}}}
 
+function! vorax#sqlplus#SandboxExec(cmd) "{{{
+  let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
+  let post = "@" . s:properties['store_set']
+  let hash = {'prep' : prep, 'post' : post, 'funnel' : 0, 'pack_file' : s:properties['sql_pack']}
+  call vorax#sqlplus#Exec(a:cmd, hash)
+endfunction "}}}
+
 function! vorax#sqlplus#PrepareVoraxScript(name, params) "{{{
   let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
   let post = "@" . s:properties['store_set']
@@ -426,7 +433,7 @@ function! s:ColumnsLayout(query) "{{{
 	return []
 endfunction "}}}
 
-function! s:ColumnsLayoutScript()
+function! s:ColumnsLayoutScript() "{{{
 	if exists('s:cl_script_content')
 		return copy(s:cl_script_content)
 	else
@@ -436,4 +443,4 @@ function! s:ColumnsLayoutScript()
 		endif
 	endif
 	return ""
-endfunction
+endfunction "}}}
