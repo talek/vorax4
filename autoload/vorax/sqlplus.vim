@@ -380,7 +380,6 @@ endfunction "}}}
 
 function! s:FormatColumns(script) "{{{
   let stmts = vorax#ruby#SqlStatements(a:script, 1, 1)
-	echom string(stmts)
 	let column_format = ""
 	let column_clear = ""
 	for stmt in stmts
