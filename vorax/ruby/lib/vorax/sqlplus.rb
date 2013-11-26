@@ -241,10 +241,16 @@ module Vorax
       yield
       send_text("#{@end_marker}\n")
       send_text("#pro #{@end_marker}\n")
+
+      # Once again with termout enforced
+      send_text("set termout on\n")
+      send_text("#{@end_marker}\n")
+      send_text("#pro #{@end_marker}\n")
     end
 
     def mark_cancel
       @process.io.stdin.puts
+      @process.io.stdin.puts("set termout on")
       @process.io.stdin.puts("pro #{@cancel_marker}")
     end
 
@@ -260,6 +266,11 @@ module Vorax
 					# the output region will end here since the
 					# block terminator command will be echoed. Otherwise,
 					# the next prompt statement will do the job.
+					f.puts "#{@end_marker}"
+          f.puts "#pro #@end_marker"
+					
+					# once again with termout enforced
+					f.puts("set termout on")
 					f.puts "#{@end_marker}"
           f.puts "#pro #@end_marker"
           f.puts opts[:post]
