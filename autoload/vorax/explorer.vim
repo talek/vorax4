@@ -346,7 +346,8 @@ function! s:BufferName(type, name) "{{{
 	return a:name . '.' . file_ext
 endfunction "}}}
 
-function! s:OpenCurrentNode(bang) "{{{
+function! s:OpenCurrentNode() "{{{
+	let bang = g:vorax_dbexplorer_force_edit ? '!' : ''
 	let path = s:tree.GetPathUnderCursor()
 	let descriptor = s:DescribeNode(path)
 	if descriptor != {}
@@ -358,15 +359,14 @@ function! s:OpenCurrentNode(bang) "{{{
 				let dbobject = descriptor['owner'] . '.' . descriptor['object']
 			endif
 			if exists('dbobject')
-				call vorax#explorer#OpenDbObject(a:bang, dbtype, dbobject)
+				call vorax#explorer#OpenDbObject(bang, dbtype, dbobject)
 			endif
 		endif
 	endif
 endfunction "}}}
 
 function! s:tree.OpenNode(path) "{{{
-	let bang = g:vorax_dbexplorer_force_edit ? '!' : ''
-	call s:OpenCurrentNode(bang)
+	call s:OpenCurrentNode()
 endfunction "}}}
 
 function! s:GetObjects(type, owner) "{{{
@@ -489,16 +489,27 @@ function! s:GetRootCategories() "{{{
 	return categories
 endfunction "}}}
 
+function! vorax#explorer#IsCompositeModule() "{{{
+	let path = s:tree.GetPathUnderCursor()
+	let descriptor = s:DescribeNode(path)
+	if descriptor['category'] == 'Packages' ||
+				\ descriptor['category'] == 'Types'
+		return 1
+	endif
+	return 0
+endfunction "}}}
+
 " Contextual menu "{{{
 
 function! vorax#explorer#Menu() "{{{
 	if !exists('s:explorer_menu')
 		let items = []
 		call add(items, s:OpenDefMenuItem())
-		call add(items, s:ForceOpenDefMenuItem())
 		call add(items, s:DescribeMenuItem())
 		call add(items, s:VerboseDescribeMenuItem())
 		call add(items, s:DropMenuItem())
+		call add(items, s:OpenSpecMenuItem())
+		call add(items, s:OpenBodyMenuItem())
 		let s:explorer_menu = vorax#menu#Create(items, 'Explorer menu. ')
 	endif
 	return s:explorer_menu
@@ -522,23 +533,6 @@ endfunction "}}}
 
 function! vorax#explorer#NormalOpenCurrentNode() "{{{
 	call s:OpenCurrentNode('')
-endfunction "}}}
-
-"}}}
-
-" Force open definiton item "{{{
-
-function! vorax#explorer#ForceOpenCurrentNode() "{{{
-	call s:OpenCurrentNode('!')
-endfunction "}}}
-
-function! s:ForceOpenDefMenuItem() "{{{
-	let open_def = vorax#menuitem#Create(
-				\ {'text': '(F)orce open definition', 
-				\  'shortcut' : 'f', 
-				\  'callback' : 'vorax#explorer#ForceOpenCurrentNode',
-				\  'isActiveCallback' : 'vorax#explorer#IsNodeEditable'})
-	return open_def
 endfunction "}}}
 
 "}}}
@@ -648,6 +642,54 @@ function! s:DropMenuItem() "{{{
 				\  'shortcut' : 'r', 
 				\  'callback' : 'vorax#explorer#DropCurrentNode',
 				\  'isActiveCallback' : 'vorax#explorer#IsNodeEditable'})
+endfunction "}}}
+
+"}}}
+
+" Object SPEC item "{{{
+
+function! s:OpenSpecMenuItem() "{{{
+	let spec_def = vorax#menuitem#Create(
+				\ {'text': 'Open (S)PEC definition', 
+				\  'shortcut' : 's', 
+				\  'callback' : 'vorax#explorer#OpenSpecCurrentNode',
+				\  'isActiveCallback' : 'vorax#explorer#IsCompositeModule'})
+	return spec_def
+endfunction "}}}
+
+function! vorax#explorer#OpenSpecCurrentNode() "{{{
+	let path = s:tree.GetPathUnderCursor()
+	let descriptor = s:DescribeNode(path)
+	if descriptor != {}
+		let dbtype = s:Category2DbmsMetadata(descriptor['category']) . '_SPEC'
+		let dbobject = descriptor['owner'] . '.' . descriptor['object']
+		let bang = g:vorax_dbexplorer_force_edit ? '!' : ''
+		call vorax#explorer#OpenDbObject(bang, dbtype, dbobject)
+	endif
+endfunction "}}}
+
+"}}}
+
+" Object BODY item "{{{
+
+function! s:OpenBodyMenuItem() "{{{
+	let body_def = vorax#menuitem#Create(
+				\ {'text': 'Open (B)ODY definition', 
+				\  'shortcut' : 'b', 
+				\  'callback' : 'vorax#explorer#OpenBodyCurrentNode',
+				\  'isActiveCallback' : 'vorax#explorer#IsCompositeModule'})
+	return body_def
+endfunction "}}}
+
+function! vorax#explorer#OpenBodyCurrentNode() "{{{
+	let path = s:tree.GetPathUnderCursor()
+	let descriptor = s:DescribeNode(path)
+	if descriptor != {}
+		let dbtype = s:Category2DbmsMetadata(descriptor['category']) . '_BODY'
+		let dbobject = descriptor['owner'] . '.' . descriptor['object']
+		let bang = g:vorax_dbexplorer_force_edit ? '!' : ''
+		call vorax#explorer#OpenDbObject(bang, dbtype, dbobject)
+	endif
 endfunction "}}}
 
 "}}}
