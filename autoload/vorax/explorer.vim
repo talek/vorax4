@@ -212,7 +212,8 @@ function! vorax#explorer#NodeSupportsVerboseDesc() "{{{
 	endif
 endfunction "}}}
 
-function! vorax#explorer#DescribeCurrentNode() "{{{ let path = s:tree.GetPathUnderCursor()
+function! vorax#explorer#DescribeCurrentNode() "{{{ 
+	let path = s:tree.GetPathUnderCursor()
 	return s:DescribeNode(path)
 endfunction "}}}
 
