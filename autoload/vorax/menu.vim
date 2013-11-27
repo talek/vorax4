@@ -23,9 +23,9 @@ endfunction
 function! s:MenuController.allEnabled()
 	let enabled_items = []
 	for i in self.menuItems
-			if i.enabled()
-					call add(enabled_items, i)
-			endif
+		if i.enabled()
+			call add(enabled_items, i)
+		endif
 	endfor
 	return enabled_items
 endfunction
@@ -58,8 +58,9 @@ function! s:MenuController.showMenu()
 endfunction
 
 function! s:MenuController._echoPrompt()
-	echo self.banner . "Use j/k/enter and the shortcuts indicated"
-	echo "=========================================================="
+	let banner = self.banner . "Use j/k/enter and the shortcuts indicated"
+	echo banner
+	echo vorax#utils#StringFiller("=", len(banner))
 
 	for i in range(0, len(self.enabledItems)-1)
 		if self.selection == i
