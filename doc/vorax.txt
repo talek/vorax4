@@ -14,7 +14,7 @@
 	   Connecting to a database ............... |vorax-connect|
 	   Executing statements ................... |vorax-exec|
 	   The output window  ..................... |vorax-output|
-	   The database explorer .................. |vorax-expolorer|
+	   The database explorer .................. |vorax-explorer|
 	   Describing objects ..................... |vorax-describe|
 	   Working with Explain Plans ............. |vorax-explainplan|
 	   The Oracle HTML Documentation .......... |vorax-oradoc|
@@ -286,9 +286,24 @@ OS under which Vorax is running:
 		So, on Windows, when the user asks for a cancellation of a running
 		statement, by default, Vorax will display a warning message and it
 		will ask the user to confirm that he really want to abort his session.
+    If the g:vorax_auto_connect variable is 1, then Vorax will automatically
+    reconnect using the last credentials used in the VORAXConnect command.
 
-If the g:vorax_auto_connect variable is 1, then Vorax will automatically
-reconnect using the last credentials used in the VORAXConnect command.
+Another way of executing statements in Vorax is using the "sandbox" mode. 
+This usually applies to external SQL scripts. Have you ever executed such a 
+script which messed up your Sqlplus environment because it had all sort of 
+weird options set which weren't reset to their original values at the end of 
+the script? Well, that's something I really don't like, so Vorax provides 
+the "sandbox" mode in which, just before starting the script to be run, all 
+current Sqlplus options are saved and, as soon as the script finishes, they 
+are restored as they were before. You may run a command/script in "sandbox" 
+mode using the default key mapping <Leader>E.
+
+Talking about scripts, did you know Vorax integrates nice with NERDTree? You 
+can navigate to the SQL script you want to execute and press @, directly in 
+the file explorer provided by NERDTree. This functionality applies to any SQL 
+script or any file with an extension specified in g:vorax_plsql_associations 
+variable. All scripts run via NERDTree are executed using the "sandbox" mode.
 
 ==============================================================================
 THE OUTPUT WINDOW                                               *vorax-output* 
@@ -322,6 +337,9 @@ settings for this window are:
   * g_vorax_output_window_default_funnel: this defines the default layout
     for the spit output (details below, keep reading).
 
+  * g:vorax_output_full_heading: whenever or not to display the full column 
+    name in the output query heading.
+
 The output window display may be toggled using:
 
   :VORAXOutputToggle
@@ -333,6 +351,22 @@ You can also toggle the append mode for the output window using:
   :VORAXOutputToggleAppend
 
 or using the default local mapping <Leader>a.
+
+One of the most annoying things in SqlPlus is the column heading truncation, 
+when the maximum column size is lesser than the length of the column name. 
+Usually, you have to come up with a bunch of COLUMN FORMAT commands, but this 
+is boring and, in case of many columns, it's not funny at all. To toggle the 
+full column name display you may use:
+
+  :VORAXOutputToggleFullHeading
+
+or you may use the default local mapping <Leader>h. This works just for those 
+queries interactively executed from an SQL buffer. It doesn't work for 
+statements which are run from SQL scripts. For example: select * from dual 
+executed directly from a SQL buffer (e.g SQL scratch) will display the full 
+"DUMMY" column heading. However, if the statement is in the test.sql file and 
+this file is executed, the full heading feature won't work. That's because 
+Vorax doesn't parse the external SQL file.
 
 The output spit by various commands may be funneled through some predefined
 formatters which are very handy quite often. These formatters are:
@@ -380,7 +414,60 @@ The database explorer may be configured using the following global variables:
 	* g:vorax_db_explorer_size: the size of the explorer window. The default 
 	  value is 30.
 
-Support for registering custom explorer plugins is under development.
+The contextual menu of the database explorer can be extended using custom 
+plugins. In fact, every option you see in the menu is provided by a plugin. 
+Of course, you're free to write your own super-mega-cool plugins.
+
+A plugin is just a vim script which must reside in vorax/plugin/explorer 
+folder. It has a very simple interface:
+
+	let s:plugin = {
+		\ 'text': 'my test plugin',
+		\ 'shortcut' : 't'}
+
+	function! s:plugin.Callback(descriptor)
+		" do stuff here
+	endfunction
+
+	function! s:plugin.IsEnabled(descriptor)
+		" decide if the plugin should be activated for the current item
+	endfunction
+
+	call vorax#explorer#RegisterPluginItem(s:plugin)
+
+Let's have a look at the code above. In text we put the label we want to 
+appear in the contextual menu. The shortcut is, obvious, the shortcut which 
+may be used to invoke the menu item implemented by the plugin.
+
+There are two functions: Callback and IsEnabled. Both are invoked with a 
+handler, describing the selected node from the explorer tree. We'll come 
+back to this descriptor shortly. The IsEnabled function is where you decide 
+if your plugin is valid for the selected node. For example, a plugin for 
+collecting table statistics wouldn't make sense for a package. The Callback 
+function is where you put your plugin logic. It is the code which is run 
+when the user invokes the menu item provided by your plugin.
+
+The descriptor argument is a hash which describes the selected node from the 
+database explorer. It has the following keys:
+
+	object: is the object name, as it is shown in the explorer. If the current 
+	        item is not a database object, the value of this key is ''.
+	owner: is the owner of the object. It's empty if the selected item is not 
+	       a database object.
+	category: the category to which the node belongs to. Could be: "Tables", 
+	          "Packages" etc.
+	dbtype: is the Oracle type of the selected node
+	status: the status of the object: VALID or INVALID
+
+The above information should be enough to determine the context in which your 
+plugins operates.
+
+The final step is to register the plugin using the RegisterPluginItem function.
+
+You may have a look into your vorax/plugin/explorer folder to see other 
+examples of already implemented plugins. Please note that every plugin script 
+file starts with a number. This is a convenient way of ordering the menu items 
+when the contextual menu is displayed.
 
 ==============================================================================
 DESCRIBING OBJECTS                                            *vorax-describe* 
