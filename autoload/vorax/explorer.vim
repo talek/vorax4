@@ -364,7 +364,7 @@ function! s:BufferName(type, name) "{{{
 endfunction "}}}
 
 function! s:tree.OpenNode(path) "{{{
-	call s:OpenCurrentNode()
+	call vorax#explorer#OpenCurrentNode()
 endfunction "}}}
 
 function! s:GetObjects(type, owner) "{{{
