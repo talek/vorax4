@@ -245,7 +245,6 @@ function! s:tree.ConfigureOptions() "{{{
   setlocal nospell
   setlocal nonu
   setlocal cursorline
-  setlocal modifiable
   setlocal nolist
   setlocal noreadonly
   setlocal nobuflisted
