@@ -7,7 +7,7 @@
 "							 All credits go to Scrooloose.
 " License:     see LICENSE.txt
 
-let s:MenuItem = {}
+let s:MenuItem = {'id': 'dummy'}
 
 function! vorax#menuitem#Create(options)
     let newMenuItem = copy(s:MenuItem)
@@ -51,7 +51,7 @@ endfunction
 
 function! s:MenuItem.enabled()
     if self.isActiveCallback != -1
-        return {self.isActiveCallback}()
+        return {self.isActiveCallback}(self.id)
     endif
     return 1
 endfunction
@@ -62,7 +62,7 @@ function! s:MenuItem.execute()
         call mc.showMenu()
     else
         if self.callback != -1
-            call {self.callback}()
+            call {self.callback}(self.id)
         endif
     endif
 endfunction

@@ -13,6 +13,7 @@ let s:tree = vorax#tree#New(
 			\  'min_size': 10,
 			\  'span': 1})
 
+" Explorer categories
 let s:base_categories = [
 			\ {'label': 'Tables', 'object_type': 'TABLE'}, 
 			\ {'label': 'Views', 'object_type': 'VIEW'}, 
@@ -28,6 +29,9 @@ let s:base_categories = [
 			\ {'label': 'DB Links', 'object_type': 'DB_LINK'},
 			\ {'label': 'Users', 'object_type': 'USER'}
 			\ ]
+
+" Registered plugins
+let s:plugins = []
 
 function! vorax#explorer#OpenDbComplete(arglead, cmdline, crrpos) "{{{
 	let parts = split(strpart(a:cmdline, 0, a:crrpos), '\s\+', 1)
@@ -172,49 +176,62 @@ function! vorax#explorer#IsOpen() abort "{{{
 	return s:tree._window.IsOpen()
 endfunction "}}}
 
-function! vorax#explorer#IsNodeEditable() "{{{
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if vorax#utils#IsEmpty(descriptor['object'])
-		return 0
-	endif
-	return 1
-endfunction "}}}
-
-function! vorax#explorer#NodeSupportsDesc() "{{{
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if vorax#utils#IsEmpty(descriptor['object'])
-		return 0
-	endif
-	if descriptor['category'] == 'Tables' ||
-				\ descriptor['category'] == 'Views' ||
-				\ descriptor['category'] == 'Packages' ||
-				\ descriptor['category'] == 'Types' ||
-				\ descriptor['category'] == 'Functions' ||
-				\ descriptor['category'] == 'Procedures'
-		return 1
-	else
-		return 0
-	endif
-endfunction "}}}
-
-function! vorax#explorer#NodeSupportsVerboseDesc() "{{{
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if vorax#utils#IsEmpty(descriptor['object'])
-		return 0
-	endif
-	if descriptor['category'] == 'Tables'
-		return 1
-	else
-		return 0
-	endif
-endfunction "}}}
-
 function! vorax#explorer#CurrentNodeProperties() "{{{ 
 	let path = s:tree.GetPathUnderCursor()
 	return s:DescribeNode(path)
+endfunction "}}}
+
+function! vorax#explorer#OpenCurrentNode() "{{{
+	let bang = g:vorax_dbexplorer_force_edit ? '!' : ''
+	let path = s:tree.GetPathUnderCursor()
+	let descriptor = s:DescribeNode(path)
+	if descriptor != {}
+		let dbtype = s:Category2DbmsMetadata(descriptor['category'])
+		if !vorax#utils#IsEmpty(descriptor['object'])
+			if descriptor['category'] == 'Users' || descriptor['category'] == 'DB Links'
+				let dbobject = descriptor['object']
+			else
+				let dbobject = descriptor['owner'] . '.' . descriptor['object']
+			endif
+			if exists('dbobject')
+				call vorax#explorer#OpenDbObject(bang, dbtype, dbobject)
+			endif
+		endif
+	endif
+endfunction "}}}
+
+function! vorax#explorer#OpenContextMenu() "{{{
+	let path = s:tree.GetPathUnderCursor()
+	call s:ContextualMenu().showMenu()
+endfunction "}}}
+
+function vorax#explorer#PluginEnabled(id) "{{{
+	let descriptor = vorax#explorer#CurrentNodeProperties()
+	let plugin = s:plugins[a:id]
+  return plugin.IsEnabled(descriptor)
+endfunction "}}}
+
+function vorax#explorer#PluginCallback(id) "{{{
+	let descriptor = vorax#explorer#CurrentNodeProperties()
+	let plugin = s:plugins[a:id]
+  return plugin.Callback(descriptor)
+endfunction "}}}
+
+function! vorax#explorer#RegisterPluginItem(item) "{{{
+	if vorax#utils#IsEmpty(a:item.shortcut)
+		let label = " : " . a:item.text
+	else
+		let label = a:item.shortcut . ": " . a:item.text
+	end
+	let menu_item = vorax#menuitem#Create(
+				\ {'text': label, 
+				\  'shortcut' : a:item.shortcut, 
+				\  'callback' : "vorax#explorer#PluginCallback",
+				\  'isActiveCallback' : "vorax#explorer#PluginEnabled" 
+				\ })
+	let menu_item.id = len(s:plugins)
+	call add(s:plugins, a:item)
+	call add(s:explorer_items, menu_item)
 endfunction "}}}
 
 function! s:tree.ConfigureOptions() "{{{
@@ -347,25 +364,6 @@ function! s:BufferName(type, name) "{{{
 	return a:name . '.' . file_ext
 endfunction "}}}
 
-function! s:OpenCurrentNode() "{{{
-	let bang = g:vorax_dbexplorer_force_edit ? '!' : ''
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if descriptor != {}
-		let dbtype = s:Category2DbmsMetadata(descriptor['category'])
-		if !vorax#utils#IsEmpty(descriptor['object'])
-			if descriptor['category'] == 'Users' || descriptor['category'] == 'DB Links'
-				let dbobject = descriptor['object']
-			else
-				let dbobject = descriptor['owner'] . '.' . descriptor['object']
-			endif
-			if exists('dbobject')
-				call vorax#explorer#OpenDbObject(bang, dbtype, dbobject)
-			endif
-		endif
-	endif
-endfunction "}}}
-
 function! s:tree.OpenNode(path) "{{{
 	call s:OpenCurrentNode()
 endfunction "}}}
@@ -490,210 +488,12 @@ function! s:GetRootCategories() "{{{
 	return categories
 endfunction "}}}
 
-function! vorax#explorer#IsCompositeModule() "{{{
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if descriptor['category'] == 'Packages' ||
-				\ descriptor['category'] == 'Types'
-		return 1
-	endif
-	return 0
-endfunction "}}}
-
-" Contextual menu "{{{
-
-function! vorax#explorer#Menu() "{{{
+function! s:ContextualMenu() "{{{
 	if !exists('s:explorer_menu')
-		let items = []
-		call add(items, s:OpenDefMenuItem())
-		call add(items, s:DescribeMenuItem())
-		call add(items, s:VerboseDescribeMenuItem())
-		call add(items, s:DropMenuItem())
-		call add(items, s:OpenSpecMenuItem())
-		call add(items, s:OpenBodyMenuItem())
-		let s:explorer_menu = vorax#menu#Create(items, 'Explorer menu. ')
+		let s:explorer_items = []
+    runtime! vorax/plugin/explorer/**/*.vim
+		let s:explorer_menu = vorax#menu#Create(s:explorer_items, 'Explorer menu. ')
 	endif
 	return s:explorer_menu
 endfunction "}}}
-
-function! vorax#explorer#OpenContextMenu() "{{{
-	let path = s:tree.GetPathUnderCursor()
-	call vorax#explorer#Menu().showMenu()
-endfunction "}}}
-
-" Normal open definition item "{{{
-
-function! s:OpenDefMenuItem() "{{{
-	let open_def = vorax#menuitem#Create(
-				\ {'text': '(O)pen definition', 
-				\  'shortcut' : 'o', 
-				\  'callback' : 'vorax#explorer#NormalOpenCurrentNode',
-				\  'isActiveCallback' : 'vorax#explorer#IsNodeEditable'})
-	return open_def
-endfunction "}}}
-
-function! vorax#explorer#NormalOpenCurrentNode() "{{{
-	call s:OpenCurrentNode('')
-endfunction "}}}
-
-"}}}
-
-" Describe object item "{{{
-function! s:DescCurrentItem(bang)
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if descriptor != {}
-		let dbtype = s:Category2DbmsMetadata(descriptor['category'])
-		if !vorax#utils#IsEmpty(descriptor['object'])
-			if descriptor['category'] == 'Users' || descriptor['category'] == 'DB Links'
-				let dbobject = descriptor['object']
-			else
-				let dbobject = descriptor['owner'] . '.' . descriptor['object']
-			endif
-			if exists('dbobject')
-				call vorax#toolkit#Desc(dbobject, a:bang)
-			endif
-		endif
-	endif
-endfunction
-
-function! vorax#explorer#DescribeCurrentNode(...) "{{{
-	if a:0 == 1
-		if !vorax#explorer#NodeSupportsDesc()
-			return
-		endif
-	endif
-	call s:DescCurrentItem('')
-endfunction "}}}
-
-function! s:DescribeMenuItem() "{{{
-	let desc_def = vorax#menuitem#Create(
-				\ {'text': '(D)escribe object', 
-				\  'shortcut' : 'd', 
-				\  'callback' : 'vorax#explorer#DescribeCurrentNode',
-				\  'isActiveCallback' : 'vorax#explorer#NodeSupportsDesc'})
-	return desc_def
-endfunction "}}}
-
-"}}}
-
-" Verbose Describe object item "{{{
-
-function! vorax#explorer#VerboseDescribeCurrentNode(...) "{{{
-	if a:0 == 1
-		if !vorax#explorer#NodeSupportsVerboseDesc()
-			return
-		endif
-	endif
-	call s:DescCurrentItem('!')
-endfunction "}}}
-
-function! s:VerboseDescribeMenuItem() "{{{
-	let desc_def = vorax#menuitem#Create(
-				\ {'text': '(V)erbose describe object', 
-				\  'shortcut' : 'v', 
-				\  'callback' : 'vorax#explorer#VerboseDescribeCurrentNode',
-				\  'isActiveCallback' : 'vorax#explorer#NodeSupportsVerboseDesc'})
-	return desc_def
-endfunction "}}}
-
-"}}}
-
-" Drop object item "{{{
-
-function! vorax#explorer#DropCurrentNode(...) "{{{
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if descriptor != {}
-		let dbtype = s:Category2DbmsMetadata(descriptor['category'])
-		if !vorax#utils#IsEmpty(descriptor['object'])
-			if descriptor['category'] == 'Users' || descriptor['category'] == 'DB Links'
-				let dbobject = '"' . descriptor['object'] . '"'
-			else
-				let dbobject = '"' . descriptor['owner'] . '"."' . descriptor['object'] . '"'
-			endif
-			if exists('dbobject')
-				let cmd = 'DROP '
-				if descriptor['dbtype'] == 'DB_LINK'
-					let cmd .= 'DATABASE LINK '
-				else
-					let cmd .= substitute(descriptor['dbtype'], '_', ' ', 'g') . ' '
-				end
-				let cmd .= dbobject . ' '
-				if descriptor['dbtype'] == 'TABLE'
-					let cmd .= 'CASCADE CONSTRAINTS;'
-				elseif descriptor['dbtype'] == 'USER'
-					let cmd .= 'CASCADE;'
-				else
-					let cmd .= ';'
-				endif
-				if confirm("Confirm you want to run: \n" . cmd, "&Yes\n&No", 2) == 1
-					let output = vorax#sqlplus#ExecImmediate(cmd)
-					call vorax#output#SpitAll(output)
-					call vorax#explorer#Refresh()
-				endif
-			endif
-		endif
-	endif
-endfunction "}}}
-
-function! s:DropMenuItem() "{{{
-   return vorax#menuitem#Create(
-				\ {'text': 'D(r)op object', 
-				\  'shortcut' : 'r', 
-				\  'callback' : 'vorax#explorer#DropCurrentNode',
-				\  'isActiveCallback' : 'vorax#explorer#IsNodeEditable'})
-endfunction "}}}
-
-"}}}
-
-" Object SPEC item "{{{
-
-function! s:OpenSpecMenuItem() "{{{
-	let spec_def = vorax#menuitem#Create(
-				\ {'text': 'Open (S)PEC definition', 
-				\  'shortcut' : 's', 
-				\  'callback' : 'vorax#explorer#OpenSpecCurrentNode',
-				\  'isActiveCallback' : 'vorax#explorer#IsCompositeModule'})
-	return spec_def
-endfunction "}}}
-
-function! vorax#explorer#OpenSpecCurrentNode() "{{{
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if descriptor != {}
-		let dbtype = s:Category2DbmsMetadata(descriptor['category']) . '_SPEC'
-		let dbobject = descriptor['owner'] . '.' . descriptor['object']
-		let bang = g:vorax_dbexplorer_force_edit ? '!' : ''
-		call vorax#explorer#OpenDbObject(bang, dbtype, dbobject)
-	endif
-endfunction "}}}
-
-"}}}
-
-" Object BODY item "{{{
-
-function! s:OpenBodyMenuItem() "{{{
-	let body_def = vorax#menuitem#Create(
-				\ {'text': 'Open (B)ODY definition', 
-				\  'shortcut' : 'b', 
-				\  'callback' : 'vorax#explorer#OpenBodyCurrentNode',
-				\  'isActiveCallback' : 'vorax#explorer#IsCompositeModule'})
-	return body_def
-endfunction "}}}
-
-function! vorax#explorer#OpenBodyCurrentNode() "{{{
-	let path = s:tree.GetPathUnderCursor()
-	let descriptor = s:DescribeNode(path)
-	if descriptor != {}
-		let dbtype = s:Category2DbmsMetadata(descriptor['category']) . '_BODY'
-		let dbobject = descriptor['owner'] . '.' . descriptor['object']
-		let bang = g:vorax_dbexplorer_force_edit ? '!' : ''
-		call vorax#explorer#OpenDbObject(bang, dbtype, dbobject)
-	endif
-endfunction "}}}
-
-"}}}
-
-"}}}
 
