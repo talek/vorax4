@@ -17,7 +17,7 @@ function! NERDTreeVoraxExec()
     " to address blanks in path on windows
     let cmd = fnamemodify(cmd, ':8')
       if vorax#utils#IsVoraxManagedFile(cmd)
-        call vorax#sqlplus#SandboxExec('@' . cmd)
+        call vorax#sqlplus#SandboxExec('@"' . cmd . '"')
       else
         call vorax#utils#SpitWarn('Not a Vorax managed file.')
       endif
