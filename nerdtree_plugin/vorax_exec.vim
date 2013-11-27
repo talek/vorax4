@@ -24,10 +24,3 @@ function! NERDTreeVoraxExec()
   endif
 endfunction 
 
-function! s:RunScript(name) abort "{{{
-  call VORAXDebug("vorax#sqlplus#RunVoraxScriptBg name=" . a:name)
-  let handler = vorax#sqlplus#PrepareVoraxScript(a:name, a:000)
-  call vorax#sqlplus#Exec('@' . a:name, handler.hash)
-endfunction "}}}
-
-
