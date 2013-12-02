@@ -28,3 +28,7 @@ to you.
 
 For details don't hesitate to have a look at the project wiki.
 
+## Community
+
+Discussion group: https://groups.google.com/d/forum/vorax-discuss
+Vorax Blog: http://vorax-ide.blogspot.ro/
