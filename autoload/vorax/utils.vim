@@ -100,14 +100,13 @@ function! vorax#utils#BufferContent(...) abort"{{{
   else
   	let start_with = 1
   endif
-  "if &ff == 'dos'
-    "let separator = "\r\n"
-  "elseif &ff == 'unix'
-    "let separator = "\n"
-  "elseif &ff == 'mac'
-    "let separator = "\r"
-  "endif
-	let separator = "\n"
+	if &ff == 'dos'
+		let separator = "\r\n"
+	elseif &ff == 'unix'
+		let separator = "\n"
+	elseif &ff == 'mac'
+		let separator = "\r"
+	endif
 	let content = join(getline(start_with, end_with), separator)
   return content
 endfunction"}}}
