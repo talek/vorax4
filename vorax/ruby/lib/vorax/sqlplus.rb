@@ -257,7 +257,7 @@ module Vorax
     def pack(command, opts)
       pack_file = opts[:pack_file]
       if pack_file
-        File.open(pack_file, 'w') do |f|
+        File.open(pack_file, 'wb') do |f|
           f.puts opts[:prep]
           f.puts "#pro #@start_marker"
           f.puts command.strip
