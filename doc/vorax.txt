@@ -15,6 +15,7 @@
 	   Executing statements ................... |vorax-exec|
 	   The output window  ..................... |vorax-output|
 	   The database explorer .................. |vorax-explorer|
+	   Connection profiles .................... |vorax-cmanager|
 	   Describing objects ..................... |vorax-describe|
 	   Working with Explain Plans ............. |vorax-explainplan|
 	   The Oracle HTML Documentation .......... |vorax-oradoc|
@@ -468,6 +469,76 @@ You may have a look into your vorax/plugin/explorer folder to see other
 examples of already implemented plugins. Please note that every plugin script 
 file starts with a number. This is a convenient way of ordering the menu items 
 when the contextual menu is displayed.
+
+==============================================================================
+CONNECTION PROFILES                                           *vorax-cmanager* 
+
+If you are that kind of DBA who administers a lot of databases then... 
+welcome to the club. Getting the connection string from an Excel sheet or a 
+Word document is not funny, really! Keepass may be a convenient alternative, 
+but when all you have is a dummy console, even such tools might be difficult 
+to be accessed.
+
+So, Vorax comes with a simple connection profiles window where you can 
+register and group various connection strings. The connection profiles store 
+is protected by a master password, provided at the time the repository is 
+created.
+
+From the technical point of view, the implementation is simple: a public 
+and a private key are generated, the private key is then secured with your 
+master password and then, the passwords from the connection profiles stored 
+into the repository are encrypted with this key. That's it!
+
+Every connection profile may be assigned to a category so that to be easy 
+to distinguish between related profiles (e.g. Production, Test, Development).
+
+The key map for toggling the connection profiles window is <Leader>pr. "PR" 
+stands for 'profile'.
+
+You may navigate through the hierarchical structure of the connection profiles 
+using the following key maps:
+
+	j: move down
+	k: move up
+	Enter or o: expand category or connect using the profile under cursor
+	m: invoke the contextual menu for the node under cursor
+
+The look of the connection profiles window is controlled by the following 
+Vorax global variables:
+
+	g:vorax_cmanager_side: where to display the connection profile window, 
+	                       right or left
+	g:vorax_cmanager_size: the width of the connection profile window
+
+The contextual menu can also be extended using custom plugins. A plugin is 
+just a vim script which must reside in vorax/plugin/cmanager folder. It has 
+a very simple interface:
+
+	let s:plugin = {
+		\ 'text': 'my test plugin',
+		\ 'shortcut' : 't'}
+
+	function! s:plugin.Callback(descriptor)
+		" do stuff here
+	endfunction
+
+	function! s:plugin.IsEnabled(descriptor)
+		" decide if the plugin should be activated for the current item
+	endfunction
+
+	call vorax#cmanager#RegisterPluginItem(s:plugin)
+
+It's the same interface used to extend the Database Explorer. What is 
+different is the descriptor dictionary used to invoke the plugin. In case 
+of a CManager plugin, the descriptor has the following attributes:
+
+	root: 1 if the plugin is invoked for the root node of the connections 
+	      tree, 0 otherwise
+	category: the category of the connection profile
+	profile: the profile, as it is shown in the connections tree
+
+You may have a look into your vorax/plugin/cmanager folder to see some 
+examples of the already implemented plugins.
 
 ==============================================================================
 DESCRIBING OBJECTS                                            *vorax-describe* 
