@@ -13,6 +13,9 @@ let s:tree = vorax#tree#New(
 			\  'min_size': 10,
 			\  'span': 1})
 
+" Registered plugins
+let s:plugins = []
+
 " Initialize password manager
 call vorax#ruby#PmInit(g:vorax_homedir)
 
@@ -37,15 +40,9 @@ function! vorax#cmanager#Refresh(...) "{{{
 endfunction "}}}
 
 function! vorax#cmanager#OpenContextMenu() "{{{
-	let path = s:tree.GetPathUnderCursor()
-	if s:tree.IsLeaf(path)
-		call s:ProfileMenu().showMenu()
-  else
-		if path ==? s:tree.path_separator . s:tree.root
-			call s:RootMenu().showMenu()
-		else
-			call s:CategoryMenu().showMenu()
-		endif
+	let menu = s:ContextualMenu()
+	if menu != {}
+		call menu.showMenu()
 	endif
 endfunction "}}}
 
@@ -123,6 +120,9 @@ function! vorax#cmanager#ChangeProfile() "{{{
 	let parts = split(crr_path, s:tree.path_separator)
 	let default_profile = parts[-1]
 	let default_category = parts[-2]
+	if default_category == s:tree.root
+		let default_category = ''
+	endif
 	call vorax#ruby#PmRemove(default_profile)
 	call vorax#cmanager#AddProfile(default_profile, default_category)
 endfunction "}}}
@@ -157,7 +157,6 @@ function! vorax#cmanager#RemoveCategory() "{{{
 	let crr_path = s:tree.GetPathUnderCursor()
 	let parts = split(crr_path, s:tree.path_separator)
 	let category = parts[-1]
-	let new_category=input('Category: ', category)
 	let categories = copy(vorax#ruby#PmProfiles(category))
 	for profile in categories
     call vorax#ruby#PmRemove(profile)
@@ -185,6 +184,60 @@ function! vorax#cmanager#ShowProfile() "{{{
 		redraw
 		echo profile
 	endif
+endfunction "}}}
+
+function! vorax#cmanager#CurrentNodeProperties() "{{{
+	let path = s:tree.GetPathUnderCursor()
+	let parts = split(path, s:tree.path_separator)
+	let is_root = (len(parts) == 1 ? 1 : 0)
+	if s:tree.IsLeaf(path)
+		if parts[-2] == s:tree.root
+			let category = ''
+		else
+			let category = parts[-2]
+		endif
+		return {'profile': parts[-1], 'category': category, 'root': is_root}
+	else
+		return {'profile' : '', 'category': parts[-1], 'root': is_root}
+	endif
+endfunction "}}}
+
+function vorax#cmanager#PluginEnabled(id) "{{{
+	let descriptor = vorax#cmanager#CurrentNodeProperties()
+	let plugin = s:plugins[a:id]
+  return plugin.IsEnabled(descriptor)
+endfunction "}}}
+
+function vorax#cmanager#PluginCallback(id) "{{{
+	let descriptor = vorax#cmanager#CurrentNodeProperties()
+	let plugin = s:plugins[a:id]
+  return plugin.Callback(descriptor)
+endfunction "}}}
+
+function! vorax#cmanager#RegisterPluginItem(item) "{{{
+	if vorax#utils#IsEmpty(a:item.shortcut)
+		let label = " : " . a:item.text
+	else
+		let label = a:item.shortcut . ": " . a:item.text
+	end
+	let menu_item = vorax#menuitem#Create(
+				\ {'text': label, 
+				\  'shortcut' : a:item.shortcut, 
+				\  'callback' : "vorax#cmanager#PluginCallback",
+				\  'isActiveCallback' : "vorax#cmanager#PluginEnabled" 
+				\ })
+	let menu_item.id = len(s:plugins)
+	call add(s:plugins, a:item)
+	call add(s:cmanager_items, menu_item)
+endfunction "}}}
+
+function! vorax#cmanager#ConnectUsingCurrentProfile() "{{{
+	let path = s:tree.GetPathUnderCursor()
+	call s:tree.OpenNode(path)
+endfunction "}}}
+
+function! vorax#cmanager#GetTree() "{{{
+	return s:tree
 endfunction "}}}
 
 function! s:tree.ConfigureOptions() "{{{
@@ -255,6 +308,11 @@ function! s:Connect(profile, password) "{{{
 	call vorax#sqlplus#Connect(cstr)
 endfunction "}}}
 
+function! s:EnterMasterPwd() "{{{
+  let pwd = inputsecret('Enter master password: ')
+	return pwd
+endfunction "}}}
+
 function! s:PmUnlock() "{{{
 	if vorax#ruby#PmHasKeys(g:vorax_homedir)
 		if !vorax#ruby#IsPmUnlocked()
@@ -287,45 +345,13 @@ function! s:PmUnlock() "{{{
 	return 1
 endfunction "}}}
 
-function! s:EnterMasterPwd() "{{{
-  let pwd = inputsecret('Enter master password: ')
-	return pwd
-endfunction "}}}
-
-function! s:RootMenu() "{{{
-	let add_profile = vorax#menuitem#Create({'text': '(A)dd profile', 'shortcut' : 'a', 'callback': 'vorax#cmanager#AddProfile'})
-	let unlock = vorax#menuitem#Create({'text': '(U)nlock repository', 'shortcut' : 'u', 'callback' : 'vorax#cmanager#UnlockRepository'})
-	let change_pwd = vorax#menuitem#Create({'text': '(C)hange password', 'shortcut' : 'c', 'callback' : 'vorax#cmanager#ChangePassword'})
-	let items = [add_profile]
-	if vorax#ruby#IsPmUnlocked()
-		call add(items, change_pwd)
-	else
-		call add(items, unlock)
-	endif
-	let root_menu = vorax#menu#Create(items, 'Profiles menu. ')
-	return root_menu
-endfunction "}}}
-
-function! s:CategoryMenu() "{{{
-	if !exists('s:conn_cat_menu')
-		let add_profile = vorax#menuitem#Create({'text': '(A)dd profile', 'shortcut' : 'a', 'callback': 'vorax#cmanager#AddProfile'})
-		let rename_ctg = vorax#menuitem#Create({'text': '(R)ename category', 'shortcut' : 'r', 'callback' : 'vorax#cmanager#RenameCategory'})
-		let remove_all = vorax#menuitem#Create({'text': '(D)elete category including all profiles', 'shortcut' : 'd', 'callback' : 'vorax#cmanager#RemoveCategory'})
-		let items = [add_profile, rename_ctg, remove_all]
-		let s:conn_cat_menu = vorax#menu#Create(items, 'Profiles menu. ')
-	endif
-	return s:conn_cat_menu
-endfunction "}}}
-
-function! s:ProfileMenu() "{{{
-	if !exists('s:conn_menu')
-		let change_profile = vorax#menuitem#Create({'text': '(C)hange profile', 'shortcut' : 'c', 'callback' : 'vorax#cmanager#ChangeProfile'})
-		let remove_profile = vorax#menuitem#Create({'text': '(R)emove profile', 'shortcut' : 'r', 'callback' : 'vorax#cmanager#RemoveProfile'})
-		let show_profile = vorax#menuitem#Create({'text': '(S)how profile', 'shortcut' : 's', 'callback' : 'vorax#cmanager#ShowProfile'})
-		let items = [change_profile, remove_profile, show_profile]
-		let s:conn_menu = vorax#menu#Create(items, 'Profiles menu. ')
-	endif
-	return s:conn_menu
+function! s:IsDuplicateProfile(profile) "{{{
+	for item in vorax#ruby#PmAllProfiles()
+		if item == a:profile
+			return 1
+		endif
+	endfor
+	return 0
 endfunction "}}}
 
 function! s:IsOsConnection(parts) "{{{
@@ -352,11 +378,16 @@ function! s:IsWalletConnection(parts) "{{{
 	endif
 endfunction "}}}
 
-function! s:IsDuplicateProfile(profile) "{{{
-	for item in vorax#ruby#PmAllProfiles()
-		if item == a:profile
-			return 1
+function! s:ContextualMenu() "{{{
+	if !exists('s:cmanager_menu')
+		let s:cmanager_items = []
+    runtime! vorax/plugin/cmanager/**/*.vim
+		if len(s:cmanager_items) > 0
+			let s:cmanager_menu = vorax#menu#Create(s:cmanager_items, 'Connection Profiles Menu. ')
+		else
+			return {}
 		endif
-	endfor
-	return 0
+	endif
+	return s:cmanager_menu
 endfunction "}}}
+
