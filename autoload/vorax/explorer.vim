@@ -205,13 +205,13 @@ function! vorax#explorer#OpenContextMenu() "{{{
 	call s:ContextualMenu().showMenu()
 endfunction "}}}
 
-function vorax#explorer#PluginEnabled(id) "{{{
+function! vorax#explorer#PluginEnabled(id) "{{{
 	let descriptor = vorax#explorer#CurrentNodeProperties()
 	let plugin = s:plugins[a:id]
   return plugin.IsEnabled(descriptor)
 endfunction "}}}
 
-function vorax#explorer#PluginCallback(id) "{{{
+function! vorax#explorer#PluginCallback(id) "{{{
 	let descriptor = vorax#explorer#CurrentNodeProperties()
 	let plugin = s:plugins[a:id]
   return plugin.Callback(descriptor)

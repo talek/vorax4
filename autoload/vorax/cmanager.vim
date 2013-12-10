@@ -202,13 +202,13 @@ function! vorax#cmanager#CurrentNodeProperties() "{{{
 	endif
 endfunction "}}}
 
-function vorax#cmanager#PluginEnabled(id) "{{{
+function! vorax#cmanager#PluginEnabled(id) "{{{
 	let descriptor = vorax#cmanager#CurrentNodeProperties()
 	let plugin = s:plugins[a:id]
   return plugin.IsEnabled(descriptor)
 endfunction "}}}
 
-function vorax#cmanager#PluginCallback(id) "{{{
+function! vorax#cmanager#PluginCallback(id) "{{{
 	let descriptor = vorax#cmanager#CurrentNodeProperties()
 	let plugin = s:plugins[a:id]
   return plugin.Callback(descriptor)
