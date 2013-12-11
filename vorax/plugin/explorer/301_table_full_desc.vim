@@ -32,4 +32,14 @@ function! s:plugin.IsEnabled(descriptor)
 	endif
 endfunction
 
+noremap <silent> <buffer> <Leader>D :call VORAXFullDescPlugin(vorax#explorer#CurrentNodeProperties())<CR>
+
+function! VORAXFullDescPlugin(descriptor)
+	if s:plugin.IsEnabled(a:descriptor)
+		call s:plugin.Callback(a:descriptor)
+	endif
+endfunction
+
+noremap <silent> <buffer> <Leader>d :call VORAXGenericDescPlugin(vorax#explorer#CurrentNodeProperties())<CR>
+
 call vorax#explorer#RegisterPluginItem(s:plugin)

@@ -251,13 +251,20 @@ function! s:tree.ConfigureOptions() "{{{
   setlocal isk+=$
   setlocal isk+=#
 	setlocal conceallevel=3
+	
+	" Load plugins here. That's because
+	" we want the tree window to be open to let
+	" custom plugins to register local mappings
+	if !exists('s:explorer_items')
+		let s:explorer_items = []
+		runtime! vorax/plugin/explorer/**/*.vim
+	endif
+
 endfunction "}}}
 
 function! s:tree.ConfigureKeys() "{{{
 	noremap <silent> <buffer> R :call vorax#explorer#Refresh()<CR>
 	noremap <silent> <buffer> m :call vorax#explorer#OpenContextMenu()<CR>
-	noremap <silent> <buffer> <Leader>d :call vorax#explorer#DescribeCurrentNode()<CR>
-	noremap <silent> <buffer> <Leader>D :call vorax#explorer#VerboseDescribeCurrentNode()<CR>
 endfunction "}}}
 
 function! s:tree.GetSubNodes(path) "{{{
@@ -489,8 +496,6 @@ endfunction "}}}
 
 function! s:ContextualMenu() "{{{
 	if !exists('s:explorer_menu')
-		let s:explorer_items = []
-    runtime! vorax/plugin/explorer/**/*.vim
 		let s:explorer_menu = vorax#menu#Create(s:explorer_items, 'Explorer menu. ')
 	endif
 	return s:explorer_menu

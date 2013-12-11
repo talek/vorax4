@@ -251,6 +251,14 @@ function! s:tree.ConfigureOptions() "{{{
 	setlocal nowrap
 	setlocal nospell
   let &ft="connvorax"
+	
+	" Load plugins here. That's because
+	" we want the tree window to be open to let
+	" custom plugins to register local mappings
+	if !exists('s:cmanager_items')
+		let s:cmanager_items = []
+    runtime! vorax/plugin/cmanager/**/*.vim
+	endif
 endfunction "}}}
 
 function! s:tree.ConfigureKeys() "{{{
@@ -380,8 +388,6 @@ endfunction "}}}
 
 function! s:ContextualMenu() "{{{
 	if !exists('s:cmanager_menu')
-		let s:cmanager_items = []
-    runtime! vorax/plugin/cmanager/**/*.vim
 		if len(s:cmanager_items) > 0
 			let s:cmanager_menu = vorax#menu#Create(s:cmanager_items, 'Connection Profiles Menu. ')
 		else
