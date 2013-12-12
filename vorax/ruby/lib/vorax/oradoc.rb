@@ -51,7 +51,6 @@ module Vorax
 							return if Oradoc::abort?
 							doc = Nokogiri::HTML(file)
 							title = doc.at("head/title").content
-							text.gsub(nbsp, " ")
 							index.add_document :file => path, 
 								:content => doc.text.split,
 								:title => title.to_s,
