@@ -68,10 +68,14 @@ function! s:ShowErrors(bufnr, winnr) abort "{{{
 endfunction "}}}
 
 function! s:GetOffset(modules, owner, object, type) "{{{
+	call VORAXDebug('PLSQL s:GetOffset: a:modules=' . string(a:modules) . 
+				\ ' a:owner=' . a:owner .
+				\ ' a:object=' . a:object .
+				\ ' a:type=' . a:type)
 	let offset = 0
 	for module in a:modules
-    if module['owner'] ==? a:owner &&
-					\ module['module'] ==? a:object &&
+    if substitute(module['owner'], '"', '', 'g') ==? a:owner &&
+					\ substitute(module['module'], '"', '', 'g') ==? a:object &&
 					\ (module['type'] == "" || module['type'] ==? a:type)
 			let offset = module['defined_at'] - 1
 			break
@@ -81,6 +85,7 @@ function! s:GetOffset(modules, owner, object, type) "{{{
 endfunction "}}}
 
 function! s:GetErrors(modules) "{{{
+  call VORAXDebug("PLSQL GetErrros: modules=" . string(a:modules))
 	let filter = []
 	for module in a:modules
 		let where = "(owner = '" . substitute(module['owner'], '"', '', 'g') . "' and " .
