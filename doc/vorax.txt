@@ -396,6 +396,11 @@ There are other interesting things you can do in the output window:
     SELECT (<original query>) WHERE ROWNUM <= :limit wrapper. This feature 
     does work just for queries executed directly from an SQL buffer, not 
     via external scripts.
+  * set the "TOP" mode using <Leader>T. In this mode, after a statement is 
+    executed, the first line of the corresponding output will be displayed 
+    on the top of the output window. You may use this mode if you find it 
+    more natural to scroll from the beginning of the output to the end than 
+    the other way around.
 
 Please note that the above key mappings are local to the output window.
 

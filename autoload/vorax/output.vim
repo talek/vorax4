@@ -244,6 +244,15 @@ function! vorax#output#ToggleSticky() abort"{{{
   endif
 endfunction"}}}
 
+function! vorax#output#ToggleTop() abort"{{{
+  let g:vorax_output_cursor_on_top = !g:vorax_output_cursor_on_top
+  if g:vorax_output_cursor_on_top
+    echo 'Top mode ON'
+  else
+    echo 'Top mode OFF'
+  endif
+endfunction"}}}
+
 function! vorax#output#Abort() abort"{{{
   try
     if vorax#ruby#SqlplusIsInitialized() &&
@@ -329,6 +338,8 @@ function! vorax#output#StatusLine() abort"{{{
   let append = (g:vorax_output_window_append ? ' APPEND' : '')
   " sticky mode
   let sticky = (g:vorax_output_window_sticky_cursor ? ' STICKY' : '')
+  " top mode
+  let top = (g:vorax_output_cursor_on_top ? ' TOP' : '')
   " limit rows
   let limit_rows = (exists('g:vorax_limit_rows') ? ' LIMIT=' . g:vorax_limit_rows : '')
   return throbber .
@@ -336,6 +347,7 @@ function! vorax#output#StatusLine() abort"{{{
         \ '%= ' . format . 
         \ col_head .
         \ append .
+				\ top .
         \ sticky .
 				\ limit_rows .
         \ ' '
