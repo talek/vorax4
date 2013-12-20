@@ -83,8 +83,8 @@ endfunction "}}}
 function! s:GetErrors(modules) "{{{
 	let filter = []
 	for module in a:modules
-		let where = "(owner = '" . module['owner'] . "' and " .
-					\ "name = '" . module['module'] . "'"
+		let where = "(owner = '" . substitute(module['owner'], '"', '', 'g') . "' and " .
+					\ "name = '" . substitute(module['module'], '"', '', 'g') . "'"
 		if !vorax#utils#IsEmpty(module['type'])
 			let where .= " and type = '" . module['type'] . "')"
 		else
