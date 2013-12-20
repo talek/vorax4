@@ -3,7 +3,7 @@
 " Description: An Oracle IDE for Geeks
 " License:     see LICENSE.txt
 
-let g:vorax_version = "4.1.5"
+let g:vorax_version = "4.2.0"
 
 if exists("g:loaded_vorax") || &cp
   finish
@@ -78,6 +78,7 @@ call s:initVariable('g:vorax_parse_min_lines', 500)
 call s:initVariable('g:vorax_update_session_owner', 1)
 call s:initVariable('g:vorax_auto_connect', 1)
 call s:initVariable('g:vorax_abort_session_warning', 0)
+call s:initVariable('g:vorax_limit_rows_warning', 0)
 
 call s:initVariable('g:vorax_omni_enable', 1)
 " The type of omni_case:

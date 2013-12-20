@@ -168,18 +168,22 @@ endfunction "}}}
 function! vorax#sqlplus#Exec(command, ...) abort "{{{
   let pre = ""
   let post = ""
+  let command = a:command
   let hash = {'pack_file' : s:properties['sql_pack'],
         \ 'funnel' : vorax#output#GetFunnel()}
   if exists("a:1") && type(a:1) == 4 "dictionary please
     let hash = a:1
   endif
   try
-    if a:command =~ '\m^\s*$'
+    if command =~ '\m^\s*$'
 			" just an empty string... fuck it!
     	return
 		end
+    if exists('g:vorax_limit_rows')
+      let command = s:LimitRows(command, g:vorax_limit_rows)
+		endif
     if g:vorax_output_full_heading
-			let format_cols = s:FormatColumns(a:command)
+			let format_cols = s:FormatColumns(command)
 			if has_key(hash, 'prep')
 				let hash['prep'] .= "\n" . format_cols['format']
 			else
@@ -196,7 +200,7 @@ function! vorax#sqlplus#Exec(command, ...) abort "{{{
 		else
 			let s:properties['cols_clear'] = ''
 		endif
-    let stmt = vorax#ruby#PrepareExec(a:command)
+    let stmt = vorax#ruby#PrepareExec(command)
     call vorax#ruby#SqlplusExec(stmt, hash)
     if vorax#ruby#SqlplusIsInitialized() && vorax#ruby#SqlplusIsAlive()
       call vorax#output#SpitterStart()
@@ -384,6 +388,33 @@ function! vorax#sqlplus#GetSource(owner, object, type) abort "{{{
 endfunction "}}}
 
 " }}}
+
+function! s:LimitRows(script, limit) "{{{
+  let stmts = vorax#ruby#SqlStatements(a:script, 1, 1)
+	let new_stmts = []
+	for stmt in stmts
+		let query = vorax#ruby#RemoveAllComments(stmt)
+		if query =~ '\m\c^\_s*\(SELECT\|WITH\)'
+			" get rid of the last terminator
+			let query = substitute(query, '\m\_s*\(;\|\/\)\_s*$', '', 'g')
+			" remove leading CRs
+			let query = substitute(query, '\m^\_s*', '', 'g')
+			let query = "select * from (\n" .
+						\ '/* start original query */' .
+						\ "\n" . query . "\n" .
+						\ '/* end */' .
+						\ "\n) where rownum <= " . a:limit . ";"
+			call add(new_stmts, query)
+			if g:vorax_limit_rows_warning
+				call add(new_stmts, "prompt WARN: output limited to maximum " . 
+							\ a:limit . " records...")
+			endif
+		else
+			call add(new_stmts, stmt)
+		end
+	endfor
+	return join(new_stmts, "\n")
+endfunction "}}}
 
 function! s:FormatColumns(script) "{{{
   let stmts = vorax#ruby#SqlStatements(a:script, 1, 1)
