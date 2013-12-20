@@ -168,7 +168,7 @@ function! vorax#output#FetchAndSpit() abort " {{{
     if vorax#ruby#SqlplusEofOutput() 
       call vorax#output#SpitterStop()
       " clear the throbber message
-      echom ""
+      echo ""
       redraw
     else
       let chunk = vorax#ruby#SqlplusReadOutput(s:read_chunk_size)
@@ -324,19 +324,33 @@ function! vorax#output#StatusLine() abort"{{{
     let format = 'TABLEZIP'
   endif
   " column heading
-  let col_head = (g:vorax_output_full_heading ? 'HEADING' : '')
+  let col_head = (g:vorax_output_full_heading ? ' HEADING' : '')
   " append mode
-  let append = (g:vorax_output_window_append ? 'APPEND' : '')
+  let append = (g:vorax_output_window_append ? ' APPEND' : '')
   " sticky mode
-  let sticky = (g:vorax_output_window_sticky_cursor ? 'STICKY' : '')
+  let sticky = (g:vorax_output_window_sticky_cursor ? ' STICKY' : '')
+  " limit rows
+  let limit_rows = (exists('g:vorax_limit_rows') ? ' LIMIT=' . g:vorax_limit_rows : '')
   return throbber .
         \ session_owner . 
         \ '%= ' . format . 
-        \ ' ' . col_head .
-        \ ' ' . append .
-        \ ' ' . sticky .
+        \ col_head .
+        \ append .
+        \ sticky .
+				\ limit_rows .
         \ ' '
 endfunction"}}}
+
+function! vorax#output#ToggleLimitRows() "{{{
+	if !exists('g:vorax_limit_rows')
+		let val = input('Limit rows to: ', '')
+		if val =~ '\m^[0-9]\+$'
+			let g:vorax_limit_rows=str2nr(val)
+		endif
+	else
+		unlet g:vorax_limit_rows
+	endif
+endfunction "}}}
 
 function! s:ConfigureBuffer() abort " {{{
   let &ft="outputvorax"
