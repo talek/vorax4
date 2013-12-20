@@ -382,6 +382,23 @@ formatters which are very handy quite often. These formatters are:
   * TABLEZIP: like the PAGEZIP, but it does compression for the entire
     table. The default key mapping to switch to this mode is <Leader>t.
 
+There are other interesting things you can do in the output window:
+
+  * switch to append mode using the <Leader>a key mapping. In this mode the 
+    window is not cleared before executing a new command.
+  * activate the "STICKY" mode using <Leader>s. By default, as soon as a 
+    command finish executing, the cursor is moved to the originating buffer. 
+    However, with "STICKY" mode on, the cursor will remain within the output 
+    window.
+  * limiting rows with <Leader>lr. If you don't want to fetch all records 
+    from a query then you may use this feature which allows to specify how 
+    many records to get. This is done by embedding your query in a 
+    SELECT (<original query>) WHERE ROWNUM <= :limit wrapper. This feature 
+    does work just for queries executed directly from an SQL buffer, not 
+    via external scripts.
+
+Please note that the above key mappings are local to the output window.
+
 ==============================================================================
 THE DATABASE EXPLORER                                         *vorax-explorer* 
 
