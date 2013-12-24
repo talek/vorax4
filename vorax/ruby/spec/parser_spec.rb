@@ -4,37 +4,37 @@ include Vorax
 
 describe 'Parser' do
 
-	it 'should detect identifiers' do# {{{
-		text = 'muci buci 23 "owner"."object".function(abc)'
+  it 'should detect identifiers' do# {{{
+    text = 'muci buci 23 "owner"."object".function(abc)'
     Parser.identifier_at(text, 3).should == "muci"
     Parser.identifier_at(text, 13).should == '"owner"."object".function'
-	end# }}}
+  end# }}}
 
-	it 'should parse a basic record type' do# {{{
-		text = <<-STRING
-			type Employee is record (
-				Name varchar2(100),
-				Salary number(10,2),
-				Gender varchar2(1)
-			);
-		STRING
-		Parser.describe_record(text).should eq([{:name=>"Name", :type=>"varchar2"}, 
-																					  {:name=>"Salary", :type=>"number"}, 
-																					  {:name=>"Gender", :type=>"varchar2"}])
-	end# }}}
+  it 'should parse a basic record type' do# {{{
+    text = <<-STRING
+      type Employee is record (
+        Name varchar2(100),
+        Salary number(10,2),
+        Gender varchar2(1)
+      );
+    STRING
+    Parser.describe_record(text).should eq([{:name=>"Name", :type=>"varchar2"}, 
+                                            {:name=>"Salary", :type=>"number"}, 
+                                            {:name=>"Gender", :type=>"varchar2"}])
+  end# }}}
 
-	it 'should parse a record type with default clauses' do# {{{
-		text = <<-STRING
-			type Muci is record (
-			  typ varchar2(10) := my_func(sysdate, systimestamp),
-			  abc date default to_date('10.10.2010', 'dd.mm.yyyy'),
-			  xyz boolean default (my_func(sysdate))
-			);
-		STRING
-		Parser.describe_record(text).should eq([{:name=>"typ", :type=>"varchar2"}, 
-																					  {:name=>"abc", :type=>"date"}, 
-																					  {:name=>"xyz", :type=>"boolean"}])
-	end# }}}
+  it 'should parse a record type with default clauses' do# {{{
+    text = <<-STRING
+      type Muci is record (
+        typ varchar2(10) := my_func(sysdate, systimestamp),
+        abc date default to_date('10.10.2010', 'dd.mm.yyyy'),
+        xyz boolean default (my_func(sysdate))
+      );
+    STRING
+    Parser.describe_record(text).should eq([{:name=>"typ", :type=>"varchar2"}, 
+                                            {:name=>"abc", :type=>"date"}, 
+                                            {:name=>"xyz", :type=>"boolean"}])
+  end# }}}
 
   it 'should work with balanced paren' do# {{{
     Parser.walk_balanced_paren('(a(b)c)').should eq("(a(b)c)")
@@ -295,43 +295,43 @@ STRING
     Parser.current_statement(text, 71, :sqlplus_commands => true, :plsql_blocks => true)[:statement].should eq("\nbegin\n  null;\nend;\n/\n")
     Parser.current_statement(text, 88, :sqlplus_commands => true, :plsql_blocks => true)[:statement].should eq("select c2 from t1\n/\n")
 
-  	text = <<STRING
+    text = <<STRING
 select * from all_objects where rownum <= 1000;
 
 set serveroutput on
 begin
-	dbms_output.put_line('Hello Vorax!');
+  dbms_output.put_line('Hello Vorax!');
 end;
 /
 
 with
   x as (select * 
-  	      from (select file_id, file_name from dba_data_files) t,
-  	           (select * from (select 'abc' col1, 'xyz' col2 from dual) x)
-  	   )
+          from (select file_id, file_name from dba_data_files) t,
+               (select * from (select 'abc' col1, 'xyz' col2 from dual) x)
+       )
 select *
   from x;
 STRING
     Parser.current_statement(text, 90, :sqlplus_commands => true, :plsql_blocks => true).
-    	should eq({:statement=>"begin\n\tdbms_output.put_line('Hello Vorax!');\nend;\n/\n", :range=>69...121})
+      should eq({:statement=>"begin\n\tdbms_output.put_line('Hello Vorax!');\nend;\n/\n", :range=>69...121})
 
-  	text = "exec dbms_crypto.encrypt("
-  	Parser.current_statement(text, 10, :plslq_blocks => true, :sqlplus_commands => true).
-  		should eq({:statement=>"exec dbms_crypto.encrypt(", :range=>0...25})
+    text = "exec dbms_crypto.encrypt("
+    Parser.current_statement(text, 10, :plslq_blocks => true, :sqlplus_commands => true).
+      should eq({:statement=>"exec dbms_crypto.encrypt(", :range=>0...25})
   end# }}}
 
-	it 'should get the next param position' do# {{{
-		text = "p1 varcha2(100) := myf('A', 1, f(y)), p2 DATE);"
-		Parser.next_argument(text).should == 37
-		text = "p1 varchar2(100) := myf('A', 1, f(y)));"
-		Parser.next_argument(text).should == 38
-		text = "p1 varchar2(100));"
-		Parser.next_argument(text).should == 17
-		text = "p1 varchar2(100)"
-		Parser.next_argument(text).should == 0 
-	end# }}}
+  it 'should get the next param position' do# {{{
+    text = "p1 varcha2(100) := myf('A', 1, f(y)), p2 DATE);"
+    Parser.next_argument(text).should == 37
+    text = "p1 varchar2(100) := myf('A', 1, f(y)));"
+    Parser.next_argument(text).should == 38
+    text = "p1 varchar2(100));"
+    Parser.next_argument(text).should == 17
+    text = "p1 varchar2(100)"
+    Parser.next_argument(text).should == 0 
+  end# }}}
 
-	it 'should split statements' do
+  it 'should split statements' do
     text = <<STRING
 select /* comment: ; */ 'muci;buci''s yea' from dual; -- interesting ha;ha?
 set serveroutput on
@@ -342,12 +342,12 @@ end;
 select * from cat;
 select * from dual
 STRING
-		Parser.statements(text).should ==
-			["select /* comment: ; */ 'muci;buci''s yea' from dual;",
-				" -- interesting ha;ha?\nset serveroutput on\n",
-				"begin\ndbms_output.put_line('xxx');\nend;\n/\n",
-				"select * from cat;",
-				"\nselect * from dual"]
-	end
+    Parser.statements(text).should ==
+      ["select /* comment: ; */ 'muci;buci''s yea' from dual;",
+        " -- interesting ha;ha?\nset serveroutput on\n",
+        "begin\ndbms_output.put_line('xxx');\nend;\n/\n",
+        "select * from cat;",
+        "\nselect * from dual"]
+  end
 
 end

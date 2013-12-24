@@ -5,9 +5,9 @@
 
 " Add ! key to execute a node in vorax.
 call NERDTreeAddKeyMap({
-			\ 'key': '@', 
-			\ 'quickhelpText': 'Execute file under VoraX.', 
-			\ 'callback': 'NERDTreeVoraxExec'})
+      \ 'key': '@', 
+      \ 'quickhelpText': 'Execute file under VoraX.', 
+      \ 'callback': 'NERDTreeVoraxExec'})
 
 " Callback function to actually execute the vorax file.
 function! NERDTreeVoraxExec()

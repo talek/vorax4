@@ -49,15 +49,15 @@ module Vorax
       walker.register_spot(/[)]/) do |scanner|
         level -= 1
         if level < 0
-				  next_pos = scanner.pos
-        	scanner.terminate
+          next_pos = scanner.pos
+          scanner.terminate
         end
       end
       walker.register_spot(/[,]/) do |scanner|
-				if level == 0
-					# end of function
-        	next_pos = scanner.pos
-        	scanner.terminate
+        if level == 0
+          # end of function
+          next_pos = scanner.pos
+          scanner.terminate
         end
       end
       walker.walk
@@ -243,9 +243,9 @@ module Vorax
           # replace nbsp with a plain blank in order to not confuse 
           # the ragel parser, in case it's used
           tr.xpath('td').each do |td| 
-          	cell_val = td.text
-          	cell_val.strip! if strip
-          	row << cell_val.gsub(nbsp, " ")
+            cell_val = td.text
+            cell_val.strip! if strip
+            row << cell_val.gsub(nbsp, " ")
           end
           resultset << row unless row.empty?
         end
@@ -335,37 +335,37 @@ module Vorax
         walker.register_spot(Parser::SQLPLUS_TERMINATOR) do |scanner|
           type = Parser.statement_type(scanner.string[(start_pos..scanner.pos)])
           if type
-          	if type == 'SQLPLUS'
-							if (start_pos..scanner.pos-1).include?(position)
-								end_pos = scanner.pos - scanner.matched.length
-								scanner.terminate
-							else
-								start_pos = scanner.pos
-							end
-						else
-							if opts[:plsql_blocks]
-								#this is a plsql block, eat till the slash terminator
-								if scanner.scan_until(Parser::SLASH_TERMINATOR)
-									if (start_pos..scanner.pos-1).include?(position)
-										end_pos = scanner.pos
-										scanner.terminate
-									else
-										start_pos = scanner.pos
-									end
-								else
-									#it's an invalid statement
-									scanner.terminate
-								end
-							end
-						end
-					#else
+            if type == 'SQLPLUS'
+              if (start_pos..scanner.pos-1).include?(position)
+                end_pos = scanner.pos - scanner.matched.length
+                scanner.terminate
+              else
+                start_pos = scanner.pos
+              end
+            else
+              if opts[:plsql_blocks]
+                #this is a plsql block, eat till the slash terminator
+                if scanner.scan_until(Parser::SLASH_TERMINATOR)
+                  if (start_pos..scanner.pos-1).include?(position)
+                    end_pos = scanner.pos
+                    scanner.terminate
+                  else
+                    start_pos = scanner.pos
+                  end
+                else
+                  #it's an invalid statement
+                  scanner.terminate
+                end
+              end
+            end
+          #else
             #start_pos = scanner.pos
           end
         end
       end
 
       walker.walk
-			end_pos = script_content.length if end_pos == 0 #partial statement
+      end_pos = script_content.length if end_pos == 0 #partial statement
       {:statement => script_content[(start_pos...end_pos)], :range => (start_pos...end_pos)}
 
     end
@@ -393,44 +393,44 @@ module Vorax
           end
         end
         statements << script_content[(start_pos...scanner.pos)]
-				start_pos = scanner.pos
+        start_pos = scanner.pos
       end
 
       walker.register_spot(Parser::SLASH_TERMINATOR) do |scanner|
         statements << script_content[(start_pos...scanner.pos)]
-				start_pos = scanner.pos
+        start_pos = scanner.pos
       end
 
       if opts[:sqlplus_commands]
         walker.register_spot(Parser::SQLPLUS_TERMINATOR) do |scanner|
           type = Parser.statement_type(scanner.string[(start_pos..scanner.pos)])
           if type
-          	if type == 'SQLPLUS'
-							statements << script_content[(start_pos...scanner.pos)]
-							start_pos = scanner.pos
-						else
-							if opts[:plsql_blocks]
-								#this is a plsql block, eat till the slash terminator
-								if scanner.scan_until(Parser::SLASH_TERMINATOR)
-									statements << script_content[(start_pos...scanner.pos)]
-									start_pos = scanner.pos
-								else
-									#it's an invalid statement
-									scanner.terminate
-								end
-							end
-						end
-					#else
+            if type == 'SQLPLUS'
+              statements << script_content[(start_pos...scanner.pos)]
+              start_pos = scanner.pos
+            else
+              if opts[:plsql_blocks]
+                #this is a plsql block, eat till the slash terminator
+                if scanner.scan_until(Parser::SLASH_TERMINATOR)
+                  statements << script_content[(start_pos...scanner.pos)]
+                  start_pos = scanner.pos
+                else
+                  #it's an invalid statement
+                  scanner.terminate
+                end
+              end
+            end
+          #else
             #start_pos = scanner.pos
           end
         end
       end
 
       walker.walk
-			if start_pos < script_content.length
-				statements << script_content[(start_pos...script_content.length)]
-			end
-			return statements
+      if start_pos < script_content.length
+        statements << script_content[(start_pos...script_content.length)]
+      end
+      return statements
 
     end
 

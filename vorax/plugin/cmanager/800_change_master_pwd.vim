@@ -4,11 +4,11 @@
 " License:     see LICENSE.txt
 
 let s:plugin = {
-			\	'text': 'change master password',
-			\ 'shortcut' : 'x'}
+      \ 'text': 'change master password',
+      \ 'shortcut' : 'x'}
 
 function! s:plugin.Callback(descriptor)
-	call vorax#cmanager#ChangePassword()
+  call vorax#cmanager#ChangePassword()
 endfunction
 
 function! s:plugin.IsEnabled(descriptor)

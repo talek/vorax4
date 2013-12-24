@@ -109,7 +109,7 @@ module Vorax
 
       def end_element name
         @io << @text if name == 'pre'
-				@io << @text.strip if name == 'b'
+        @io << @text.strip if name == 'b'
         end_hook(name.downcase)
         @tags_chain.pop
       end

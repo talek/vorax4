@@ -4,15 +4,15 @@
 " License:     see LICENSE.txt
 
 let s:plugin = {
-			\	'text': 'unlock',
-			\ 'shortcut' : 'u'}
+      \ 'text': 'unlock',
+      \ 'shortcut' : 'u'}
 
 function! s:plugin.Callback(descriptor)
-	call vorax#cmanager#UnlockRepository()
+  call vorax#cmanager#UnlockRepository()
 endfunction
 
 function! s:plugin.IsEnabled(descriptor)
-	return !vorax#ruby#IsPmUnlocked()
+  return !vorax#ruby#IsPmUnlocked()
 endfunction
 
 call vorax#cmanager#RegisterPluginItem(s:plugin)

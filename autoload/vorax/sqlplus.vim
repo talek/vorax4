@@ -19,7 +19,7 @@ let s:properties = {'store_set'     : tempname() . ".opts",
                   \ 'connstr'       : '',
                   \ 'sql_folder'    : fnamemodify(expand('<sfile>:p:h') . '/../../vorax/sql/', ':p:8'),
                   \ 'db_banner'     : '',
-									\ 'cols_clear'    : '',
+                  \ 'cols_clear'    : '',
                   \ 'sane_options'  : ['set define "&"',
                   \                    'set pause off',
                   \                    'set termout on']}
@@ -35,11 +35,11 @@ endfunction
 function! vorax#sqlplus#Connect(cstr) abort "{{{
   call VORAXDebug("vorax#sqlplus#Connect: cstr=" . string(a:cstr))
   let parts = s:PrepareCstr(a:cstr)
-	" run BeforeConnect hook
-	if exists('*VORAXBeforeConnect')
-		" Execute hook
-		call VORAXBeforeConnect(parts['user'], parts['db'], parts['role'])
-	endif
+  " run BeforeConnect hook
+  if exists('*VORAXBeforeConnect')
+    " Execute hook
+    call VORAXBeforeConnect(parts['user'], parts['db'], parts['role'])
+  endif
   " visual feedback to the user please
   redraw
   echo 'Initializing connection...'
@@ -73,13 +73,13 @@ function! vorax#sqlplus#Connect(cstr) abort "{{{
   " reset the omni cache
   call vorax#omni#ResetCache()
   " refresh dbexplorer
-	call vorax#explorer#RefreshRoot()
+  call vorax#explorer#RefreshRoot()
   redraw
-	" run AfterConnect hook
-	if exists('*VORAXAfterConnect')
-		" Execute hook
-		call VORAXAfterConnect(s:properties['user'], s:properties['db'], s:properties['privilege'])
-	endif
+  " run AfterConnect hook
+  if exists('*VORAXAfterConnect')
+    " Execute hook
+    call VORAXAfterConnect(s:properties['user'], s:properties['db'], s:properties['privilege'])
+  endif
 endfunction "}}}
 
 function! vorax#sqlplus#Initialize() abort "{{{
@@ -87,7 +87,7 @@ function! vorax#sqlplus#Initialize() abort "{{{
   call vorax#ruby#SqlplusFork()
   sleep 300m " just let sqlplus to warm up
   let opts = add(g:vorax_sqlplus_options, 
-				\ 'store set ' . s:properties['store_set'] . ' replace')
+        \ 'store set ' . s:properties['store_set'] . ' replace')
   let opts = extend(opts, s:properties['sane_options'])
   call vorax#sqlplus#ExecImmediate(join(opts, "\n"))
   call VORAXDebug("vorax#sqlplus#Initialize(): done!")
@@ -102,25 +102,25 @@ function! vorax#sqlplus#UpdateSessionOwner() "{{{
             \ '_CONNECT_IDENTIFIER', 
             \ '_O_VERSION', 
             \ '_PRIVILEGE')
-			call VORAXDebug("vorax#sqlplus#UpdateSessionOwner vars=" . string(vars))
+      call VORAXDebug("vorax#sqlplus#UpdateSessionOwner vars=" . string(vars))
       if vars['_USER'] != ""
         let s:properties['user'] = vars['_USER']
         let s:properties['db'] = vars['_CONNECT_IDENTIFIER']
         let s:properties['privilege'] = vars['_PRIVILEGE']
         let s:properties['db_banner'] = vars['_O_VERSION']
-				call VORAXDebug("vorax#sqlplus#UpdateSessionOwner s:properties=" . string(s:properties))
-				" update status bar
-				let &ro = &ro
-      	return
+        call VORAXDebug("vorax#sqlplus#UpdateSessionOwner s:properties=" . string(s:properties))
+        " update status bar
+        let &ro = &ro
+        return
       endif
     endif
     let s:properties['user'] = ''
     let s:properties['db'] = ''
     let s:properties['privilege'] = ''
     let s:properties['db_banner'] = ''
-		call VORAXDebug("vorax#sqlplus#UpdateSessionOwner s:properties=" . string(s:properties))
-  	" update status bar
-  	let &ro = &ro
+    call VORAXDebug("vorax#sqlplus#UpdateSessionOwner s:properties=" . string(s:properties))
+    " update status bar
+    let &ro = &ro
   endif
 endfunction "}}}
 
@@ -176,30 +176,30 @@ function! vorax#sqlplus#Exec(command, ...) abort "{{{
   endif
   try
     if command =~ '\m^\s*$'
-			" just an empty string... fuck it!
-    	return
-		end
+      " just an empty string... fuck it!
+      return
+    end
     if exists('g:vorax_limit_rows')
       let command = s:LimitRows(command, g:vorax_limit_rows)
-		endif
+    endif
     if g:vorax_output_full_heading
-			let format_cols = s:FormatColumns(command)
-			if has_key(hash, 'prep')
-				let hash['prep'] .= "\n" . format_cols['format']
-			else
-				let hash['prep'] = format_cols['format']
-			endif
-			if has_key(hash, 'post')
-				let hash['post'] .= "\n" . format_cols['clear']
-			else
-				let hash['post'] = format_cols['clear']
-			endif
-			" need to save them in this global namespace in order
-			" to cleanup if the query is cancelled
-			let s:properties['cols_clear'] = format_cols['clear']
-		else
-			let s:properties['cols_clear'] = ''
-		endif
+      let format_cols = s:FormatColumns(command)
+      if has_key(hash, 'prep')
+        let hash['prep'] .= "\n" . format_cols['format']
+      else
+        let hash['prep'] = format_cols['format']
+      endif
+      if has_key(hash, 'post')
+        let hash['post'] .= "\n" . format_cols['clear']
+      else
+        let hash['post'] = format_cols['clear']
+      endif
+      " need to save them in this global namespace in order
+      " to cleanup if the query is cancelled
+      let s:properties['cols_clear'] = format_cols['clear']
+    else
+      let s:properties['cols_clear'] = ''
+    endif
     let stmt = vorax#ruby#PrepareExec(command)
     call vorax#ruby#SqlplusExec(stmt, hash)
     if vorax#ruby#SqlplusIsInitialized() && vorax#ruby#SqlplusIsAlive()
@@ -227,13 +227,13 @@ function! vorax#sqlplus#ExecImmediate(command, ...) abort "{{{
     call vorax#ruby#SqlplusExec(a:command, hash)
     let output = ""
     if has_key(hash, 'message')
-    	let message = hash['message']
+      let message = hash['message']
     else
-    	let message = 'Busy...'
+      let message = 'Busy...'
     endif
     while vorax#ruby#SqlplusBusy()
       let output .= vorax#ruby#SqlplusReadOutput()
-			echo message . ' ' . vorax#utils#Throbber()
+      echo message . ' ' . vorax#utils#Throbber()
       redraw
     endwhile
     echo 'Done.'
@@ -254,7 +254,7 @@ function! vorax#sqlplus#Query(command, ...) abort "{{{
   let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
   if exists('a:1')
     let hash['message'] = a:1
-	endif
+  endif
   let output = vorax#sqlplus#ExecImmediate(a:command, hash)
   return vorax#ruby#ParseResultset(output)
 endfunction "}}}
@@ -335,7 +335,7 @@ function! vorax#sqlplus#PrepareVoraxScript(name, params) "{{{
     let params .= vorax#sqlplus#QuoteScriptParam(param) . ' '
   endfor
   let script = s:properties['sql_folder'] . a:name . ' ' . params
-	return {'script': script, 'hash': hash}
+  return {'script': script, 'hash': hash}
 endfunction "}}}
 
 function! vorax#sqlplus#RunVoraxScript(name, ...) abort "{{{
@@ -391,87 +391,87 @@ endfunction "}}}
 
 function! s:LimitRows(script, limit) "{{{
   let stmts = vorax#ruby#SqlStatements(a:script, 1, 1)
-	let new_stmts = []
-	for stmt in stmts
-		let query = vorax#ruby#RemoveAllComments(stmt)
-		if query =~ '\m\c^\_s*\(SELECT\|WITH\)'
-			" get rid of the last terminator
-			let query = substitute(query, '\m\_s*\(;\|\/\)\_s*$', '', 'g')
-			" remove leading CRs
-			let query = substitute(query, '\m^\_s*', '', 'g')
-			let query = "select * from (\n" .
-						\ '/* start original query */' .
-						\ "\n" . query . "\n" .
-						\ '/* end */' .
-						\ "\n) where rownum <= " . a:limit . ";"
-			call add(new_stmts, query)
-			if g:vorax_limit_rows_warning
-				call add(new_stmts, "prompt WARN: output limited to maximum " . 
-							\ a:limit . " records...")
-			endif
-		else
-			call add(new_stmts, stmt)
-		end
-	endfor
-	return join(new_stmts, "\n")
+  let new_stmts = []
+  for stmt in stmts
+    let query = vorax#ruby#RemoveAllComments(stmt)
+    if query =~ '\m\c^\_s*\(SELECT\|WITH\)'
+      " get rid of the last terminator
+      let query = substitute(query, '\m\_s*\(;\|\/\)\_s*$', '', 'g')
+      " remove leading CRs
+      let query = substitute(query, '\m^\_s*', '', 'g')
+      let query = "select * from (\n" .
+            \ '/* start original query */' .
+            \ "\n" . query . "\n" .
+            \ '/* end */' .
+            \ "\n) where rownum <= " . a:limit . ";"
+      call add(new_stmts, query)
+      if g:vorax_limit_rows_warning
+        call add(new_stmts, "prompt WARN: output limited to maximum " . 
+              \ a:limit . " records...")
+      endif
+    else
+      call add(new_stmts, stmt)
+    end
+  endfor
+  return join(new_stmts, "\n")
 endfunction "}}}
 
 function! s:FormatColumns(script) "{{{
   let stmts = vorax#ruby#SqlStatements(a:script, 1, 1)
-	let column_format = ""
-	let column_clear = ""
-	for stmt in stmts
-		let query = vorax#ruby#RemoveAllComments(stmt)
-		if query =~ '\m\c^\_s*\(SELECT\|WITH\)'
-			for column in s:ColumnsLayout(query)
-				let column_format .= "column " . column[0] .
-							\ " format a" . column[1] . "\n"
-				let column_clear .= "column " . column[0] .
-							\ " clear" . "\n"
-			endfor
-		end
-	endfor
-	return {'format': column_format, 'clear': column_clear}
+  let column_format = ""
+  let column_clear = ""
+  for stmt in stmts
+    let query = vorax#ruby#RemoveAllComments(stmt)
+    if query =~ '\m\c^\_s*\(SELECT\|WITH\)'
+      for column in s:ColumnsLayout(query)
+        let column_format .= "column " . column[0] .
+              \ " format a" . column[1] . "\n"
+        let column_clear .= "column " . column[0] .
+              \ " clear" . "\n"
+      endfor
+    end
+  endfor
+  return {'format': column_format, 'clear': column_clear}
 endfunction "}}}
 
 function! s:ColumnsLayout(query) "{{{
-	" get rid of the last terminator
-	let query = substitute(a:query, '\m\_s*\(;\|\/\)\_s*$', '', 'g')
-	" compose the statement init template
-	let stmt_init = ""
-	let index = 1
-	for line in split(query, "\n")
-		let stmt_init .= "l_stmt(" . index . ") := '" . 
-					\ substitute(line, "'", "''", 'g') . 
-					\ "';\n"
-		let index += 1
-	endfor
-	" get the format columns script
-	let script_content = s:ColumnsLayoutScript()
-	if !vorax#utils#IsEmpty(script_content)
-		let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
-		let post = "@" . s:properties['store_set']
-		let hash = {'prep' : prep, 'post' : post, 'funnel' : 0, 'pack_file' : s:properties['sql_pack']}
-		let exec_code=substitute(script_content, '\m\s*-- l_stmt initialize\s*', 
-					\ stmt_init,
-					\ '')
-		let output=vorax#sqlplus#ExecImmediate(exec_code, hash)
-		let result  = vorax#ruby#ParseResultset(output)
-		if exists("result['resultset'][0]")
-			return result['resultset'][0]
-	  endif
-	endif
-	return []
+  " get rid of the last terminator
+  let query = substitute(a:query, '\m\_s*\(;\|\/\)\_s*$', '', 'g')
+  " compose the statement init template
+  let stmt_init = ""
+  let index = 1
+  for line in split(query, "\n")
+    let stmt_init .= "l_stmt(" . index . ") := '" . 
+          \ substitute(line, "'", "''", 'g') . 
+          \ "';\n"
+    let index += 1
+  endfor
+  " get the format columns script
+  let script_content = s:ColumnsLayoutScript()
+  if !vorax#utils#IsEmpty(script_content)
+    let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
+    let post = "@" . s:properties['store_set']
+    let hash = {'prep' : prep, 'post' : post, 'funnel' : 0, 'pack_file' : s:properties['sql_pack']}
+    let exec_code=substitute(script_content, '\m\s*-- l_stmt initialize\s*', 
+          \ stmt_init,
+          \ '')
+    let output=vorax#sqlplus#ExecImmediate(exec_code, hash)
+    let result  = vorax#ruby#ParseResultset(output)
+    if exists("result['resultset'][0]")
+      return result['resultset'][0]
+    endif
+  endif
+  return []
 endfunction "}}}
 
 function! s:ColumnsLayoutScript() "{{{
-	if exists('s:cl_script_content')
-		return copy(s:cl_script_content)
-	else
-		let script_name = s:properties['sql_folder'] . 'columns_layout.sql' 
-		if filereadable(script_name)
-			let s:cl_script_content = join(readfile(script_name), "\n")
-		endif
-	endif
-	return ""
+  if exists('s:cl_script_content')
+    return copy(s:cl_script_content)
+  else
+    let script_name = s:properties['sql_folder'] . 'columns_layout.sql' 
+    if filereadable(script_name)
+      let s:cl_script_content = join(readfile(script_name), "\n")
+    endif
+  endif
+  return ""
 endfunction "}}}

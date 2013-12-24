@@ -4,7 +4,7 @@
 "
 "              https://github.com/scrooloose/nerdtree
 "
-"							 All credits go to Scrooloose.
+"              All credits go to Scrooloose.
 " License:     see LICENSE.txt
 
 let s:MenuItem = {'id': 'dummy'}

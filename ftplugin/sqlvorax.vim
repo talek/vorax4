@@ -16,17 +16,17 @@ call vorax#toolkit#InitCommonBuffers()
 
 if g:vorax_map_keys
   " mappings for SQL file
-	nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
+  nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
 
-	nnoremap <buffer> <silent> <Leader>e :VORAXExecCurrent<CR>
+  nnoremap <buffer> <silent> <Leader>e :VORAXExecCurrent<CR>
   xnoremap <buffer> <silent> <Leader>e :VORAXExecSelection<CR>
 
-	nnoremap <buffer> <silent> <Leader>E :VORAXExecSbCurrent<CR>
+  nnoremap <buffer> <silent> <Leader>E :VORAXExecSbCurrent<CR>
   xnoremap <buffer> <silent> <Leader>E :VORAXExecSbSelection<CR>
 
-	nnoremap <buffer> <silent> <Leader>x :VORAXExplain!<CR>
+  nnoremap <buffer> <silent> <Leader>x :VORAXExplain!<CR>
   xnoremap <buffer> <silent> <Leader>x :VORAXExplainSelection!<CR>
-	nnoremap <buffer> <silent> <Leader>X :VORAXExplain<CR>
+  nnoremap <buffer> <silent> <Leader>X :VORAXExplain<CR>
   xnoremap <buffer> <silent> <Leader>X :VORAXExplainSelection<CR>
 endif
 
@@ -36,8 +36,8 @@ if g:vorax_omni_enable
 endif
 
 if exists('*VORAXAfterSqlBufferLoad')
-	" Execute hook
-	call VORAXAfterSqlBufferLoad()
+  " Execute hook
+  call VORAXAfterSqlBufferLoad()
 endif
 
 " signal that everything is setup

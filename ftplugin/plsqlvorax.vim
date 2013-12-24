@@ -11,9 +11,9 @@ call vorax#toolkit#InitCommonBuffers()
 
 " key mappings
 if g:vorax_map_keys
-	nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
-	nnoremap <buffer> <silent> gd :call vorax#plsql#GotoDef()<CR>
-	nnoremap <buffer> <silent> <Leader>c :VORAXCompile<CR>
+  nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
+  nnoremap <buffer> <silent> gd :call vorax#plsql#GotoDef()<CR>
+  nnoremap <buffer> <silent> <Leader>c :VORAXCompile<CR>
 endif
 
 
@@ -23,19 +23,19 @@ if g:vorax_folding_enable "{{{
   function! s:SaveOpenFolds()"{{{
     if exists('b:descriptor')
       for element in b:descriptor
-				if !exists('element["open"]') && g:vorax_folding_initial_state ==? 'all_open'
-					let element["open"] = 1
+        if !exists('element["open"]') && g:vorax_folding_initial_state ==? 'all_open'
+          let element["open"] = 1
         else
-					if foldlevel(element["start_pos"]) > 0
-						if foldclosed(element["start_pos"]) != -1
-							let element['open'] = 0
-						else
-							let element['open'] = 1
-						endif
-					else
-						let element['open'] = 0
-					endif
-				endif
+          if foldlevel(element["start_pos"]) > 0
+            if foldclosed(element["start_pos"]) != -1
+              let element['open'] = 0
+            else
+              let element['open'] = 1
+            endif
+          else
+            let element['open'] = 0
+          endif
+        endif
       endfor
     endif
   endfunction"}}}
@@ -55,26 +55,26 @@ if g:vorax_folding_enable "{{{
       " only if changes in the buffer occured
       call s:ComputeFoldsStructure()
       let b:crr_changedtick = b:changedtick
-			if exists('b:descriptor')
-				" remove existing folds
-				normal! zE
-				" redefine folding points
-				for element in b:descriptor
-					if element["start_pos"] < element["end_pos"]
-						try
-							exe element["start_pos"] . "," . element["end_pos"] . "fo"
-							if element['open'] || (line('.') >= element["start_pos"] && line('.') <= element["end_pos"])
-								" restore previous opened folds and keep the current fold open
-								exe element["start_pos"] . "," . element["end_pos"] . "foldo"
-							endif
-						catch /^Vim\%((\a\+)\)\=:E490/
-							" might happen if the previous regions were
-							" incorrectly defined on an syntactically wrong PLSQL code
-						endtry
-					endif
-				endfor
-			endif
-		endif
+      if exists('b:descriptor')
+        " remove existing folds
+        normal! zE
+        " redefine folding points
+        for element in b:descriptor
+          if element["start_pos"] < element["end_pos"]
+            try
+              exe element["start_pos"] . "," . element["end_pos"] . "fo"
+              if element['open'] || (line('.') >= element["start_pos"] && line('.') <= element["end_pos"])
+                " restore previous opened folds and keep the current fold open
+                exe element["start_pos"] . "," . element["end_pos"] . "foldo"
+              endif
+            catch /^Vim\%((\a\+)\)\=:E490/
+              " might happen if the previous regions were
+              " incorrectly defined on an syntactically wrong PLSQL code
+            endtry
+          endif
+        endfor
+      endif
+    endif
     call winrestview(state)
   endfunction"}}}
 
@@ -101,8 +101,8 @@ endif
 
 " hooks
 if exists('*VORAXAfterPlsqlBufferLoad')
-	" Execute hook
-	call VORAXAfterPlsqlBufferLoad()
+  " Execute hook
+  call VORAXAfterPlsqlBufferLoad()
 endif
 
 " signal that everything is setup

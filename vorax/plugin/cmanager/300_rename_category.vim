@@ -4,15 +4,15 @@
 " License:     see LICENSE.txt
 
 let s:plugin = {
-			\	'text': 'rename',
-			\ 'shortcut' : 'm'}
+      \ 'text': 'rename',
+      \ 'shortcut' : 'm'}
 
 function! s:plugin.Callback(descriptor)
-	call vorax#cmanager#RenameCategory()
+  call vorax#cmanager#RenameCategory()
 endfunction
 
 function! s:plugin.IsEnabled(descriptor)
-	return a:descriptor['profile'] == '' && a:descriptor['root'] == 0
+  return a:descriptor['profile'] == '' && a:descriptor['root'] == 0
 endfunction
 
 call vorax#cmanager#RegisterPluginItem(s:plugin)

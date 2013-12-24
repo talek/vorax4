@@ -23,7 +23,7 @@ if has('ruby') && (s:ruby_ver =~ '\m^1\.9.*$' || s:ruby_ver =~ '\m^2\.')
   try
     ruby require 'vorax'
   catch /.*LoadError.*/
-		let g:vorax_ruby_loaded = 0
+    let g:vorax_ruby_loaded = 0
     echom "Vorax cannot load its ruby buddy code!"
     echom v:exception
     echom ""
@@ -32,7 +32,7 @@ if has('ruby') && (s:ruby_ver =~ '\m^1\.9.*$' || s:ruby_ver =~ '\m^2\.')
     finish
   endtry
 else
-	let g:vorax_ruby_loaded = 0
+  let g:vorax_ruby_loaded = 0
   echom("Vorax needs that your VIM to be compiled with ruby 1.9 support!")
   finish
 endif
@@ -97,7 +97,7 @@ function! vorax#ruby#SqlStatements(sql_script, plsql_blocks, sqlplus_commands) "
                         VIM::evaluate('a:sql_script'), 
                         :plsql_blocks => (VIM::evaluate('a:plsql_blocks') == 1 ? true : false),
                         :sqlplus_commands => (VIM::evaluate('a:sqlplus_commands') == 1 ? true : false)) 
-	VIM::command("return #{statements.inspect}")
+  VIM::command("return #{statements.inspect}")
 ERC
 endfunction "}}}
 
@@ -121,10 +121,10 @@ function! vorax#ruby#ParseResultset(html, ...) abort"{{{
   ruby <<ERC
 # encoding: UTF-8
   if VIM::evaluate('a:0') == 0
-		result = Vorax::Parser.query_result(VIM::evaluate('a:html'))
-	else
-		result = Vorax::Parser.query_result(VIM::evaluate('a:html'), VIM::evaluate('a:1') == 1 ? true : false)
-	end
+    result = Vorax::Parser.query_result(VIM::evaluate('a:html'))
+  else
+    result = Vorax::Parser.query_result(VIM::evaluate('a:html'), VIM::evaluate('a:1') == 1 ? true : false)
+  end
   vim_hash = "{'resultset' : #{result[:resultset].inspect}, 'errors' : #{result[:errors].inspect}}"
   VIM::command("return #{vim_hash}")
 ERC
@@ -140,8 +140,8 @@ endfunction"}}}
 
 function! vorax#ruby#GetAlias(statement, alias_name, position)"{{{
   call VORAXDebug('vorax#ruby#GetAlias a:statement=' . string(a:statement) .
-				\ ' a:alias_name = ' . string(a:alias_name) .
-				\ ' a:position = ' . a:position)
+        \ ' a:alias_name = ' . string(a:alias_name) .
+        \ ' a:position = ' . a:position)
   ruby <<ERC
 # encoding: UTF-8
   vim_alias = {}
@@ -149,8 +149,8 @@ function! vorax#ruby#GetAlias(statement, alias_name, position)"{{{
   target_alias = inspector.find_alias(VIM::evaluate('a:alias_name'), 
                                       VIM::evaluate('a:position') - 1)
   if target_alias
-		vim_alias = "{'alias_type' : #{target_alias.class.name.split(/::/).last.inspect}, 'base' : #{target_alias.base.inspect} }"
-	end
+    vim_alias = "{'alias_type' : #{target_alias.class.name.split(/::/).last.inspect}, 'base' : #{target_alias.base.inspect} }"
+  end
   VIM::command("return #{vim_alias}") 
 ERC
 endfunction"}}}
@@ -188,130 +188,130 @@ function! vorax#ruby#DescribeDeclare(source_text) abort"{{{
   ruby <<ERC
 # encoding: UTF-8
     structure = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
-		region = structure.regions.children.first.content
-		items = []
-		region.declared_items.each do |i| 
-			item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
-				if v.nil?
-					h[k] = '' 
-				elsif v.is_a?(TrueClass) 
-					h[k] = 1
-				elsif v.is_a?(FalseClass)
-					h[k] = 0
-				else
-					h[k] = v
-				end
-			end
-			items << item.to_json
-		end
+    region = structure.regions.children.first.content
+    items = []
+    region.declared_items.each do |i| 
+      item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
+        if v.nil?
+          h[k] = '' 
+        elsif v.is_a?(TrueClass) 
+          h[k] = 1
+        elsif v.is_a?(FalseClass)
+          h[k] = 0
+        else
+          h[k] = v
+        end
+      end
+      items << item.to_json
+    end
   VIM::command("return [#{items.join(',')}]")
 ERC
 endfunction"}}}
 
 function! vorax#ruby#ComputePlsqlStructure(stored_as, source_text) abort"{{{
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	Vorax.extra[VIM::evaluate('a:stored_as')] = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
+  Vorax.extra[VIM::evaluate('a:stored_as')] = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
 ERC
 endfunction"}}}
 
 function! vorax#ruby#CompositeName(structure_stored_in, position) abort "{{{
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
+  structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
   region = structure.region_at(VIM::evaluate('a:position'))
   package_name = ''
   begin
-	  if region 
-	  	if region.is_a?(Vorax::Parser::CompositeRegion)
-				package_name = region.name
-				break
-			end
+    if region 
+      if region.is_a?(Vorax::Parser::CompositeRegion)
+        package_name = region.name
+        break
+      end
       region = region.node.parent.content
-		else
-			break
-		end
-	end while true
-	VIM::command("return #{package_name.inspect}")
+    else
+      break
+    end
+  end while true
+  VIM::command("return #{package_name.inspect}")
 ERC
 endfunction "}}}
 
 function! vorax#ruby#RegionScope(structure_stored_in, position) abort "{{{
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	scope = []
-	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
+  scope = []
+  structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
   region = structure.region_at(VIM::evaluate('a:position'))
   begin
-	  if region
-    	region_hash = region.to_hash
-    	region_hash[:region_type] = region.class.name.split(/::/).last || ''
+    if region
+      region_hash = region.to_hash
+      region_hash[:region_type] = region.class.name.split(/::/).last || ''
       vim_region_hash = region_hash.inject({}) { |h,(k,v)| h[k] = (v ? v : ''); h }.to_json
-	    scope << vim_region_hash
+      scope << vim_region_hash
       region = region.node.parent.content
-		else
-			break
-		end
-	end while true
+    else
+      break
+    end
+  end while true
   VIM::command("return [#{scope.join(',')}]")
 ERC
 endfunction "}}}
 
 function! vorax#ruby#LocalItems(structure_stored_in, position, prefix)"{{{
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
+  structure = Vorax.extra[VIM::evaluate('a:structure_stored_in')]
   region = structure.region_at(VIM::evaluate('a:position'))
   items = []
   begin
-	  if region
+    if region
       if region.kind_of?(Vorax::Parser::ForRegion)
-      	item = {:item_type => 'ForVariable', 
-      	          :domain => region.domain, 
-      	          :domain_type => region.domain_type.to_s,
-      	          :variable => region.variable.to_s,
-      	          :declared_at => region.variable_position,
-      	          :start_pos => region.start_pos,
-									:end_pos => region.end_pos
-      	          }.to_json
-      	items << item
+        item = {:item_type => 'ForVariable', 
+                  :domain => region.domain, 
+                  :domain_type => region.domain_type.to_s,
+                  :variable => region.variable.to_s,
+                  :declared_at => region.variable_position,
+                  :start_pos => region.start_pos,
+                  :end_pos => region.end_pos
+                  }.to_json
+        items << item
       elsif region.respond_to?(:declared_items)
-			  if region.declared_items
-					region.declared_items.each do |i| 
-						if i && i.respond_to?(:name) && i.name.downcase.start_with?(VIM::evaluate('a:prefix').downcase)
-							item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
-								if v.nil?
-									h[k] = '' 
-								elsif v.is_a?(TrueClass) 
-									h[k] = 1
-								elsif v.is_a?(FalseClass)
-									h[k] = 0
-								else
-									h[k] = v
-								end
-							end
-							items << item.to_json
-						end
-					end
-				end
-			end
+        if region.declared_items
+          region.declared_items.each do |i| 
+            if i && i.respond_to?(:name) && i.name.downcase.start_with?(VIM::evaluate('a:prefix').downcase)
+              item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
+                if v.nil?
+                  h[k] = '' 
+                elsif v.is_a?(TrueClass) 
+                  h[k] = 1
+                elsif v.is_a?(FalseClass)
+                  h[k] = 0
+                else
+                  h[k] = v
+                end
+              end
+              items << item.to_json
+            end
+          end
+        end
+      end
       if region.kind_of?(Vorax::Parser::PackageBodyRegion)
         name = region.name
         spec = structure.regions.find do |r| 
           r.content.kind_of?(Vorax::Parser::PackageSpecRegion) && r.content.name =~ /^#{name}$/i
         end
-				if spec
-					region = spec.content
-				else
-					break
-				end
-			else
-				region = region.node.parent.content
-			end
-		else
-			break
-		end
-	end while true
+        if spec
+          region = spec.content
+        else
+          break
+        end
+      else
+        region = region.node.parent.content
+      end
+    else
+      break
+    end
+  end while true
   VIM::command("return [#{items.join(',')}]")
 ERC
 endfunction"}}}
@@ -326,8 +326,8 @@ function! vorax#ruby#PlsqlRegions(source_text) abort"{{{
     if region
       vim_hash = region.to_hash.inject({}) { |h,(k,v)| h[k] = (v ? v : ''); h }
       vim_hash[:level] = node.level
-    	vim_hash[:region_type] = region.class.name.split(/::/).last || ''
-    	vim_regions << vim_hash.to_json
+      vim_hash[:region_type] = region.class.name.split(/::/).last || ''
+      vim_regions << vim_hash.to_json
     end
   end
   VIM::command("return [#{vim_regions.join(',')}]")
@@ -335,43 +335,43 @@ ERC
 endfunction"}}}
 
 function! vorax#ruby#RemoveAllComments(text) abort"{{{
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	clear_text = Vorax::Parser.remove_all_comments(VIM::evaluate('a:text'))
-	VIM::command("return #{clear_text.inspect}")
+  clear_text = Vorax::Parser.remove_all_comments(VIM::evaluate('a:text'))
+  VIM::command("return #{clear_text.inspect}")
 ERC
 endfunction"}}}
 
 function! vorax#ruby#DescribeRecordType(text) abort"{{{
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
     items = []
     rec_items = Vorax::Parser.describe_record(VIM::evaluate('a:text'))
-		rec_items.each do |i|
-				item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
-					if v.nil?
-						h[k] = '' 
-					elsif v.is_a?(TrueClass) 
-						h[k] = 1
-					elsif v.is_a?(FalseClass)
-						h[k] = 0
-					else
-						h[k] = v
-					end
-				end
-				items << item.to_json
-	  end
-		VIM::command("return [#{items.join(',')}]")
+    rec_items.each do |i|
+        item = Vorax::Utils.transform_hash(i.to_hash, :deep => true) do |h, k, v|
+          if v.nil?
+            h[k] = '' 
+          elsif v.is_a?(TrueClass) 
+            h[k] = 1
+          elsif v.is_a?(FalseClass)
+            h[k] = 0
+          else
+            h[k] = v
+          end
+        end
+        items << item.to_json
+    end
+    VIM::command("return [#{items.join(',')}]")
 ERC
 endfunction"}}}
 
 function! vorax#ruby#IdentifierAt(line, crrpos) abort "{{{
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	data = VIM::evaluate("a:line")
-	crrpos = VIM::evaluate('a:crrpos')
-	identifier = Vorax::Parser.identifier_at(data, crrpos)
-	VIM::command("return #{identifier.inspect}")
+  data = VIM::evaluate("a:line")
+  crrpos = VIM::evaluate('a:crrpos')
+  identifier = Vorax::Parser.identifier_at(data, crrpos)
+  VIM::command("return #{identifier.inspect}")
 ERC
 endfunction "}}}
 
@@ -620,151 +620,151 @@ endfunction"}}}
 " Connection Profiles Management {{{
 
 function! vorax#ruby#PmInit(config_dir)
-	ruby <<ERC
-	Vorax.extra['pm'] = Vorax::ProfilesManager.new(VIM::evaluate('a:config_dir'))
+  ruby <<ERC
+  Vorax.extra['pm'] = Vorax::ProfilesManager.new(VIM::evaluate('a:config_dir'))
 ERC
 endfunction
 
 function! vorax#ruby#PmHasKeys(config_dir)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	if Vorax::ProfilesManager.initialized?(VIM::evaluate('a:config_dir'))
-		VIM::command("return 1")
-	else
-		VIM::command("return 0")
-	end
+  if Vorax::ProfilesManager.initialized?(VIM::evaluate('a:config_dir'))
+    VIM::command("return 1")
+  else
+    VIM::command("return 0")
+  end
 ERC
 endfunction
 
 function! vorax#ruby#PmSecure(config_dir, master_pwd)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	Vorax::ProfilesManager.create(VIM::evaluate('a:config_dir'), VIM::evaluate('a:master_pwd'))
+  Vorax::ProfilesManager.create(VIM::evaluate('a:config_dir'), VIM::evaluate('a:master_pwd'))
 ERC
 endfunction
 
 function! vorax#ruby#PmChangePwd(config_dir, old_pwd, new_pwd)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	Vorax::ProfilesManager.change_master_pwd(
-		VIM::evaluate('a:config_dir'), 
-		VIM::evaluate('a:old_pwd'),
-		VIM::evaluate('a:new_pwd')
-	)
+  Vorax::ProfilesManager.change_master_pwd(
+    VIM::evaluate('a:config_dir'), 
+    VIM::evaluate('a:old_pwd'),
+    VIM::evaluate('a:new_pwd')
+  )
 ERC
 endfunction
 
 function! vorax#ruby#PmCategories()
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	VIM::command("return #{pm.categories.inspect}")
+  pm = Vorax.extra['pm']
+  VIM::command("return #{pm.categories.inspect}")
 ERC
 endfunction
 
 function! vorax#ruby#PmProfiles(category)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	VIM::command("return #{pm.profiles(VIM::evaluate('a:category')).inspect}")
+  pm = Vorax.extra['pm']
+  VIM::command("return #{pm.profiles(VIM::evaluate('a:category')).inspect}")
 ERC
 endfunction
 
 function! vorax#ruby#PmAllProfiles()
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	VIM::command("return #{pm.profiles(nil).inspect}")
+  pm = Vorax.extra['pm']
+  VIM::command("return #{pm.profiles(nil).inspect}")
 ERC
 endfunction
 
 function! vorax#ruby#PmSetMasterPassword(pwd)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	begin
-	  pm = Vorax.extra['pm']
-	  pm.master_password = VIM::evaluate('a:pwd')
-	rescue OpenSSL::PKey::RSAError => e
+  begin
+    pm = Vorax.extra['pm']
+    pm.master_password = VIM::evaluate('a:pwd')
+  rescue OpenSSL::PKey::RSAError => e
     # invalide password... ignore it
   end
 ERC
 endfunction
 
 function! vorax#ruby#PmSave()
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	pm.save
+  pm = Vorax.extra['pm']
+  pm.save
 ERC
 endfunction
 
 function! vorax#ruby#PmGetPassword(profile)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	pwd = pm.password(VIM::evaluate('a:profile'))
-	VIM::command("return #{pwd.inspect}")
+  pm = Vorax.extra['pm']
+  pwd = pm.password(VIM::evaluate('a:profile'))
+  VIM::command("return #{pwd.inspect}")
 ERC
 endfunction
 
 function! vorax#ruby#IsPmUnlocked()
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	if pm.unlocked
-		VIM::command('return 1')
-	else
-		VIM::command('return 0')
-	end
+  pm = Vorax.extra['pm']
+  if pm.unlocked
+    VIM::command('return 1')
+  else
+    VIM::command('return 0')
+  end
 ERC
 endfunction
 
 function! vorax#ruby#IsPmProfileWithPassword(profile)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	if pm.attribute(VIM::evaluate('a:profile'), 'password')
-		VIM::command('return 1')
-	else
-		VIM::command('return 0')
-	end
+  pm = Vorax.extra['pm']
+  if pm.attribute(VIM::evaluate('a:profile'), 'password')
+    VIM::command('return 1')
+  else
+    VIM::command('return 0')
+  end
 ERC
 endfunction
 
 function! vorax#ruby#PmAdd(profile, password, category, important)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	pm.add(VIM::evaluate('a:profile'), 
-	  :password => VIM::evaluate('a:password'),
-	  :category => VIM::evaluate('a:category'),
-	  :important => VIM::evaluate('a:important'))
+  pm = Vorax.extra['pm']
+  pm.add(VIM::evaluate('a:profile'), 
+    :password => VIM::evaluate('a:password'),
+    :category => VIM::evaluate('a:category'),
+    :important => VIM::evaluate('a:important'))
 ERC
 endfunction
 
 function! vorax#ruby#PmRemove(profile)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	pm.remove(VIM::evaluate('a:profile'))
+  pm = Vorax.extra['pm']
+  pm.remove(VIM::evaluate('a:profile'))
 ERC
 endfunction
 
 function! vorax#ruby#PmEdit(profile, property_name, property_value)
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	pm.edit(VIM::evaluate('a:profile'),
-		VIM::evaluate('a:property_name'),
-		VIM::evaluate('a:property_value'))
+  pm = Vorax.extra['pm']
+  pm.edit(VIM::evaluate('a:profile'),
+    VIM::evaluate('a:property_name'),
+    VIM::evaluate('a:property_value'))
 ERC
 endfunction
 
 function! vorax#ruby#PmMasterPwd()
-	ruby <<ERC
+  ruby <<ERC
 # encoding: UTF-8
-	pm = Vorax.extra['pm']
-	VIM::command("return #{pm.master_password.inspect}")
+  pm = Vorax.extra['pm']
+  VIM::command("return #{pm.master_password.inspect}")
 ERC
 endfunction
 
@@ -773,44 +773,44 @@ endfunction
 " Oradoc {{{
 
 function! vorax#ruby#AllBooks(folder)
-	ruby <<EOR
+  ruby <<EOR
 # encoding: UTF-8
-	books = Vorax::Oradoc.all_books(VIM::evaluate('a:folder'))
-	VIM::command("return #{books.inspect}")
+  books = Vorax::Oradoc.all_books(VIM::evaluate('a:folder'))
+  VIM::command("return #{books.inspect}")
 EOR
 endfunction
 
 function! vorax#ruby#DisplayBooks(folder)
-	ruby <<EOR
+  ruby <<EOR
 # encoding: UTF-8
-	Vorax::Oradoc.all_books(VIM::evaluate('a:folder')) do |book, file|
+  Vorax::Oradoc.all_books(VIM::evaluate('a:folder')) do |book, file|
     VIM::command("echo #{book.inspect}")
   end
 EOR
 endfunction
 
 function! vorax#ruby#CreateDocIndex(doc_folder, index_folder, only_books)
-	ruby <<EOR
+  ruby <<EOR
 # encoding: UTF-8
-	Vorax::Oradoc.create_index(VIM::evaluate('a:doc_folder'),
-														 VIM::evaluate('a:index_folder'),
-														 VIM::evaluate('a:only_books'))
+  Vorax::Oradoc.create_index(VIM::evaluate('a:doc_folder'),
+                             VIM::evaluate('a:index_folder'),
+                             VIM::evaluate('a:only_books'))
 EOR
 endfunction
 
 function! vorax#ruby#OradocSearch(index_folder, what, ...)
-	ruby <<EOR
+  ruby <<EOR
 # encoding: UTF-8
   if VIM::evaluate('a:0') == 0
-		results = Vorax::Oradoc.search(
-			VIM::evaluate('a:index_folder'),
-			VIM::evaluate('a:what'))
+    results = Vorax::Oradoc.search(
+      VIM::evaluate('a:index_folder'),
+      VIM::evaluate('a:what'))
   else
-		results = Vorax::Oradoc.search(
-			VIM::evaluate('a:index_folder'),
-			VIM::evaluate('a:what'),
-			VIM::evaluate('a:1'))
-	end
+    results = Vorax::Oradoc.search(
+      VIM::evaluate('a:index_folder'),
+      VIM::evaluate('a:what'),
+      VIM::evaluate('a:1'))
+  end
   VIM::command("return #{results.to_json}")
 EOR
 endfunction

@@ -25,21 +25,21 @@ set pagesize 0
 select distinct t.*
 from
 (
-	select attr_name word,
-				attr_name abbr,
-				attr_type_name kind,
-				'' menu
-		from all_type_attrs
-	where owner = '&1'
-		and type_name = '&2'
-	union
-	select method_name word,
-				method_name abbr,
-				'' kind,
-				'' menu
-		from all_type_methods
-	where owner = '&1'
-		and type_name = '&2'
+  select attr_name word,
+        attr_name abbr,
+        attr_type_name kind,
+        '' menu
+    from all_type_attrs
+  where owner = '&1'
+    and type_name = '&2'
+  union
+  select method_name word,
+        method_name abbr,
+        '' kind,
+        '' menu
+    from all_type_methods
+  where owner = '&1'
+    and type_name = '&2'
 ) t;
 
 

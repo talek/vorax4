@@ -6,19 +6,19 @@
 
                                                         *vorax* *vorax-plugin*
 
-	Contents:
-	   What is VoraX .......................... |vorax-whatis|
-	   Features ............................... |vorax-features|
-	   Architecture ........................... |vorax-architecture|
-	   Installation Guide ..................... |vorax-install|
-	   Connecting to a database ............... |vorax-connect|
-	   Executing statements ................... |vorax-exec|
-	   The output window  ..................... |vorax-output|
-	   The database explorer .................. |vorax-explorer|
-	   Connection profiles .................... |vorax-cmanager|
-	   Describing objects ..................... |vorax-describe|
-	   Working with Explain Plans ............. |vorax-explainplan|
-	   The Oracle HTML Documentation .......... |vorax-oradoc|
+  Contents:
+     What is VoraX .......................... |vorax-whatis|
+     Features ............................... |vorax-features|
+     Architecture ........................... |vorax-architecture|
+     Installation Guide ..................... |vorax-install|
+     Connecting to a database ............... |vorax-connect|
+     Executing statements ................... |vorax-exec|
+     The output window  ..................... |vorax-output|
+     The database explorer .................. |vorax-explorer|
+     Connection profiles .................... |vorax-cmanager|
+     Describing objects ..................... |vorax-describe|
+     Working with Explain Plans ............. |vorax-explainplan|
+     The Oracle HTML Documentation .......... |vorax-oradoc|
 
 ==============================================================================
 WHAT IS VORAX                                                   *vorax-whatis*
@@ -46,25 +46,25 @@ used within a regular console makes it suitable for server environments.
 
 The main reasons which motivate us to develop this plugin are:
 
-	- the power of Vim editor. When applied to Oracle development or 
-	  database administration it brings a lot of efficiency and fun.
+  - the power of Vim editor. When applied to Oracle development or 
+    database administration it brings a lot of efficiency and fun.
 
-	- the need for a cross platform tool. Vim is available on many
-	  platforms which means you're free to use it on any OS you like.
+  - the need for a cross platform tool. Vim is available on many
+    platforms which means you're free to use it on any OS you like.
 
-	- availability as a console IDE. Having a shiny IDE on a slow SSH
-	  connection doesn't sound so good, does it?
+  - availability as a console IDE. Having a shiny IDE on a slow SSH
+    connection doesn't sound so good, does it?
 
-	- having an IDE with a small footprint. VoraX is nothing but a 
-	  collection of VimL and Ruby scripts provided as a Vim plugin. We 
-	  hope VoraX will consume as less resources as possible.
+  - having an IDE with a small footprint. VoraX is nothing but a 
+    collection of VimL and Ruby scripts provided as a Vim plugin. We 
+    hope VoraX will consume as less resources as possible.
 
-	- the dream of an improved SqlPLUS environment. I know a lot of guys
-	  (including me) who use SqlPLUS a lot, even for complex tasks. 
-	  On the other hand, its limitations are quite annoying: we want good 
-	  code completion, pretty print output and so on. We cannot get rid of 
-	  SqlPLUS because we still think it's a great tool, but we can make it 
-	  better. This is another goal of VoraX.
+  - the dream of an improved SqlPLUS environment. I know a lot of guys
+    (including me) who use SqlPLUS a lot, even for complex tasks. 
+    On the other hand, its limitations are quite annoying: we want good 
+    code completion, pretty print output and so on. We cannot get rid of 
+    SqlPLUS because we still think it's a great tool, but we can make it 
+    better. This is another goal of VoraX.
 
 VoraX stands for Vim ORAcle eXtension.
 
@@ -73,28 +73,28 @@ FEATURES                                                      *vorax-features*
 
 Below are some of the features Vorax is endowed with:
 
-	- Advanced code completion;
+  - Advanced code completion;
 
-	- Folding PL/SQL code;
+  - Folding PL/SQL code;
 
-	- A database objects browser. You may browse tables, views, packages
-	  and so on. 
+  - A database objects browser. You may browse tables, views, packages
+    and so on. 
 
-	- Connection profiles. VoraX allows to store various connection
-	  strings, including the corresponding passwords. All these passwords
-	  are protected using a master password.
-	
-	- Support for editing and compiling PL/SQL modules like packages,
-	  types, procedures and functions.
+  - Connection profiles. VoraX allows to store various connection
+    strings, including the corresponding passwords. All these passwords
+    are protected using a master password.
+  
+  - Support for editing and compiling PL/SQL modules like packages,
+    types, procedures and functions.
 
-	- Convenient key mappings for: describe object under cursor, execute
-	  current statement, etc.
-	
-	- Formatted output. You may switch to a vertical columns layout or
-	  to a compressed format. In a compressed layout all columns width are
-	  resized according to the length of the contained data.
+  - Convenient key mappings for: describe object under cursor, execute
+    current statement, etc.
+  
+  - Formatted output. You may switch to a vertical columns layout or
+    to a compressed format. In a compressed layout all columns width are
+    resized according to the length of the contained data.
 
-	- Built-in HTML Oracle documentation search.
+  - Built-in HTML Oracle documentation search.
 
 ==============================================================================
 ARCHITECTURE                                              *vorax-architecture*
@@ -159,11 +159,11 @@ CONNECTING TO A DATABASE                                       *vorax-connect*
 The first thing you'll usually do after you start Vorax is to connect to a 
 target database. There is a simple command just for this:
 
-	:VORAXConnect <connect_string>
+  :VORAXConnect <connect_string>
 
 For example, you may use:
 
-	:VORAXConnect scott/tiger@db
+  :VORAXConnect scott/tiger@db
 
 If you don't provide the password or the database you want to connect to, 
 Vorax will ask for the missing information.
@@ -175,11 +175,11 @@ these functions you may embed logic relevant for various connection profiles.
 For example, if you want to display a confirmation message for every 
 connection which is made using an ADMIN user, you may use the following hook:
 
-	function! VORAXAfterConnect(user, db, role)
-		if a:user ==? 'ADMIN'
-			call confirm("Do you promise you'll be a nice guy?", "&Yes")
-		endif
-	endfunction
+  function! VORAXAfterConnect(user, db, role)
+    if a:user ==? 'ADMIN'
+      call confirm("Do you promise you'll be a nice guy?", "&Yes")
+    endif
+  endfunction
 
 Here, we used the VORAXAfterConnect hook because it is invoked only if the 
 connection succeeds.
@@ -208,11 +208,11 @@ hooks:
 
 For example:
 
-	function! VORAXAfterConnect(user, db, role)
-		let data = vorax#sqlplus#Query(
-		  \ "select sys_context('userenv', 'instance_name') from dual;")
-		call vorax#output#Spit("Hey! You're on " . data.resultset[0][0][0])
-	endfunction
+  function! VORAXAfterConnect(user, db, role)
+    let data = vorax#sqlplus#Query(
+      \ "select sys_context('userenv', 'instance_name') from dual;")
+    call vorax#output#Spit("Hey! You're on " . data.resultset[0][0][0])
+  endfunction
 
 Another interesting thing you'll notice is that Vorax status-line will display 
 the USER@DB info in a different color, taking into consideration the type of 
@@ -284,9 +284,9 @@ OS under which Vorax is running:
 
       Bug 8890996: ENH: CONTROL-C SHOULD NOT EXIT WINDOWS CONSOLE SQLPLUS
 
-		So, on Windows, when the user asks for a cancellation of a running
-		statement, by default, Vorax will display a warning message and it
-		will ask the user to confirm that he really want to abort his session.
+    So, on Windows, when the user asks for a cancellation of a running
+    statement, by default, Vorax will display a warning message and it
+    will ask the user to confirm that he really want to abort his session.
     If the g:vorax_auto_connect variable is 1, then Vorax will automatically
     reconnect using the last credentials used in the VORAXConnect command.
 
@@ -414,28 +414,28 @@ feature as well.
 The following key mappings are relevant in the context of the database 
 explorer:
 
-	* <Leader>ve - Toggle the explorer window. ve stands for "Vorax Explorer".
-	* m - Invokes the contextual menu for an explorer node.
-	* o or ENTER - Edit the object definition or expand/collapse a category
-	* R - Refresh the database explorer.
-	* <Leader>d - describe the selected database object
-	* <Leader>D - verbose describe the selected table
+  * <Leader>ve - Toggle the explorer window. ve stands for "Vorax Explorer".
+  * m - Invokes the contextual menu for an explorer node.
+  * o or ENTER - Edit the object definition or expand/collapse a category
+  * R - Refresh the database explorer.
+  * <Leader>d - describe the selected database object
+  * <Leader>D - verbose describe the selected table
 
 The database explorer may be configured using the following global variables:
 
-	* g:vorax_dbexplorer_force_edit: whenever or not to get the object 
-	  definition directly from the database or, if a local file matching the 
-	  object name exists, to open that file instead (default value). Please 
-	  see VORAXEdit vs. VORAXEdit!.
-	
-	* g:vorax_dbexplorer_exclude: a Vim style regular expression which may be 
-	  used to filter the categories some might not be interested in.
+  * g:vorax_dbexplorer_force_edit: whenever or not to get the object 
+    definition directly from the database or, if a local file matching the 
+    object name exists, to open that file instead (default value). Please 
+    see VORAXEdit vs. VORAXEdit!.
+  
+  * g:vorax_dbexplorer_exclude: a Vim style regular expression which may be 
+    used to filter the categories some might not be interested in.
 
-	* g:vorax_db_explorer_side: where to layout the database explorer window: 
-	  left or right. By default it's left.
-	
-	* g:vorax_db_explorer_size: the size of the explorer window. The default 
-	  value is 30.
+  * g:vorax_db_explorer_side: where to layout the database explorer window: 
+    left or right. By default it's left.
+  
+  * g:vorax_db_explorer_size: the size of the explorer window. The default 
+    value is 30.
 
 The contextual menu of the database explorer can be extended using custom 
 plugins. In fact, every option you see in the menu is provided by a plugin. 
@@ -444,19 +444,19 @@ Of course, you're free to write your own super-mega-cool plugins.
 A plugin is just a vim script which must reside in vorax/plugin/explorer 
 folder. It has a very simple interface:
 
-	let s:plugin = {
-		\ 'text': 'my test plugin',
-		\ 'shortcut' : 't'}
+  let s:plugin = {
+    \ 'text': 'my test plugin',
+    \ 'shortcut' : 't'}
 
-	function! s:plugin.Callback(descriptor)
-		" do stuff here
-	endfunction
+  function! s:plugin.Callback(descriptor)
+    " do stuff here
+  endfunction
 
-	function! s:plugin.IsEnabled(descriptor)
-		" decide if the plugin should be activated for the current item
-	endfunction
+  function! s:plugin.IsEnabled(descriptor)
+    " decide if the plugin should be activated for the current item
+  endfunction
 
-	call vorax#explorer#RegisterPluginItem(s:plugin)
+  call vorax#explorer#RegisterPluginItem(s:plugin)
 
 Let's have a look at the code above. In text we put the label we want to 
 appear in the contextual menu. The shortcut is, obvious, the shortcut which 
@@ -473,14 +473,14 @@ when the user invokes the menu item provided by your plugin.
 The descriptor argument is a hash which describes the selected node from the 
 database explorer. It has the following keys:
 
-	object: is the object name, as it is shown in the explorer. If the current 
-	        item is not a database object, the value of this key is ''.
-	owner: is the owner of the object. It's empty if the selected item is not 
-	       a database object.
-	category: the category to which the node belongs to. Could be: "Tables", 
-	          "Packages" etc.
-	dbtype: is the Oracle type of the selected node
-	status: the status of the object: VALID or INVALID
+  object: is the object name, as it is shown in the explorer. If the current 
+          item is not a database object, the value of this key is ''.
+  owner: is the owner of the object. It's empty if the selected item is not 
+         a database object.
+  category: the category to which the node belongs to. Could be: "Tables", 
+            "Packages" etc.
+  dbtype: is the Oracle type of the selected node
+  status: the status of the object: VALID or INVALID
 
 The above information should be enough to determine the context in which your 
 plugins operates.
@@ -520,44 +520,44 @@ stands for 'profile'.
 You may navigate through the hierarchical structure of the connection profiles 
 using the following key maps:
 
-	j: move down
-	k: move up
-	Enter or o: expand category or connect using the profile under cursor
-	m: invoke the contextual menu for the node under cursor
+  j: move down
+  k: move up
+  Enter or o: expand category or connect using the profile under cursor
+  m: invoke the contextual menu for the node under cursor
 
 The look of the connection profiles window is controlled by the following 
 Vorax global variables:
 
-	g:vorax_cmanager_side: where to display the connection profile window, 
-	                       right or left
-	g:vorax_cmanager_size: the width of the connection profile window
+  g:vorax_cmanager_side: where to display the connection profile window, 
+                         right or left
+  g:vorax_cmanager_size: the width of the connection profile window
 
 The contextual menu can also be extended using custom plugins. A plugin is 
 just a vim script which must reside in vorax/plugin/cmanager folder. It has 
 a very simple interface:
 
-	let s:plugin = {
-		\ 'text': 'my test plugin',
-		\ 'shortcut' : 't'}
+  let s:plugin = {
+    \ 'text': 'my test plugin',
+    \ 'shortcut' : 't'}
 
-	function! s:plugin.Callback(descriptor)
-		" do stuff here
-	endfunction
+  function! s:plugin.Callback(descriptor)
+    " do stuff here
+  endfunction
 
-	function! s:plugin.IsEnabled(descriptor)
-		" decide if the plugin should be activated for the current item
-	endfunction
+  function! s:plugin.IsEnabled(descriptor)
+    " decide if the plugin should be activated for the current item
+  endfunction
 
-	call vorax#cmanager#RegisterPluginItem(s:plugin)
+  call vorax#cmanager#RegisterPluginItem(s:plugin)
 
 It's the same interface used to extend the Database Explorer. What is 
 different is the descriptor dictionary used to invoke the plugin. In case 
 of a CManager plugin, the descriptor has the following attributes:
 
-	root: 1 if the plugin is invoked for the root node of the connections 
-	      tree, 0 otherwise
-	category: the category of the connection profile
-	profile: the profile, as it is shown in the connections tree
+  root: 1 if the plugin is invoked for the root node of the connections 
+        tree, 0 otherwise
+  category: the category of the connection profile
+  profile: the profile, as it is shown in the connections tree
 
 You may have a look into your vorax/plugin/cmanager folder to see some 
 examples of the already implemented plugins.
@@ -567,17 +567,17 @@ DESCRIBING OBJECTS                                            *vorax-describe*
 
 In order to describe a database object, Vorax provides the following methods:
 
-	* the BASIC describe (the output from the SqlPlus DESC command): applies 
-	  to tables, views, procedures, functions, packages and types.
-	
-	* a VERBOSE describe: applies just to tables and it gets a lot of information 
-	  about: comments, constraints, indexes, parent-child relationships, the 
-	  tablespace the table belongs to, etc.
+  * the BASIC describe (the output from the SqlPlus DESC command): applies 
+    to tables, views, procedures, functions, packages and types.
+  
+  * a VERBOSE describe: applies just to tables and it gets a lot of information 
+    about: comments, constraints, indexes, parent-child relationships, the 
+    tablespace the table belongs to, etc.
 
 The default key mappings are:
 
-	* <Leader>d for a BASIC describe
-	* <Leader>D for a VERBOSE describe
+  * <Leader>d for a BASIC describe
+  * <Leader>D for a VERBOSE describe
 
 "D" stands for "Describe" therefore it shouldn't be a problem to memorize it. 
 By default, these mappings are available in all SQL and PLSQL buffers, as 
@@ -599,14 +599,14 @@ executed.
 
 When it comes to explaining a SQL statement, there are two main approaches:
 
-	* get a detailed plan which involves executing the statement. This would be 
-		the real execution plan which is usually obtained using DBMS_XPLAN 
-		package.
+  * get a detailed plan which involves executing the statement. This would be 
+    the real execution plan which is usually obtained using DBMS_XPLAN 
+    package.
 
-	* get an estimated plan which may or may not be the real execution plan, 
-	  with information about how the optimizer is intending to execute the 
-	  statement, but without actually running it. It's the typical case of 
-	  "AUTOTRACE TRACEONLY EXPLAIN" SqlPlus command.
+  * get an estimated plan which may or may not be the real execution plan, 
+    with information about how the optimizer is intending to execute the 
+    statement, but without actually running it. It's the typical case of 
+    "AUTOTRACE TRACEONLY EXPLAIN" SqlPlus command.
 
 Taking into consideration the above use cases, Vorax implements the two 
 approaches. Basically you can get:
@@ -658,17 +658,17 @@ to download it.
 As soon as you have the archive, unzip it somewhere on your disk. Then all 
 these HTML files must be indexed using the following command:
 
-	:VORAXDocIndex [path_to_your_oracle_html_doc]
+  :VORAXDocIndex [path_to_your_oracle_html_doc]
 
 Usually, the documentation pack is huge and I doubt is anybody interested 
 in all that content. That's why, Vorax will index just the books provided 
 in the g:vorax_oradoc_index_only variable. By default, this variable is 
 initialized as an array having the following elements:
 
-	- "Database SQL Language Reference"
-	- "Database Reference"
-	- "Database PL/SQL Packages and Types Reference"
-	- "Database Error Messages"
+  - "Database SQL Language Reference"
+  - "Database Reference"
+  - "Database PL/SQL Packages and Types Reference"
+  - "Database Error Messages"
 
 All above are in fact prefixes used by Vorax indexer to match the book 
 name. So, in short, only those books with names starting with one of the 
@@ -678,7 +678,7 @@ If you want to add more titles, you need to know what other books are
 available in your documentation pack. You may use the following command 
 to find this:
 
-	:VORAXDocBooks [path_to_your_oracle_html_doc]
+  :VORAXDocBooks [path_to_your_oracle_html_doc]
 
 If you need to index all the content, then it's enough to unlet the 
 g:vorax_oradoc_index_only variable.
@@ -694,9 +694,9 @@ in Vorax sql/plsql buffers, or into the output window.
 The result of your search is displayed in a special window along with the 
 containing book. Within this window you can:
 
-	- navigate to the item you think is the most relevant
-	- opening the documentation for a found item using Enter or o.
-	- closing the window using q.
+  - navigate to the item you think is the most relevant
+  - opening the documentation for a found item using Enter or o.
+  - closing the window using q.
 
 The maximum number of search results is configurable via the 
 g:vorax_oradoc_max_results variable. By default it's 30.
@@ -704,11 +704,11 @@ g:vorax_oradoc_max_results variable. By default it's 30.
 You may control the layout of the Oracle documentation window with the 
 following variables:
 
-	- g:vorax_oradoc_win_style: can be horizontal or vertical
-	- g:vorax_oradoc_win_side: if the window style was defined as "horizontal" 
-	  then the valid values are top or bottom. If the window style is "vertical", 
-	  then you may choose between right or left
-	- g:vorax_oradoc_win_size: the size of the documentation window
+  - g:vorax_oradoc_win_style: can be horizontal or vertical
+  - g:vorax_oradoc_win_side: if the window style was defined as "horizontal" 
+    then the valid values are top or bottom. If the window style is "vertical", 
+    then you may choose between right or left
+  - g:vorax_oradoc_win_size: the size of the documentation window
 
 By default, Vorax doesn't know how to open the target documentation file 
 because this is done differently based on the OS platform and user preferences: 
@@ -717,13 +717,13 @@ user to tell how the documentation file is supposed to be opened, by defining
 the g:vorax_oradoc_open_cmd. The %u substitution variable is used to merge the 
 documentation file path into the defined command. For example:
 
-	let g:vorax_oradoc_open_cmd='"C:\Program Files (x86)\Chrome\chrome.exe" file://%u'
+  let g:vorax_oradoc_open_cmd='"C:\Program Files (x86)\Chrome\chrome.exe" file://%u'
 
 will open the documentation file using Chrome.
 
 Or, if you are in tmux (my favorite):
 
-	let g:vorax_oradoc_open_cmd='tmux new-window "w3m %u"'
+  let g:vorax_oradoc_open_cmd='tmux new-window "w3m %u"'
 
 This means, a new tmux window will be created with a w3m browser having the 
 documentation file loaded. That's very convenient because you don't have to leave 

@@ -20,14 +20,14 @@ prompt
 set feedback off
 set timing off
 begin
-	dbms_lob.createtemporary (lob_loc => :plan, cache => TRUE);
-	:plan := '';
-	for l_rec in (SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(null, null, '&2'))) loop
-		:plan := :plan || l_rec.plan_table_output || chr(10);
-	end loop;
-	-- don't bother to get the exact size in bytes. Get the length in chars and
-	-- multiply by 4, which is the maximum size for a char in AL32UTF8.
-	:plan_length := length(:plan) * 4;
+  dbms_lob.createtemporary (lob_loc => :plan, cache => TRUE);
+  :plan := '';
+  for l_rec in (SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(null, null, '&2'))) loop
+    :plan := :plan || l_rec.plan_table_output || chr(10);
+  end loop;
+  -- don't bother to get the exact size in bytes. Get the length in chars and
+  -- multiply by 4, which is the maximum size for a char in AL32UTF8.
+  :plan_length := length(:plan) * 4;
 end;
 /
 set autot off

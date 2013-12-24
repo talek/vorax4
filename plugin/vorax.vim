@@ -151,15 +151,15 @@ call s:initVariable('g:vorax_sql_script_default_extension', 'sql')
 call s:initVariable('g:vorax_sql_associations',
       \ {'TABLE' : 'tab',
       \  'VIEW' : 'viw',
-			\  'SQL_DEFAULT' : g:vorax_sql_script_default_extension})
+      \  'SQL_DEFAULT' : g:vorax_sql_script_default_extension})
 exe 'autocmd BufRead,BufNewFile *.{' . join(values(g:vorax_sql_associations), ',') . '} let &ft="sql" | SQLSetType sqlvorax'
 
 " Oradoc selective books
 call s:initVariable('g:vorax_oradoc_index_only', [
-			\ "Database SQL Language Reference",
-			\ "Database Reference",
-			\ "Database PL/SQL Packages and Types Reference",
-			\ "Database Error Messages"])
+      \ "Database SQL Language Reference",
+      \ "Database Reference",
+      \ "Database PL/SQL Packages and Types Reference",
+      \ "Database Error Messages"])
 call s:initVariable('g:vorax_oradoc_max_results', 30)
 call s:initVariable('g:vorax_oradoc_win_style', 'horizontal')
 call s:initVariable('g:vorax_oradoc_win_side', 'top')
@@ -187,10 +187,10 @@ command! -n=* -complete=file VORAXDocSearch :call vorax#oradoc#Search(<f-args>)
 if g:vorax_map_keys
   " global mappings
   nnoremap <silent> <Leader>o :VORAXOutputToggle<CR>
-	nnoremap <silent> <Leader>pr :VORAXConnectionsToggle<CR>
-	nnoremap <silent> <Leader>ve :VORAXExplorerToggle<CR>
-	nnoremap <silent> <Leader>ss :VORAXScratch<CR>
-	nnoremap <silent> <Leader>k :VORAXDocSearch<CR>
+  nnoremap <silent> <Leader>pr :VORAXConnectionsToggle<CR>
+  nnoremap <silent> <Leader>ve :VORAXExplorerToggle<CR>
+  nnoremap <silent> <Leader>ss :VORAXScratch<CR>
+  nnoremap <silent> <Leader>k :VORAXDocSearch<CR>
 endif
 
 "}}}
@@ -211,7 +211,7 @@ hi User3 term=standout cterm=standout ctermfg=5 gui=reverse guifg=#d33682
 " Logging Initialization {{{
 
 function! VORAXDebug(message)
-	" dummy function: do nothing
+  " dummy function: do nothing
 endfunction
 
 if exists('g:vorax_debug') && g:vorax_debug == 1
@@ -221,15 +221,15 @@ if exists('g:vorax_debug') && g:vorax_debug == 1
   try
     exe "call vorax#ruby#InitLogging(g:vorax_homedir . '/vorax.log')"
 
-		function! VORAXDebug(message)
-			if type(a:message) == 3 || type(a:message) == 4
-				" a list or a dictionary
-				let msg = string(a:message)
-			else
-				let msg = a:message
-			endif
-			exe "call vorax#ruby#Log(0, " . string(msg) . ")"
-		endfunction
+    function! VORAXDebug(message)
+      if type(a:message) == 3 || type(a:message) == 4
+        " a list or a dictionary
+        let msg = string(a:message)
+      else
+        let msg = a:message
+      endif
+      exe "call vorax#ruby#Log(0, " . string(msg) . ")"
+    endfunction
 
   catch /E117/
     echo "Sorry, don't expect VoraX to work properly!"

@@ -139,11 +139,11 @@ it 'should work with accept prompts' do# {{{
   begin
     pack_file = Tempfile.new(['vorax', '.sql'])
     @sp.exec("accept var prompt \"Enter var: \"\nprompt &var", :prep => @prep, :pack_file => pack_file.path)
-		Timeout::timeout(10) {
-			@result << @sp.read_output(32767) while @result !~ /Enter var: \z/
-			@sp.send_text("muci\n")
-			@result << @sp.read_output(32767) while @result !~ /muci\n\z/
-		}
+    Timeout::timeout(10) {
+      @result << @sp.read_output(32767) while @result !~ /Enter var: \z/
+      @sp.send_text("muci\n")
+      @result << @sp.read_output(32767) while @result !~ /muci\n\z/
+    }
   ensure
     pack_file.unlink
   end

@@ -41,9 +41,9 @@ declare
   l_part3       varchar2(100);
   l_db_link     varchar2(120);
   l_next_pos    pls_integer;
-	l_object_id   all_objects.object_id%type;
-	ex_object_id_missing exception;
-	pragma exception_init(ex_object_id_missing, -00904);
+  l_object_id   all_objects.object_id%type;
+  ex_object_id_missing exception;
+  pragma exception_init(ex_object_id_missing, -00904);
 
   function resolve(object_in in varchar2,
                    owner_in  in varchar2,
@@ -127,18 +127,18 @@ begin
         -- object_id in all_procedures is not available in
         -- 10gR1 or lower
         begin
-					execute immediate 'select object_id ' ||
-														'  from all_procedures ' ||
-														'  where owner = ''SYS''' ||
-														'  and object_name = ''STANDARD''' ||
-														'  and procedure_name = :1' 
-									into l_object_id using l_part1;
+          execute immediate 'select object_id ' ||
+                            '  from all_procedures ' ||
+                            '  where owner = ''SYS''' ||
+                            '  and object_name = ''STANDARD''' ||
+                            '  and procedure_name = :1' 
+                  into l_object_id using l_part1;
           l_result := '<td>SYS</td><td>STANDARD</td><td>PACKAGE</td><td>' 
             || l_object_id || '</td>';
           l_extra := l_part1;
         exception
-				  when ex_object_id_missing then
-				  	null;
+          when ex_object_id_missing then
+            null;
         end;
       end if;
     end if;

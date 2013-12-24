@@ -196,16 +196,16 @@ begin
   end loop;
 
   -- triggers
-  for r in (	select rpad( trigger_name, 32)||' => '||triggering_event||' '||trigger_type output, rownum rownum#
-					from all_triggers a
-					where a.owner = l_owner
-						and a.table_name = l_table)
+  for r in (  select rpad( trigger_name, 32)||' => '||triggering_event||' '||trigger_type output, rownum rownum#
+          from all_triggers a
+          where a.owner = l_owner
+            and a.table_name = l_table)
   loop
-	if r.rownum# = 1 then
+  if r.rownum# = 1 then
       dbms_output.put_line('');
       dbms_output.put_line('Triggers');
       dbms_output.put_line('-------------------');
-	end if;
+  end if;
     dbms_output.put_line('   ' || r.output);
   end loop;
 

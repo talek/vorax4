@@ -5,17 +5,17 @@ include Parser
 
 describe 'stmt_inspector' do
 
-	it 'should work with delete statements' do
+  it 'should work with delete statements' do
     text = "\n      delete from bskcmptre d where itmidn = d.\n    end loop;"
     inspector = StmtInspector.new(text)
     inspector.find_alias('d', 0).columns.should == ['bskcmptre.*']
-	end
+  end
 
-	it 'should work with hierarchical queries' do
-		text = "select * from (select level as lvl, bskcmptre_tbl.*\n                       from bskcmptre_tbl\n                      start with itmidn = pi_nodidn\n                     connect by prior itmidn = bskprnidn\n                      order by itmidn desc) v_crtrec"
+  it 'should work with hierarchical queries' do
+    text = "select * from (select level as lvl, bskcmptre_tbl.*\n                       from bskcmptre_tbl\n                      start with itmidn = pi_nodidn\n                     connect by prior itmidn = bskprnidn\n                      order by itmidn desc) v_crtrec"
     inspector = StmtInspector.new(text)
     inspector.find_alias('v_crtrec', 0).columns.should == ["lvl", "bskcmptre_tbl.*"]
-	end
+  end
 
   it 'should work with a complex query' do# {{{
     text = '

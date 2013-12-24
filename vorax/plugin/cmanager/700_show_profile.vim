@@ -4,15 +4,15 @@
 " License:     see LICENSE.txt
 
 let s:plugin = {
-			\	'text': 'show',
-			\ 'shortcut' : 's'}
+      \ 'text': 'show',
+      \ 'shortcut' : 's'}
 
 function! s:plugin.Callback(descriptor)
-	call vorax#cmanager#ShowProfile()
+  call vorax#cmanager#ShowProfile()
 endfunction
 
 function! s:plugin.IsEnabled(descriptor)
-	return a:descriptor['profile'] != ''
+  return a:descriptor['profile'] != ''
 endfunction
 
 call vorax#cmanager#RegisterPluginItem(s:plugin)

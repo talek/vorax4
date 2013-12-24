@@ -22,14 +22,14 @@ module Vorax
     # where the RSA keys are along with the configuration
     # file. 
     def initialize(config_dir)
-			require 'openssl'
+      require 'openssl'
       @config_dir = config_dir
       @unlocked = false
       if File.exists?("#@config_dir/#{REPOSITORY_FILE}")
         # the profiles.xml file already exists. Just load it.
         profiles_file = File.open("#{config_dir}/#{REPOSITORY_FILE}")
         @repository_xml = Nokogiri::XML(profiles_file)
-      	profiles_file.close
+        profiles_file.close
       else
         # the profiles.xml file does not exists. Initialize an empty repository.
         @repository_xml = Nokogiri::XML('<profiles></profiles>')
@@ -60,37 +60,37 @@ module Vorax
       profile_element['password'] = encrypt(opts[:password]) if opts[:password] && !opts[:password].empty?
       profile_element['category'] = opts[:category]
       profile_element['important'] = opts[:important]
-    	@repository_xml.root.add_child(profile_element)
+      @repository_xml.root.add_child(profile_element)
     end
 
-		def profiles(category = nil)
-			profile_ids = []
-			@repository_xml.xpath("//profile").each do |profile|
+    def profiles(category = nil)
+      profile_ids = []
+      @repository_xml.xpath("//profile").each do |profile|
         if category.nil?
-					profile_ids << profile["id"]
-				else
-				  profile_ids << profile["id"] if profile['category'] == category
-				end
-			end
-			return profile_ids.sort
-		end
+          profile_ids << profile["id"]
+        else
+          profile_ids << profile["id"] if profile['category'] == category
+        end
+      end
+      return profile_ids.sort
+    end
 
-		def categories
-			categories = []
-			@repository_xml.xpath("//profile").each do |profile|
-				categories << profile["category"] unless profile["category"].empty?
-			end
-			return categories.uniq.sort
-		end
+    def categories
+      categories = []
+      @repository_xml.xpath("//profile").each do |profile|
+        categories << profile["category"] unless profile["category"].empty?
+      end
+      return categories.uniq.sort
+    end
 
-		def profile(id)
+    def profile(id)
       @repository_xml.at_css("profile[@id='#{id}']")
-		end
+    end
 
-		def edit(id, property, value)
+    def edit(id, property, value)
       profile_element = profile(id)
-			profile_element[property] = value
-		end
+      profile_element[property] = value
+    end
 
     # Remove the provided profile from the repository.
     def remove(id)
@@ -138,12 +138,12 @@ module Vorax
       File.open("#{config_dir}/#{PUBLIC_KEY}", 'w') { |f| f.puts(public_key) }
     end
 
-		def self.change_master_pwd(config_dir, old_pwd, new_pwd)
+    def self.change_master_pwd(config_dir, old_pwd, new_pwd)
       private_key = OpenSSL::PKey::RSA.new(File.read("#{config_dir}/#{PRIVATE_KEY}"), old_pwd)
       cipher =  OpenSSL::Cipher::Cipher.new('des3')
       private_key = private_key.to_pem(cipher, new_pwd)
       File.open("#{config_dir}/#{PRIVATE_KEY}", 'w', 0600) { |f| f.puts(private_key) }
-		end
+    end
 
     # Was the password repository already initialized into the
     # provided directory?

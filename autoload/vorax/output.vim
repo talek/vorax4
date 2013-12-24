@@ -52,10 +52,10 @@ function! vorax#output#Close() abort " {{{
     if winnr != -1
       exec winnr . 'wincmd w'
       try
-				close!
+        close!
       catch /^Vim\%((\a\+)\)\=:E444/
-				echo 'Last window baby!'
-			endtry
+        echo 'Last window baby!'
+      endtry
       wincmd p
     endif
   endif
@@ -66,7 +66,7 @@ function! vorax#output#Spit(text) abort " {{{
   normal! G
   let lines = split(a:text, '\n', 1)
   if len(lines) > 1 && lines[0] != ''
-		call VORAXDebug("vorax#output#Spit: " . string(lines))
+    call VORAXDebug("vorax#output#Spit: " . string(lines))
   endif
   let last_line = line('$')
   if s:first_chunk && 
@@ -79,13 +79,13 @@ function! vorax#output#Spit(text) abort " {{{
     call remove(lines, 0)
   endif
   if len(lines) > 0
-		if s:first_chunk && g:vorax_output_cursor_on_top
-			if lines[0] == ""
-				let s:current_line = last_line + 1
-			else
-				let s:current_line = last_line 
-			endif
-		endif
+    if s:first_chunk && g:vorax_output_cursor_on_top
+      if lines[0] == ""
+        let s:current_line = last_line + 1
+      else
+        let s:current_line = last_line 
+      endif
+    endif
     call setline(last_line, getline(last_line) . lines[0])
     call append(last_line, lines[1:])
     normal! G
@@ -114,7 +114,7 @@ function! vorax#output#Clear() abort " {{{
 endfunction " }}}
 
 function! vorax#output#IsWaitingForData() abort"{{{
-	return s:vorax_executing
+  return s:vorax_executing
 endfunction"}}}
 
 function! vorax#output#PrepareSpit() abort "{{{
@@ -138,12 +138,12 @@ endfunction " }}}
 
 function! vorax#output#PostSpit() abort "{{{
   call vorax#sqlplus#UpdateSessionOwner()
-	" update dbexplorer
-	call vorax#explorer#RefreshRoot()
+  " update dbexplorer
+  call vorax#explorer#RefreshRoot()
   call vorax#output#Open()
   if g:vorax_output_cursor_on_top
-		exe "normal! " . s:current_line . 'G'
-	endif
+    exe "normal! " . s:current_line . 'G'
+  endif
   if !g:vorax_output_window_sticky_cursor
     exe s:originating_window.'wincmd w'
   endif
@@ -155,11 +155,11 @@ function! vorax#output#SpitterStop() abort " {{{
   call vorax#output#PostSpit()
   let prop = vorax#sqlplus#Properties()
   if filereadable(prop['store_set'])
-		call VORAXDebug('vorax#output#SpitterStop(): sp_options='.string(readfile(prop['store_set'], 'b')))
-	endif
+    call VORAXDebug('vorax#output#SpitterStop(): sp_options='.string(readfile(prop['store_set'], 'b')))
+  endif
   if exists("s:save_ut")
-		let &ut = s:save_ut
-	endif
+    let &ut = s:save_ut
+  endif
   let s:vorax_executing = 0
 endfunction " }}}
 
@@ -266,13 +266,13 @@ function! vorax#output#Abort() abort"{{{
       if cancelled
         " it's a good thing to revert to default options
         let sp_props = vorax#sqlplus#Properties()
-				if filereadable(sp_props['store_set'])
-					call vorax#sqlplus#ExecImmediate('@' . sp_props['store_set'])
+        if filereadable(sp_props['store_set'])
+          call vorax#sqlplus#ExecImmediate('@' . sp_props['store_set'])
         endif
         if !vorax#utils#IsEmpty(sp_props['cols_clear'])
-					" clear columns if previous formatting was in place
-					call vorax#sqlplus#ExecImmediate(sp_props['cols_clear'])
-				endif
+          " clear columns if previous formatting was in place
+          call vorax#sqlplus#ExecImmediate(sp_props['cols_clear'])
+        endif
         call vorax#output#Spit("\n*** Cancelled! ***")
       endif
     endif
@@ -286,8 +286,8 @@ function! vorax#output#Abort() abort"{{{
     endif
     call vorax#sqlplus#UpdateSessionOwner()
     if vorax#sqlplus#SessionOwner() == '@'
-    	" reconnected my ass
-    	let reconnected = ''
+      " reconnected my ass
+      let reconnected = ''
     endif
     call vorax#output#Spit("\n*** Session aborted" . reconnected . "! ***")
     echo
@@ -347,21 +347,21 @@ function! vorax#output#StatusLine() abort"{{{
         \ '%= ' . format . 
         \ col_head .
         \ append .
-				\ top .
+        \ top .
         \ sticky .
-				\ limit_rows .
+        \ limit_rows .
         \ ' '
 endfunction"}}}
 
 function! vorax#output#ToggleLimitRows() "{{{
-	if !exists('g:vorax_limit_rows')
-		let val = input('Limit rows to: ', '')
-		if val =~ '\m^[0-9]\+$'
-			let g:vorax_limit_rows=str2nr(val)
-		endif
-	else
-		unlet g:vorax_limit_rows
-	endif
+  if !exists('g:vorax_limit_rows')
+    let val = input('Limit rows to: ', '')
+    if val =~ '\m^[0-9]\+$'
+      let g:vorax_limit_rows=str2nr(val)
+    endif
+  else
+    unlet g:vorax_limit_rows
+  endif
 endfunction "}}}
 
 function! s:ConfigureBuffer() abort " {{{
@@ -390,8 +390,8 @@ function! s:ConfigureBuffer() abort " {{{
   " ESC for cancelling the currently executing statement
   exe 'nnoremap <buffer> <silent>' . g:vorax_output_abort_key . ' :VORAXOutputAbort<CR>'
 
-	" Oradoc keymap
-	nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
+  " Oradoc keymap
+  nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
 
 endfunction " }}}
 

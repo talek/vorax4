@@ -37,7 +37,7 @@ module Vorax
       FOR_STMT = /(?:\bfor\b)/i unless defined?(FOR_STMT)
       LOOP_STMT = /(?:\bloop\b)/i unless defined?(LOOP_STMT)
       IF_STMT = /(?:\bif\b)/i unless defined?(IF_STMT)
-			DECLARE_BLOCK = /(?:\bdeclare\b)/i unless defined?(DECLARE_BLOCK)
+      DECLARE_BLOCK = /(?:\bdeclare\b)/i unless defined?(DECLARE_BLOCK)
 
       # @return [String] the PLSQL code on which the structure was computed
       attr_reader :code
@@ -78,29 +78,29 @@ module Vorax
         dump_text
       end
 
-			# Get the region on the provided position.
-			#
-			# @param pos [Integer] the absolute position within the PLSQL code boundaries
-			# @param kind [Parser::Region] consider only the region of this type
-			#
-			# @return [Parser::Region] the region corresponding to the provided position
-			# @return nil if no region was detected on the provided position
-			def region_at(pos, kind=nil)
-				target_region = nil
-				regions.breadth_each do |node|
-					region = node.content
-					if region
-						if (region.start_pos..region.end_pos).include?(pos)
+      # Get the region on the provided position.
+      #
+      # @param pos [Integer] the absolute position within the PLSQL code boundaries
+      # @param kind [Parser::Region] consider only the region of this type
+      #
+      # @return [Parser::Region] the region corresponding to the provided position
+      # @return nil if no region was detected on the provided position
+      def region_at(pos, kind=nil)
+        target_region = nil
+        regions.breadth_each do |node|
+          region = node.content
+          if region
+            if (region.start_pos..region.end_pos).include?(pos)
               if kind && region.kind_of?(kind)
-              	target_region = region
-							elsif kind.nil?
-								target_region = region
-							end
-						end
-					end
-				end
-				return target_region
-			end
+                target_region = region
+              elsif kind.nil?
+                target_region = region
+              end
+            end
+          end
+        end
+        return target_region
+      end
 
     private
 
@@ -123,39 +123,39 @@ module Vorax
             probe_data = CompositeRegion.probe(text_code)
             if probe_data[:kind]
               if probe_data[:pointer]
-								signature_end = scanner.pos - scanner.matched.length + probe_data[:pointer] + 1
-							end
+                signature_end = scanner.pos - scanner.matched.length + probe_data[:pointer] + 1
+              end
               start_pos = scanner.pos - scanner.matched.length + 1
               name_pos = start_pos + probe_data[:name_pos]
               if probe_data[:kind] == :package_spec
-								region = PackageSpecRegion.new(self, 
-																						:name => probe_data[:name], 
-																						:start_pos => start_pos,
-																						:name_pos => name_pos,
-																						:signature_end_pos => signature_end)
-							elsif probe_data[:kind] == :type_spec
-								region = TypeSpecRegion.new(self, 
-																						:name => probe_data[:name], 
-																						:start_pos => start_pos,
-																						:name_pos => name_pos)
-							elsif probe_data[:kind] == :package_body
-								region = PackageBodyRegion.new(self, 
-																							 :name => probe_data[:name], 
-																							 :start_pos => start_pos,
-																							 :name_pos => name_pos,
-																							 :signature_end_pos => signature_end)
-							elsif probe_data[:kind] == :type_body
-								region = TypeBodyRegion.new(self, 
-																						:name => probe_data[:name], 
-																						:start_pos => start_pos,
-																						:name_pos => name_pos,
-																					  :signature_end_pos => signature_end)
-							end
-						end
-						if region
-							assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
-							@level += 1
-						end
+                region = PackageSpecRegion.new(self, 
+                                            :name => probe_data[:name], 
+                                            :start_pos => start_pos,
+                                            :name_pos => name_pos,
+                                            :signature_end_pos => signature_end)
+              elsif probe_data[:kind] == :type_spec
+                region = TypeSpecRegion.new(self, 
+                                            :name => probe_data[:name], 
+                                            :start_pos => start_pos,
+                                            :name_pos => name_pos)
+              elsif probe_data[:kind] == :package_body
+                region = PackageBodyRegion.new(self, 
+                                               :name => probe_data[:name], 
+                                               :start_pos => start_pos,
+                                               :name_pos => name_pos,
+                                               :signature_end_pos => signature_end)
+              elsif probe_data[:kind] == :type_body
+                region = TypeBodyRegion.new(self, 
+                                            :name => probe_data[:name], 
+                                            :start_pos => start_pos,
+                                            :name_pos => name_pos,
+                                            :signature_end_pos => signature_end)
+              end
+            end
+            if region
+              assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
+              @level += 1
+            end
           end
         end
       end
@@ -177,30 +177,30 @@ module Vorax
         @walker.register_spot(SUBPROG) do |scanner|
           if not on_spec?
             text_code = "#{scanner.matched}#{scanner.rest}"
-						probe_data = SubprogRegion.probe(text_code)
-						if probe_data[:name]
-							start_pos = scanner.pos - scanner.matched.length + 1
-							name_pos = start_pos + probe_data[:name_pos]
-							region = SubprogRegion.new(self, 
-																				 :name => probe_data[:name], 
-																				 :name_pos => name_pos,
-																				 :start_pos => start_pos)
-							node = Tree::TreeNode.new(region.id, region)
-							@current_parent << node
-							@level += 1
-							assign_parent(node)
-							scanner.pos += probe_data[:name_pos]
-						end
-					end
+            probe_data = SubprogRegion.probe(text_code)
+            if probe_data[:name]
+              start_pos = scanner.pos - scanner.matched.length + 1
+              name_pos = start_pos + probe_data[:name_pos]
+              region = SubprogRegion.new(self, 
+                                         :name => probe_data[:name], 
+                                         :name_pos => name_pos,
+                                         :start_pos => start_pos)
+              node = Tree::TreeNode.new(region.id, region)
+              @current_parent << node
+              @level += 1
+              assign_parent(node)
+              scanner.pos += probe_data[:name_pos]
+            end
+          end
         end
       end
 
       def register_declare_spot
         @walker.register_spot(DECLARE_BLOCK) do |scanner|
-					region = DeclareRegion.new(self, :start_pos => scanner.pos - scanner.matched.length + 1)
-					assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
+          region = DeclareRegion.new(self, :start_pos => scanner.pos - scanner.matched.length + 1)
+          assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
         end
-			end
+      end
 
       def register_begin_spot
         @walker.register_spot(BEGIN_MARKER) do |scanner|
@@ -211,50 +211,50 @@ module Vorax
             @level += 1
             assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
           else
-          	if @current_parent && 
-          		  @current_parent.content && has_begin_block?
-							@current_parent.content.body_start_pos = scanner.pos - scanner.matched.length + 1
-						end
+            if @current_parent && 
+                @current_parent.content && has_begin_block?
+              @current_parent.content.body_start_pos = scanner.pos - scanner.matched.length + 1
+            end
           end
         end
       end
 
-			def register_for_spot
+      def register_for_spot
         @walker.register_spot(FOR_STMT) do |scanner|
-					text_code = "#{scanner.matched}#{scanner.rest}"
-					probe_data = ForRegion.probe(text_code)
-					if probe_data[:pointer]
-						start_pos = scanner.pos - scanner.matched.length + 1
-						region = ForRegion.new(self, 
-																	 :start_pos => start_pos,
-																	 :variable => probe_data[:variable],
-																	 :variable_position => start_pos + probe_data[:variable_position],
-																	 :domain => probe_data[:domain],
-																	 :domain_type => probe_data[:domain_type])
+          text_code = "#{scanner.matched}#{scanner.rest}"
+          probe_data = ForRegion.probe(text_code)
+          if probe_data[:pointer]
+            start_pos = scanner.pos - scanner.matched.length + 1
+            region = ForRegion.new(self, 
+                                   :start_pos => start_pos,
+                                   :variable => probe_data[:variable],
+                                   :variable_position => start_pos + probe_data[:variable_position],
+                                   :domain => probe_data[:domain],
+                                   :domain_type => probe_data[:domain_type])
             assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
-						scanner.pos = start_pos + probe_data[:pointer]
-						@level += 1
-					end
-				end
-			end
+            scanner.pos = start_pos + probe_data[:pointer]
+            @level += 1
+          end
+        end
+      end
 
-			def register_loop_spot
+      def register_loop_spot
         @walker.register_spot(LOOP_STMT) do |scanner|
-					stmt = "#{scanner.matched}#{scanner.rest}"
-					region = LoopRegion.new(self, :start_pos => scanner.pos - scanner.matched.length + 1)
-					assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
-					@level += 1
-				end
-			end
+          stmt = "#{scanner.matched}#{scanner.rest}"
+          region = LoopRegion.new(self, :start_pos => scanner.pos - scanner.matched.length + 1)
+          assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
+          @level += 1
+        end
+      end
 
-			def register_if_spot
+      def register_if_spot
         @walker.register_spot(IF_STMT) do |scanner|
-					stmt = "#{scanner.matched}#{scanner.rest}"
-					region = IfRegion.new(self, :start_pos => scanner.pos - scanner.matched.length + 1)
-					assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
-					@level += 1
-				end
-			end
+          stmt = "#{scanner.matched}#{scanner.rest}"
+          region = IfRegion.new(self, :start_pos => scanner.pos - scanner.matched.length + 1)
+          assign_parent(@current_parent << Tree::TreeNode.new(region.id, region))
+          @level += 1
+        end
+      end
 
       def register_end_spot
         @walker.register_spot(END_MARKER) do |scanner|
@@ -265,79 +265,79 @@ module Vorax
             # not part of a conditional compiling syntax
             text_code = "#{scanner.matched}#{scanner.rest}"
             probe_data = Region.probe_end(text_code)
-						if probe_data[:pointer]
-							@level -= 1 if @level > 0
-						  end_declare = scanner.pos - 1
-							end_pos = end_declare + (probe_data[:pointer] - 1)
-							if probe_data[:kind] == :end
-								@begin_level -= 1 if @begin_level > 0
-								if @current_parent.content
-									@current_parent.content.end_pos = end_pos
-									@current_parent.content.declare_end_pos = end_declare - scanner.matched.length if on_composite?
-								end
-								assign_parent(@current_parent.parent)
-							elsif probe_data[:kind] == :end_loop
-								if on_loop? || on_for?
-									@current_parent.content.end_pos = end_pos
-									scanner.pos = @current_parent.content.end_pos
-									assign_parent(@current_parent.parent)
-								else
-									# something's fishy
-									scanner.terminate
-								end
-							elsif probe_data[:kind] == :end_if
-								if on_if?
-									@current_parent.content.end_pos = end_pos
-									scanner.pos = @current_parent.content.end_pos
-									assign_parent(@current_parent.parent)
-								else
-									# something's fishy
-									scanner.terminate
-								end
-							end
-						end
+            if probe_data[:pointer]
+              @level -= 1 if @level > 0
+              end_declare = scanner.pos - 1
+              end_pos = end_declare + (probe_data[:pointer] - 1)
+              if probe_data[:kind] == :end
+                @begin_level -= 1 if @begin_level > 0
+                if @current_parent.content
+                  @current_parent.content.end_pos = end_pos
+                  @current_parent.content.declare_end_pos = end_declare - scanner.matched.length if on_composite?
+                end
+                assign_parent(@current_parent.parent)
+              elsif probe_data[:kind] == :end_loop
+                if on_loop? || on_for?
+                  @current_parent.content.end_pos = end_pos
+                  scanner.pos = @current_parent.content.end_pos
+                  assign_parent(@current_parent.parent)
+                else
+                  # something's fishy
+                  scanner.terminate
+                end
+              elsif probe_data[:kind] == :end_if
+                if on_if?
+                  @current_parent.content.end_pos = end_pos
+                  scanner.pos = @current_parent.content.end_pos
+                  assign_parent(@current_parent.parent)
+                else
+                  # something's fishy
+                  scanner.terminate
+                end
+              end
+            end
           end
         end
       end
 
-		  def current_region
-				if @current_parent && @current_parent.content
-					@current_parent.content
-				end
-			end
+      def current_region
+        if @current_parent && @current_parent.content
+          @current_parent.content
+        end
+      end
 
-			def on_spec?
-				current_region && current_region.kind_of?(SpecRegion)
-			end
+      def on_spec?
+        current_region && current_region.kind_of?(SpecRegion)
+      end
 
-			def on_composite?
-				current_region && current_region.kind_of?(CompositeRegion)
-			end
+      def on_composite?
+        current_region && current_region.kind_of?(CompositeRegion)
+      end
 
-			def on_subprog?
-				current_region && current_region.kind_of?(SubprogRegion)
-			end
+      def on_subprog?
+        current_region && current_region.kind_of?(SubprogRegion)
+      end
 
-			def on_for?
-				current_region && current_region.kind_of?(ForRegion)
-			end
+      def on_for?
+        current_region && current_region.kind_of?(ForRegion)
+      end
 
-			def on_loop?
-				current_region && current_region.kind_of?(LoopRegion)
-			end
+      def on_loop?
+        current_region && current_region.kind_of?(LoopRegion)
+      end
 
-			def on_if?
-				current_region && current_region.kind_of?(IfRegion)
-			end
+      def on_if?
+        current_region && current_region.kind_of?(IfRegion)
+      end
 
-			def on_anonymous?
-				current_region && current_region.kind_of?(AnonymousRegion)
-			end
+      def on_anonymous?
+        current_region && current_region.kind_of?(AnonymousRegion)
+      end
 
-			def has_begin_block?
-				@current_parent.content.kind_of?(SubprogRegion) || 
-					@current_parent.content.kind_of?(DeclareRegion)
-			end
+      def has_begin_block?
+        @current_parent.content.kind_of?(SubprogRegion) || 
+          @current_parent.content.kind_of?(DeclareRegion)
+      end
 
       def assign_parent(node)
         @current_parent = node

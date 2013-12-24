@@ -19,25 +19,25 @@ module Vorax
 
       # @see HTMLConvertor.start_hook
       def start_hook name, attrs = []
-				@io << "\n" if name == 'table' && @nl
+        @io << "\n" if name == 'table' && @nl
         @last_open_tag[:name] = name
         @last_open_tag[:attrs] = attrs
       end
 
       # @see HTMLConvertor.end_hook
       def end_hook name
-				# @nl logic: whenever or not a new table
-				# will add an new line at the beginning. If a
-				# br or p is already issued before, then NO! This
-				# is needed when sqlplus adds extra <br>s before
-				# a <table>.
+        # @nl logic: whenever or not a new table
+        # will add an new line at the beginning. If a
+        # br or p is already issued before, then NO! This
+        # is needed when sqlplus adds extra <br>s before
+        # a <table>.
         if ['br', 'p'].include?(name)
-					@io << "\n" 
-        	@nl = false
-				elsif name == "s"
-        	# simply ignore, it'a ping
+          @io << "\n" 
+          @nl = false
+        elsif name == "s"
+          # simply ignore, it'a ping
         else
-        	@nl = true
+          @nl = true
         end
         @record << {:text => text.strip, 
                     :is_column => ("th" == name), 

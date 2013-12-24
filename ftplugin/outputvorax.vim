@@ -18,14 +18,14 @@ command! -n=0 -bar VORAXOutputAbort :call vorax#output#Abort()
 call vorax#toolkit#InitCommonBuffers()
 
 if g:vorax_map_keys
-	nnoremap <buffer> <silent> <Leader>cl :VORAXOutputClear<CR>
-	nnoremap <buffer> <silent> <Leader>v :VORAXOutputVertical<CR>
-	nnoremap <buffer> <silent> <Leader>p :VORAXOutputPagezip<CR>
-	nnoremap <buffer> <silent> <Leader>t :VORAXOutputTablezip<CR>
-	nnoremap <buffer> <silent> <Leader>a :VORAXOutputToggleAppend<CR>
-	nnoremap <buffer> <silent> <Leader>h :VORAXOutputToggleFullHeading<CR>
-	nnoremap <buffer> <silent> <Leader>lr :VORAXOutputToggleLimitRows<CR>
-	nnoremap <buffer> <silent> <Leader>s :VORAXOutputToggleSticky<CR>
-	nnoremap <buffer> <silent> <Leader>T :VORAXOutputToggleTop<CR>
-	nnoremap <buffer> <silent> <CR> :VORAXOutputAskUser<CR>
+  nnoremap <buffer> <silent> <Leader>cl :VORAXOutputClear<CR>
+  nnoremap <buffer> <silent> <Leader>v :VORAXOutputVertical<CR>
+  nnoremap <buffer> <silent> <Leader>p :VORAXOutputPagezip<CR>
+  nnoremap <buffer> <silent> <Leader>t :VORAXOutputTablezip<CR>
+  nnoremap <buffer> <silent> <Leader>a :VORAXOutputToggleAppend<CR>
+  nnoremap <buffer> <silent> <Leader>h :VORAXOutputToggleFullHeading<CR>
+  nnoremap <buffer> <silent> <Leader>lr :VORAXOutputToggleLimitRows<CR>
+  nnoremap <buffer> <silent> <Leader>s :VORAXOutputToggleSticky<CR>
+  nnoremap <buffer> <silent> <Leader>T :VORAXOutputToggleTop<CR>
+  nnoremap <buffer> <silent> <CR> :VORAXOutputAskUser<CR>
 endif

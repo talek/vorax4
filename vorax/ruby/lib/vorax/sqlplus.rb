@@ -35,11 +35,11 @@ module Vorax
                                 :tablezip => Output::TablezipConvertor}
       # warm up
       sleep 0.2
-			# set the blockterm as the end_marker. The blockterm should
-			# not be touch by the Vorax user, otherwise nasty things
-			# may happen. This is also a workaround to mark the end of
-			# output when the "echo" setting of sqlplus is "on". See the
-			# implementation of pack().
+      # set the blockterm as the end_marker. The blockterm should
+      # not be touch by the Vorax user, otherwise nasty things
+      # may happen. This is also a workaround to mark the end of
+      # output when the "echo" setting of sqlplus is "on". See the
+      # implementation of pack().
       send_text("\n#set blockterm \"#@end_marker\"\n")
     end
 
@@ -209,7 +209,7 @@ module Vorax
           rescue Errno::EAGAIN
             sleep 0.1
           end
-				  yield if block_given?
+          yield if block_given?
         end
         @busy = false
       end
@@ -261,17 +261,17 @@ module Vorax
           f.puts opts[:prep]
           f.puts "#pro #@start_marker"
           f.puts command.strip
-					# we assume that the @end_marker is also
-					# set as a block terminator. If "set echo on"
-					# the output region will end here since the
-					# block terminator command will be echoed. Otherwise,
-					# the next prompt statement will do the job.
-					f.puts "#{@end_marker}"
+          # we assume that the @end_marker is also
+          # set as a block terminator. If "set echo on"
+          # the output region will end here since the
+          # block terminator command will be echoed. Otherwise,
+          # the next prompt statement will do the job.
+          f.puts "#{@end_marker}"
           f.puts "#pro #@end_marker"
-					
-					# once again with termout enforced
-					f.puts("set termout on")
-					f.puts "#{@end_marker}"
+          
+          # once again with termout enforced
+          f.puts("set termout on")
+          f.puts "#{@end_marker}"
           f.puts "#pro #@end_marker"
           f.puts opts[:post]
         end
