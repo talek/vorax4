@@ -26,6 +26,12 @@ end
 " define the VoraX autocommand group
 augroup VoraX
 
+" not a very bad idea to set the filetype plugin on.
+" It doesn't guarantee that another plugin or the user has
+" disabled this feature, but may be useful for simple
+" startup configurations.
+filetype plugin on
+
 " }}}
 
 " Configuration {{{
