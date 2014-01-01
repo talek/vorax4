@@ -153,6 +153,8 @@ However, you need to take care of some dependencies VoraX relies on:
       environment $PATH variable. An instant client with SqlPLUS should be 
       just fine.
 
+   6. Ensure you have "filetype plugin on" set in your .vimrc file.
+
 ==============================================================================
 CONNECTING TO A DATABASE                                       *vorax-connect* 
 
