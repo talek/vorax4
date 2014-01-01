@@ -525,7 +525,10 @@ using the following key maps:
   j: move down
   k: move up
   Enter or o: expand category or connect using the profile under cursor
-  m: invoke the contextual menu for the node under cursor
+  m: invoke the contextual menu for the node under cursor to add new profiles, 
+     edit the existing ones or simply to remove them. Other options may be 
+     available since the contextual menu supports custom plugins, as it is 
+     described later within this chapter.
 
 The look of the connection profiles window is controlled by the following 
 Vorax global variables:
