@@ -92,5 +92,19 @@ describe 'stmt_inspector' do
     inspector.find_alias('tab', 0).columns.should eq(["user_id", "user_name", "password", "c1", "c2"])
   end# }}}
 
+  it 'should get columns for alias with extract from syntax' do
+    # 697
+    text = 'select j.owner, j.job_name, j.program_owner, j.program_name, j.job_type, j.job_action, j.schedule_name, j.schedule_type, j.start_date, j.repeat_interval, j.job_class, j.restartable, j.last_start_date, j.last_run_duration, j.stop_on_window_close, j.comments, round(avg(durs.seconds), 0) avg_e_time
+        from dba_scheduler_jobs j join
+        (select owner, job_name, to_number(extract(second from run_duration)) + to_number(extract(minute from run_duration)) * 60 + to_number(extract(hour from run_duration))   * 60 * 60 +
+          to_number(extract(day from run_duration))  * 60 * 60* 24 as Seconds,
+          extract(timezone_minute from run_duration) minute, 
+          extract(timezone_hour from run_duration) hour from dba_scheduler_job_run_details group by owner, job_name) durs
+        on j.owner=durs.
+         where enabled = \'TRUE\';'
+    inspector = StmtInspector.new(text)
+    inspector.find_alias('durs', 0).columns.should eq(["owner", "job_name", "Seconds", "minute", "hour"])
+  end
+
 end
 

@@ -50,6 +50,17 @@ include common "common.rl";
 # interesting spots
 plain_table_ref = ((identifier '.')? identifier ('@' identifier)?) >tableref_start %tableref_end;
 alias = identifier >alias_start %alias_end;
+extract = K_EXTRACT ws* '(' ws* (K_SECOND | 
+                                 K_MINUTE | 
+                                 K_HOUR |
+                                 K_YEAR |
+                                 K_MONTH |
+                                 K_DAY |
+                                 K_TIMEZONE_HOUR |
+                                 K_TIMEZONE_MINUTE |
+                                 K_TIMEZONE_REGION |
+                                 K_TIMEZONE_ABBR) ws+ K_FROM ws+;
+
 sub_query = '(' >subquery_start;
 table_reference = ((plain_table_ref | sub_query) (ws+ alias)?) >before_tref;
 from_spot = ws+ K_FROM ws+ table_reference (ws* ',' ws* table_reference)*;
@@ -63,6 +74,7 @@ main := |*
   dquoted_string;
   comment;
   start_select => { @start_columns = te };
+  extract;
   from_spot => { @columns = data[(@start_columns..ts)] unless @columns };
   with_spot;
   join_spot;

@@ -35,6 +35,10 @@ describe 'column' do
     Parser::Column.new.walk('f(1, g(2), x(3, 2, f(10))), my_func(col)').should eq([])
   end
 
+  it 'should work with unbalanced expressions' do
+    Parser::Column.new.walk("owner, job_name, to_number(extract(second ").should eq(["owner", "job_name", "second"])
+  end
+
 end
 
 

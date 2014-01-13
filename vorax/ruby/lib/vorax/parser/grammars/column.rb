@@ -320,7 +320,7 @@ when 0 then
 		begin
 
   expr = Parser.walk_balanced_paren(data[(p..-1)])
-  p += expr.length - 1
+  p += expr.length
   te = p
 		end
 when 3 then

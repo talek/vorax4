@@ -4,7 +4,7 @@ machine column;
 
 action expr_start {
   expr = Parser.walk_balanced_paren(data[(p..-1)])
-  p += expr.length - 1
+  p += expr.length
   te = p
 }
 

@@ -26,6 +26,17 @@ identifier_level3 = identifier '.' identifier_level2;
 qualified_identifier = identifier_level3 | identifier_level2 | identifier;
 
 # define intereseting keywords
+K_EXTRACT=/extract/i;
+K_SECOND=/second/i;
+K_MINUTE=/minute/i;
+K_HOUR=/hour/i;
+K_YEAR=/year/i;
+K_MONTH=/month/i;
+K_DAY=/day/i;
+K_TIMEZONE_HOUR=/timezone_hour/i;
+K_TIMEZONE_MINUTE=/timezone_minute/i;
+K_TIMEZONE_REGION=/timezone_region/i;
+K_TIMEZONE_ABBR=/timezone_abbr/i;
 K_SUBTYPE=/subtype/i;
 K_OVERRIDING=/overriding/i;
 K_FINAL=/final/i;
