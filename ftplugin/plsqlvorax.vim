@@ -105,5 +105,8 @@ if exists('*VORAXAfterPlsqlBufferLoad')
   call VORAXAfterPlsqlBufferLoad()
 endif
 
+" Needed in order Vorax parser to work
+setlocal nobinary
+
 " signal that everything is setup
 let b:did_ftplugin = 1
