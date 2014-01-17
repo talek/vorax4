@@ -32,7 +32,7 @@ module Vorax
 
       PLSQL_CONTAINER = /(?:\bpackage\b|\btype\b)/i unless defined?(PLSQL_CONTAINER)
       SUBPROG = /(?:\boverriding\b|\bconstructor\b|\bmember\b|\bmap\b|\bstatic\b|\border\b|\bfunction\b|\bprocedure\b)/i unless defined?(SUBPROG)
-      BEGIN_MARKER = /(?:\bbegin\b)/i unless defined?(BEGIN_MARKER)
+      BEGIN_MARKER = /(?:\bbegin\b|\bcase\b)/i unless defined?(BEGIN_MARKER)
       END_MARKER = /(?:\bend\b)/i unless defined?(END_MARKER)
       FOR_STMT = /(?:\bfor\b)/i unless defined?(FOR_STMT)
       LOOP_STMT = /(?:\bloop\b)/i unless defined?(LOOP_STMT)
