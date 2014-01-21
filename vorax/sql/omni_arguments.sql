@@ -24,11 +24,30 @@ set null ''
 set markup html on
 set pagesize 0
 
+column def_arg new_value is_default
+set termout off
+select case when to_number(substr('&_O_RELEASE', 1, 2)) < 11 then
+         '''N''' 
+       else
+        'defaulted'
+       end def_arg from dual;
+set termout on
+
 select argument_name || ' => '  word, 
-       decode(defaulted, 'Y', '[' || argument_name || ']', argument_name) abbr,
+       decode(is_default, 'Y', '[' || argument_name || ']', argument_name) abbr,
        in_out || ' ' || data_type kind, 
        decode(overload, null, ' ' ,'o' || OVERLOAD) menu
-  from all_arguments
+  from (select argument_name, 
+               object_name,
+               package_name,
+               owner,
+               in_out, 
+               data_type, 
+               data_level,
+               overload, 
+               position,
+               &is_default. is_default
+          from all_arguments)
  where owner = '&1'
    and nvl(package_name, '"') = nvl('&2', '"')
    and object_name = '&3'
@@ -38,3 +57,4 @@ order by overload, position;
 
 undefine 1
 undefine 2
+undefine 3
