@@ -212,7 +212,7 @@ function! s:DotItems(prefix) "{{{
   let omni_items = []
   let dot_string = s:GetTextBeforeLastDot()
   let items = copy(s:FollowDotChain(split(dot_string, '\m\.'), {}, [], 1))
-  call filter(items, 'toupper(v:val["name"]) =~ "^' . vorax#utils#LiteralRegexp(toupper(a:prefix)) . '"')
+  call filter(items, 'toupper(v:val["name"]) =~ ''^' . vorax#utils#LiteralRegexp(toupper(a:prefix)) . '''')
   for item in items
     let rec = s:Item2Omni(item)
     call add(omni_items, rec)
