@@ -38,6 +38,8 @@ function! vorax#explorer#OpenDbComplete(arglead, cmdline, crrpos) "{{{
   if len(parts) == 2
     " completion for object type
     let object_types = map(copy(s:base_categories), 'v:val.object_type')
+    call extend(object_types, ['PACKAGE_SPEC', 'PACKAGE_BODY', 
+          \ 'TYPE_SPEC', 'TYPE_BODY'])
     return filter(object_types, "v:val =~? '^" . a:arglead . "'")
   elseif len(parts) == 3
     " completion for object name
