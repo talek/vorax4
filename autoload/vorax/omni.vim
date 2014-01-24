@@ -142,7 +142,7 @@ function! s:WordItems(prefix) abort "{{{
       call add(result, {'word' : item, 'kind' : 'kyw' })
     endfor
   endif
-  call filter(result, 'v:val.word =~ ''^' . a:prefix . '''')
+  call filter(result, 'v:val.word =~ ''^' . vorax#utils#LiteralRegexp(a:prefix) . '''')
   return result
 endfunction "}}}
 
@@ -212,7 +212,7 @@ function! s:DotItems(prefix) "{{{
   let omni_items = []
   let dot_string = s:GetTextBeforeLastDot()
   let items = copy(s:FollowDotChain(split(dot_string, '\m\.'), {}, [], 1))
-  call filter(items, 'toupper(v:val["name"]) =~ "^' . toupper(a:prefix) . '"')
+  call filter(items, 'toupper(v:val["name"]) =~ "^' . vorax#utils#LiteralRegexp(toupper(a:prefix)) . '"')
   for item in items
     let rec = s:Item2Omni(item)
     call add(omni_items, rec)
@@ -664,7 +664,7 @@ function! s:AliasItems(alias, prefix, ...) abort "{{{
     endif
   endfor
   call VORAXDebug("omni s:AliasItems expanded_columns=" . string(expanded_columns))
-  call filter(expanded_columns, 'toupper(v:val.name) =~ ''^' . toupper(a:prefix) . '''')
+  call filter(expanded_columns, 'toupper(v:val.name) =~ ''^' . vorax#utils#LiteralRegexp(toupper(a:prefix)) . '''')
   return expanded_columns
 endfunction "}}}
 

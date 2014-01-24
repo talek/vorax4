@@ -55,7 +55,6 @@ select *
      where owner = 'SYS'
        and object_name = 'STANDARD'
        and procedure_name like replace(replace('&1', '_', '"_'), '%', '"%') || '%' escape '"'
-
   ) 
  where rownum <= &2
 order by 1;
