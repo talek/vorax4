@@ -12,10 +12,13 @@ command! -n=0 -range -buffer VORAXExecSbCurrent :call vorax#sqlplus#SandboxExec(
 command! -n=0 -range -buffer -bang VORAXExplain :call vorax#toolkit#Explain(vorax#utils#CurrentStatement(1, 1), '<bang>')
 command! -n=0 -range -buffer -bang VORAXExplainSelection :call vorax#toolkit#Explain(vorax#utils#CurrentSelection(), '<bang>')
 
+command! -n=0 -buffer VORAXExecBuffer :call vorax#sqlplus#Exec(vorax#utils#BufferContent())
+
 call vorax#toolkit#InitCommonBuffers()
 
 if g:vorax_map_keys
   " mappings for SQL file
+  nnoremap <buffer> <silent> <leader>be :VORAXExecBuffer<CR>
   nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
 
   nnoremap <buffer> <silent> <Leader>e :VORAXExecCurrent<CR>
