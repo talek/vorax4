@@ -1315,4 +1315,16 @@ syn keyword sqlStatement SELECT
 syn region sqlString start=+"+    end=+"+ contains=@Spell
 syn region sqlString start=+'+    end=+'+ contains=@Spell
 "
+" Numbers:¬
+syn match sqlNumber "-\=\<\d*\.\=[0-9_]\>"
+
+" Comments:¬
+syn region sqlComment start="/\*"  end="\*/" contains=sqlTodo
+syn match sqlComment "--.*$" contains=sqlTodo
+
+syn sync ccomment sqlComment
+
+" Todo.
+syn keyword sqlTodo contained TODO FIXME XXX DEBUG NOTE
+
 let b:current_syntax = "plsqlvorax"
