@@ -103,6 +103,7 @@ function! s:GetErrors(modules) "{{{
           \ 'where ' . join(filter, ' OR ') . ';', 'Fetching errors, if any...')
     if type(rs) == 4 && has_key(rs, "resultset") && len(rs["resultset"]) >= 1
       return rs["resultset"][0]
+    endif
   endif
   return []
 endfunction "}}}
