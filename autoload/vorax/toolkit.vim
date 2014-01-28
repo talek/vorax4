@@ -79,6 +79,8 @@ function! vorax#toolkit#Explain(statement, bang) abort "{{{
 endfunction "}}}
 
 function! vorax#toolkit#InitCommonBuffers() abort "{{{
+  setlocal isk+=$
+  setlocal isk+=#
   command! -n=0 -buffer -bang VORAXDescUnderCursor :call vorax#toolkit#DescUnderCursor('<bang>')
   if g:vorax_map_keys
     nnoremap <buffer> <silent> <Leader>d :VORAXDescUnderCursor<CR>
