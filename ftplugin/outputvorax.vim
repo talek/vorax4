@@ -29,3 +29,9 @@ if g:vorax_map_keys
   nnoremap <buffer> <silent> <Leader>T :VORAXOutputToggleTop<CR>
   nnoremap <buffer> <silent> <CR> :VORAXOutputAskUser<CR>
 endif
+
+if g:vorax_omni_output_window_items
+  au BufLeave <buffer> let b:vorax_visible_bounds=[line('w0'), line('w$')]
+endif
+
+

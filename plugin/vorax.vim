@@ -3,7 +3,7 @@
 " Description: An Oracle IDE for Geeks
 " License:     see LICENSE.txt
 
-let g:vorax_version = "4.3.3"
+let g:vorax_version = "4.3.4"
 
 if exists("g:loaded_vorax") || &cp
   finish
@@ -101,6 +101,7 @@ call s:initVariable('g:vorax_omni_force_upcase_const', 1)
 call s:initVariable('g:vorax_omni_sort_items', 0)
 call s:initVariable('g:vorax_omni_cache', ['SYS'])
 call s:initVariable('g:vorax_omni_too_many_items_warn_delay', 500)
+call s:initVariable('g:vorax_omni_output_window_items', 1)
 
 " The format for xplan
 call s:initVariable('g:vorax_xplan_format', 'ALLSTATS LAST')

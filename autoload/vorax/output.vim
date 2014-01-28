@@ -364,6 +364,10 @@ function! vorax#output#ToggleLimitRows() "{{{
   endif
 endfunction "}}}
 
+function! vorax#output#GetBufferName() "{{{
+  return s:name
+endfunction "}}}
+
 function! s:ConfigureBuffer() abort " {{{
   let &ft="outputvorax"
   setlocal winfixheight

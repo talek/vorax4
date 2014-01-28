@@ -143,8 +143,31 @@ function! s:WordItems(prefix) abort "{{{
     endfor
   endif
   call filter(result, 'v:val.word =~ ''^' . vorax#utils#LiteralRegexp(a:prefix) . '''')
+  " add output window items
+  for item in s:OutputWindowWords(a:prefix)
+    call add(result, {'word' : item, 'kind' : 'output'})
+  endfor
   return result
 endfunction "}}}
+
+function! s:OutputWindowWords(prefix)
+  let omni_words = []
+  let output_bufname = vorax#output#GetBufferName()
+  let visible_bounds = getbufvar(output_bufname, 'vorax_visible_bounds')
+  " should be a list and have 2 elements
+  if type(visible_bounds) == 3 && len(visible_bounds) == 2
+    let visible_output = getbufline(output_bufname, 
+          \ visible_bounds[0], 
+          \ visible_bounds[1])
+    for line in visible_output
+      call substitute(line, 
+            \ '\<' . vorax#utils#LiteralRegexp(a:prefix) . '[^ ]*\>', 
+            \ '\=add(omni_words, submatch(0))' , 
+            \ 'g')
+    endfor
+  endif
+  return omni_words
+endfunction
 
 function! s:ShortLocalName(name)"{{{
   let short_name = toupper(substitute(a:name, '\m"', '', 'g'))
