@@ -19,6 +19,7 @@ call vorax#toolkit#InitCommonBuffers()
 if g:vorax_map_keys
   " mappings for SQL file
   nnoremap <buffer> <silent> <leader>be :VORAXExecBuffer<CR>
+  nnoremap <buffer> <silent> @ :VORAXExecBuffer<CR>
   nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
 
   nnoremap <buffer> <silent> <Leader>e :VORAXExecCurrent<CR>
