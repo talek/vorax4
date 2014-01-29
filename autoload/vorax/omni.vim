@@ -150,15 +150,39 @@ function! s:WordItems(prefix) abort "{{{
   return result
 endfunction "}}}
 
-function! s:OutputWindowWords(prefix)
+function! s:OutputWindowWords(prefix) "{{{
   let omni_words = []
   let output_bufname = vorax#output#GetBufferName()
   let visible_bounds = getbufvar(output_bufname, 'vorax_visible_bounds')
   " should be a list and have 2 elements
   if type(visible_bounds) == 3 && len(visible_bounds) == 2
+
+    " compute the offset in case the output window was resized. We need
+    " to do that because the visible bounds are updated on output window
+    " LostFocus. However, if the output window was resized from another
+    " window these visible bounds are not updated. So, Vorax will also
+    " check the output window hight and if there are differences computes
+    " an offset so that to accomodate with the new window size.
+    "
+    " Note: we could easily move to the output window and get the visible
+    " bounds, but we don't want to move to another window while the 
+    " completion is done.
+    let output_window_nr = bufwinnr(output_bufname)
+    if output_window_nr >= 0
+      let offset = winheight(output_window_nr) - 
+            \ (visible_bounds[1] - visible_bounds[0]) - 1
+    else
+      let offset = 0
+    endif
+
+    let up = visible_bounds[0] - offset
+    if up < 0
+      let up = 0
+    endif
+
     let visible_output = getbufline(output_bufname, 
-          \ visible_bounds[0], 
-          \ visible_bounds[1])
+          \ up, 
+          \ visible_bounds[1] + offset)
     for line in visible_output
       call substitute(line, 
             \ '\<' . vorax#utils#LiteralRegexp(a:prefix) . '[^ ]*\>', 
@@ -167,7 +191,7 @@ function! s:OutputWindowWords(prefix)
     endfor
   endif
   return omni_words
-endfunction
+endfunction "}}}
 
 function! s:ShortLocalName(name)"{{{
   let short_name = toupper(substitute(a:name, '\m"', '', 'g'))

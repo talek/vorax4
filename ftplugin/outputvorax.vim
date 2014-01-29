@@ -31,7 +31,7 @@ if g:vorax_map_keys
 endif
 
 if g:vorax_omni_output_window_items
-  au BufLeave <buffer> let b:vorax_visible_bounds=[line('w0'), line('w$')]
+  au BufLeave,VimResized <buffer> call vorax#output#SetVisibleBounds()
 endif
 
 

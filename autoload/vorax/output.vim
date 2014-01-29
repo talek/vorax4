@@ -145,6 +145,8 @@ function! vorax#output#PostSpit() abort "{{{
     exe "normal! " . s:current_line . 'G'
   endif
   if !g:vorax_output_window_sticky_cursor
+    " update visible bounds
+    call vorax#output#SetVisibleBounds()
     exe s:originating_window.'wincmd w'
   endif
 endfunction "}}}
@@ -366,6 +368,10 @@ endfunction "}}}
 
 function! vorax#output#GetBufferName() "{{{
   return s:name
+endfunction "}}}
+
+function! vorax#output#SetVisibleBounds() "{{{
+  let b:vorax_visible_bounds=[line('w0'), line('w$')]
 endfunction "}}}
 
 function! s:ConfigureBuffer() abort " {{{
