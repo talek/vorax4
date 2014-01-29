@@ -40,7 +40,7 @@ begin
     exit when l_index = &3;
     if l_rec.kind = 'CLUSTER' or l_rec.kind = 'FUNCTION' or l_rec.kind = 'MATERIALIZED VIEW' or
       l_rec.kind = 'PACKAGE' or l_rec.kind = 'PROCEDURE' or l_rec.kind = 'SEQUENCE' or
-      l_rec.kind = 'TABLE' or l_rec.kind = 'TYPE' or l_rec.kind = 'VIEW' 
+      l_rec.kind = 'TABLE' or l_rec.kind = 'TYPE' or l_rec.kind = 'VIEW' or l_rec.kind = 'SYNONYM'
     then
       if l_first then
         dbms_output.put_line('<table>');
