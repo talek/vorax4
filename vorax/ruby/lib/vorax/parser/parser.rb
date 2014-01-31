@@ -126,8 +126,8 @@ module Vorax
     #   argument should be given
     def self.argument_belongs_to(statement, position = nil)
       Vorax.debug("statement=#{statement.inspect} positon=#{position}")
-      position = statement.length unless position
-      stmt = Parser.remove_all_comments(statement[(0...position)])
+      #position = statement.length unless position
+      stmt = Parser.remove_all_comments(statement[(0...position-1)])
       Vorax.debug("interesting part=#{stmt}")
       stmt.reverse!
       level = 0
