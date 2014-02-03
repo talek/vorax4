@@ -150,6 +150,18 @@ function! s:WordItems(prefix) abort "{{{
   return result
 endfunction "}}}
 
+function! s:AddOutputWord(list, item, prefix) "{{{
+  call add(a:list, a:item)
+  let parts = split(a:item, '\m\W')
+  if len(parts) > 1
+    for part in parts
+      if part =~ '\m^' . vorax#utils#LiteralRegexp(a:prefix)
+        call add(a:list, part)
+      endif
+    endfor
+  endif
+endfunction "}}}
+
 function! s:OutputWindowWords(prefix) "{{{
   let omni_words = []
   let output_bufname = vorax#output#GetBufferName()
@@ -186,7 +198,7 @@ function! s:OutputWindowWords(prefix) "{{{
     for line in visible_output
       call substitute(line, 
             \ '\<' . vorax#utils#LiteralRegexp(a:prefix) . '[^ ]*\>', 
-            \ '\=add(omni_words, submatch(0))' , 
+            \ '\=s:AddOutputWord(omni_words, submatch(0), a:prefix)' , 
             \ 'g')
     endfor
   endif
