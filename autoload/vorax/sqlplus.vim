@@ -55,6 +55,7 @@ function! vorax#sqlplus#Connect(cstr) abort "{{{
   call vorax#ruby#SqlplusExec("connect " . s:properties['connstr'],
         \ {'prep': join(prep, "\n"), 'post' : post})
   let output = ""
+  call vorax#output#PrepareSpit()
   while vorax#ruby#SqlplusBusy()
     let output .= vorax#ruby#SqlplusReadOutput()
     " visual feedback to the user please
@@ -62,12 +63,10 @@ function! vorax#sqlplus#Connect(cstr) abort "{{{
     redraw
     sleep 50m
   endwhile
-  if !g:vorax_output_window_append
-    call vorax#output#Clear()
-  endif
   call vorax#output#Spit(vorax#utils#Strip(output))
   call vorax#sqlplus#UpdateSessionOwner()
   call s:PrintWelcomeBanner()
+  call vorax#output#PostSpit()
   " clear the throbber message
   echom ""
   " reset the omni cache
