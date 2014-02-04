@@ -3,7 +3,7 @@
 " Description: An Oracle IDE for Geeks
 " License:     see LICENSE.txt
 
-let g:vorax_version = "4.3.9"
+let g:vorax_version = "4.3.10"
 
 if exists("g:loaded_vorax") || &cp
   finish
@@ -186,6 +186,7 @@ command! -n=0 VORAXScratch :call vorax#toolkit#NewSqlScratch()
 command! -n=1 -complete=file VORAXDocBooks :call vorax#oradoc#Books(<q-args>)
 command! -n=1 -complete=file VORAXDocIndex :call vorax#oradoc#CreateIndex(<q-args>)
 command! -n=* -complete=file VORAXDocSearch :call vorax#oradoc#Search(<f-args>)
+command! -n=+ -complete=customlist,vorax#explorer#NewDbComplete VORAXNew :call vorax#explorer#NewDbObject(<f-args>)
 
 " }}}
 
