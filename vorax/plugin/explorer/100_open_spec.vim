@@ -15,8 +15,9 @@ function! s:plugin.Callback(descriptor)
 endfunction
 
 function! s:plugin.IsEnabled(descriptor)
-  if a:descriptor['category'] == 'Packages' ||
-        \ a:descriptor['category'] == 'Types'
+  if (a:descriptor['category'] == 'Packages' ||
+        \ a:descriptor['category'] == 'Types') &&
+        \ a:descriptor['object'] != ''
     return 1
   endif
   return 0
