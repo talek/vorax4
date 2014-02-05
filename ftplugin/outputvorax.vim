@@ -3,6 +3,13 @@
 " Description: Code automatically executed when the output window is open
 " License:     see LICENSE.txt
 
+if exists('s:initialized')
+  finish
+endif
+
+let s:initialized = 1
+
+
 command! -n=0 -bar VORAXOutputClear :call vorax#output#Clear()
 command! -n=0 -bar VORAXOutputVertical :call vorax#output#ToggleFunnel(1)
 command! -n=0 -bar VORAXOutputPagezip :call vorax#output#ToggleFunnel(2)
@@ -30,8 +37,13 @@ if g:vorax_map_keys
   nnoremap <buffer> <silent> <CR> :VORAXOutputAskUser<CR>
 endif
 
-if g:vorax_omni_output_window_items
-  au BufLeave,VimResized <buffer> call vorax#output#SetVisibleBounds()
-endif
+augroup VoraxOutputWin
+  au!
 
-
+  if g:vorax_omni_output_window_items
+    au BufLeave,VimResized <buffer> call vorax#output#SetVisibleBounds()
+  endif
+  
+  au WinLeave <buffer> setlocal nocursorline
+  au BufEnter <buffer> setlocal cursorline
+augroup END

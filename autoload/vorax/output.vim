@@ -30,6 +30,7 @@ function! vorax#output#Open() abort " {{{
       silent! exec "buffer " . s:name
     else
       exec winnr . 'wincmd w'
+      return
     endif
   endif
 
@@ -145,9 +146,18 @@ function! vorax#output#PostSpit() abort "{{{
     exe "normal! " . s:current_line . 'G'
   endif
   if !g:vorax_output_window_sticky_cursor
-    " update visible bounds
-    call vorax#output#SetVisibleBounds()
-    exe s:originating_window.'wincmd w'
+    if s:originating_window != winnr()
+      " Needed when here from the CursorHold event. An autoevent
+      " is not trigger from another event, so the BufLeave au
+      " will not be triggered.
+
+      " update visible bounds
+      call vorax#output#SetVisibleBounds()
+      " disable cursorline
+      setlocal nocursorline
+
+      exe s:originating_window.'wincmd w'
+    endif
   endif
 endfunction "}}}
 
