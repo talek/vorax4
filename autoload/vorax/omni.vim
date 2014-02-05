@@ -27,7 +27,6 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
               \ s:context.absolute_pos - 1, 
               \ 1, 0)
         call vorax#ruby#ComputePlsqlStructure(s:plsql_struct_key, stmt.text)
-        echom string(stmt)
         let s:context.local_items = vorax#ruby#LocalItems(s:plsql_struct_key, 
               \ strlen(stmt.text) - 1, '')
       endif
