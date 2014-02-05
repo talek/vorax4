@@ -14,10 +14,12 @@
      Connecting to a database ............... |vorax-connect|
      Executing statements ................... |vorax-exec|
      The output window  ..................... |vorax-output|
+     Edit database objects .................. |vorax-edit|
      The database explorer .................. |vorax-explorer|
      Connection profiles .................... |vorax-cmanager|
      Describing objects ..................... |vorax-describe|
      Working with Explain Plans ............. |vorax-explainplan|
+     PLSQL Support  ......................... |vorax-plsql|
      The Oracle HTML Documentation .......... |vorax-oradoc|
 
 ==============================================================================
@@ -249,6 +251,10 @@ You have the following options to run each of the above statements:
   * visual select the statement(s) to be executed and run the selection with
     the same "<Leader>e" mapping.
 
+  * if you want to execute the entire SQL buffer you may also use the 
+    VORAXExecBuffer command or the <Leader>be or @ key mapping. be stands for 
+    Buffer Exec.
+
 Note: The default mapping, of course, is configurable.
 
 In addition, you may use:
@@ -405,6 +411,66 @@ There are other interesting things you can do in the output window:
     the other way around.
 
 Please note that the above key mappings are local to the output window.
+
+==============================================================================
+EDIT DATABASE OBJECTS                                             *vorax-edit* 
+
+In Vorax, a quite often task is to open the definition behind a database 
+object. Maybe you want to look at how the object was created or maybe the goal 
+is to change its definition. Whatever the reason is, Vorax provides a very 
+simple command for this task:
+
+  :VORAXEdit <object_type> [<owner>.]<object_name>
+
+The <object_type> may be a PACKAGE, a TABLE, a TYPE_SPEC etc. Usually, the 
+<object_type> is a sub-set of the valid types known to work with the Oracle 
+package DBMS_METADATA. The <object_name> is the Oracle object you want to open 
+and, very important, its type must match the provided <object_type>. Both, 
+<object_type> and <object_name> have completion support.
+
+The type of Vim buffer into which the definition is loaded is different according 
+to the type of the opened object. Here, two Vorax settings are important: 
+g:vorax_plsql_associations and g:vorax_sql_associations. These are Vim 
+dictionaries, having as key the <object_type> and, as value, the file extension. 
+Everything in g:vorax_plsql_associations refers to PLSQL buffers, everything in 
+g:vorax_sql_associations refers to SQL buffers. If an object type is not found in 
+these two global variables then the value form g:vorax_sql_script_default_extension 
+is used. So, these settings can be used to tailor the buffer/file names so that 
+to use your own file extensions. Many companies also enforce some naming conventions 
+for these files therefore you'll need to change these settings accordingly.
+
+The most important thing you need to take care when using this command is that, when 
+a file with the same name which Vorax would use to open a database object definition 
+DOES exist in the current directory, then the local file is loaded instead of the 
+actual database definition. This is not a bug, but a feature. Usually, if you use 
+a source repository system then you should always rely on the file from the 
+repository and not on the definition from the database. Of course, there are times 
+when you want to get the definition from the database, in which case you have to use 
+the VORAXEdit! command. Did you notice the trailing "!"? If you use the "bang!" 
+version of VORAXEdit, then the definition form the database will always overwrite any 
+local file which might exist in the current folder. In both situations, with "!" and 
+without, VORAXEdit will display a warning when a local file with the same name exists.
+
+If you want to get rid of the warning messages you may simply disable them 
+using g:vorax_edit_warning.
+
+In case you want to create a new database object, you may use 
+
+  :VORAXNew <type> <name> 
+
+command. The <type> is the database object type and the <name> is the name of the object. 
+The name is optional and if it's not provided you'll be asked to. This command will 
+open a new Vim buffer having the name of the database object to be created and the 
+file extension corresponding to g:vorax_plsql_associations or g:vorax_sql_associations. 
+As soon as this buffer is opened, a user defined function can be invoked, of course, 
+if there's any defined. The signature of this function must be:
+
+  function VORAXAfterNewDbObject(type, object)
+
+  endfunction
+
+You may use this hook in your .vimrc file to expand your custom templates or do anything 
+you consider useful for this particular scenario.
 
 ==============================================================================
 THE DATABASE EXPLORER                                         *vorax-explorer* 
@@ -625,6 +691,32 @@ You may further adjust the real execution plan obtained via DBMS_XPLAN by
 providing your own format, specified into the g:vorax_xplan_format variable. 
 Its value should match a valid value of the "format" argument of the 
 DBMS_XPLAN.DISPLAY_CURSOR function. The default value is ALLSTATS LAST.
+
+==============================================================================
+PLSQL SUPPORT                                                    *vorax-plsql* 
+
+As an Oracle developer, is very likely to interact with a lot of PLSQL objects 
+like: packages, types, functions, procedures etc. The code source of these 
+database objects are usually loaded into special vorax PLSQL buffers which, 
+unlike the SQL ones, allow to compile the corresponding PLSQL source.
+
+The default key mapping for compiling is <Leader>c. "C" stands, obviously, for 
+"C"ompile. Two things happen when a PLSQL object is compiled:
+
+  * the buffer content is sent as it is to the server.
+  * as soon as the buffer content is executed, Vorax will check the ALL_ERRORS 
+    view to see if any relevant errors exist. If such errors are found, they are 
+    loaded into a Vim quickfix window, along with the error line, error column 
+    and the message itself.
+
+Note: Pay attention that during the compilation of an PLSQL object, the 
+      substitution variables feature is disabled.
+
+The window where the compilation errors are displayed is configurable via:
+
+  * g:vorax_errwin_height: the height of the error window
+  * g:vorax_errwin_goto_first: whenever or not, after the error window is 
+    displayed, the cursor to be moved to the first error.
 
 ==============================================================================
 THE ORACLE HTML DOCUMENTATION                                   *vorax-oradoc* 
