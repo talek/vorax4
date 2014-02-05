@@ -28,7 +28,7 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
               \ 1, 0)
         call vorax#ruby#ComputePlsqlStructure(s:plsql_struct_key, stmt.text)
         let s:context.local_items = vorax#ruby#LocalItems(s:plsql_struct_key, 
-              \ s:context.absolute_pos - 1, '')
+              \ stmt['position'] - 1, '')
       endif
     endif
     let items = []
@@ -541,9 +541,8 @@ function! s:LocalItems() abort "{{{
   let result = {'resultset' : [[]]}
   let crr_pos = s:context['absolute_pos']
     
-  let items = vorax#ruby#LocalItems(s:plsql_struct_key, crr_pos-1, '')
   let args = []
-  for item in items
+  for item in s:context['local_items']
     if item["item_type"] == 'ForVariable'
       let rec = [item['variable'], item['variable'], '', '']
     elseif has_key(item, 'name')
