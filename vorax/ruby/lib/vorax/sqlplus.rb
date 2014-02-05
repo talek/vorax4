@@ -224,7 +224,11 @@ module Vorax
 
     def br_only(chunk)
       # be prepared for chunks with <p> tag broken in the middle
-      chunk.gsub(/<p>/, "<br>").gsub(/<p\z/, "<br").gsub(/\Ap>/, "br>")
+      chunk.encode('UTF-8', 
+                   'binary', 
+                   invalid: :replace, 
+                   undef: :replace, 
+                   replace: '').gsub(/<p>/, "<br>").gsub(/<p\z/, "<br").gsub(/\Ap>/, "br>")
     end
 
     def prepare_funnel(convertor_name)
