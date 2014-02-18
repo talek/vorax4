@@ -155,7 +155,7 @@ endfunction "}}}
 
 function! vorax#sqlplus#MergeCstr(parts) "{{{
     return a:parts["user"] . 
-          \ "/" . a:parts["password"] .
+          \ '/"' . a:parts["password"] . '"' .
           \ (a:parts["db"] == "" ? "" : "@" . a:parts["db"]) . 
           \ (a:parts["role"] == "" ? "" : " as " .a:parts["role"])
 endfunction "}}}
