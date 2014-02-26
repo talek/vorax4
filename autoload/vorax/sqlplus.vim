@@ -181,6 +181,7 @@ function! vorax#sqlplus#Exec(command, ...) abort "{{{
     if exists('g:vorax_limit_rows')
       let command = s:LimitRows(command, g:vorax_limit_rows)
     endif
+    call VORAXDebug("vorax#sqlplus#Exec: full_heading=".g:vorax_output_full_heading)
     if g:vorax_output_full_heading
       let format_cols = s:FormatColumns(command)
       if has_key(hash, 'prep')
@@ -416,11 +417,14 @@ function! s:LimitRows(script, limit) "{{{
 endfunction "}}}
 
 function! s:FormatColumns(script) "{{{
+  call VORAXDebug("s:FormatColumns: a:script=".string(a:script))
   let stmts = vorax#ruby#SqlStatements(a:script, 1, 1)
+  call VORAXDebug("s:FormatColumns: stmts=".string(stmts))
   let column_format = ""
   let column_clear = ""
   for stmt in stmts
     let query = vorax#ruby#RemoveAllComments(stmt)
+    call VORAXDebug("s:FormatColumns: query=".string(query))
     if query =~ '\m\c^\_s*\(SELECT\|WITH\)'
       for column in s:ColumnsLayout(query)
         let column_format .= "column " . column[0] .
@@ -434,8 +438,10 @@ function! s:FormatColumns(script) "{{{
 endfunction "}}}
 
 function! s:ColumnsLayout(query) "{{{
+  call VORAXDebug("s:ColumnsLayout: a:query=".string(a:query))
   " get rid of the last terminator
   let query = substitute(a:query, '\m\_s*\(;\|\/\)\_s*$', '', 'g')
+  call VORAXDebug("s:ColumnsLayout: query=".string(query))
   " compose the statement init template
   let stmt_init = ""
   let index = 1
@@ -447,6 +453,7 @@ function! s:ColumnsLayout(query) "{{{
   endfor
   " get the format columns script
   let script_content = s:ColumnsLayoutScript()
+  call VORAXDebug("s:ColumnsLayout: script_content=".string(script_content))
   if !vorax#utils#IsEmpty(script_content)
     let prep = 'store set ' . s:properties['store_set'] . ' replace' . "\nset echo off"
     let post = "@" . s:properties['store_set']
@@ -470,6 +477,7 @@ function! s:ColumnsLayoutScript() "{{{
     let script_name = s:properties['sql_folder'] . 'columns_layout.sql' 
     if filereadable(script_name)
       let s:cl_script_content = join(readfile(script_name), "\n")
+      return copy(s:cl_script_content)
     endif
   endif
   return ""
