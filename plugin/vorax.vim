@@ -67,7 +67,7 @@ call s:initVariable('g:vorax_output_full_heading', 0)
 "   3 = tablezip
 call s:initVariable('g:vorax_output_window_default_funnel', 0)
 call s:initVariable('g:vorax_debug', 0)
-call s:initVariable('g:vorax_throbber', ['|', '\', '-', '/'])
+call s:initVariable('g:vorax_throbber', ['|', '/', '-', '*', '\'])
 call s:initVariable('g:vorax_sqlplus_options', 
       \ ['set tab off',
       \  'set appinfo "VoraX"',
