@@ -324,3 +324,9 @@ function! vorax#utils#IsVoraxManagedFile(file) "{{{
   endif
 endfunction "}}}
 
+function! vorax#utils#WarnBusy() "{{{
+  call vorax#utils#SpitWarn("Sqlplus is busy executing another command.")
+  sleep " wait a sec
+  redraw
+  echo ' '
+endfunction "}}}

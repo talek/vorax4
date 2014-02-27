@@ -33,25 +33,29 @@ function! vorax#toolkit#DescComplete(arglead, cmdline, crrpos) "{{{
 endfunction "}}}
 
 function! vorax#toolkit#Desc(name, verbose) abort "{{{
-  if !vorax#utils#IsEmpty(a:name)
-    " the name must be resolved first
-    let metadata = vorax#sqlplus#NameResolve(a:name)
-    if a:verbose == '!'
-      if metadata['type'] ==? 'TABLE'
-        let output = vorax#sqlplus#RunVoraxScript('verbose_desc.sql', 
-              \ metadata['schema'],
-              \ metadata['object'])
+  try
+    if !vorax#utils#IsEmpty(a:name)
+      " the name must be resolved first
+      let metadata = vorax#sqlplus#NameResolve(a:name)
+      if a:verbose == '!'
+        if metadata['type'] ==? 'TABLE'
+          let output = vorax#sqlplus#RunVoraxScript('verbose_desc.sql', 
+                \ metadata['schema'],
+                \ metadata['object'])
+        else
+          redraw
+          call vorax#utils#SpitWarn('Sorry, VORAXDesc! is supported for TABLEs only!')
+          return
+        endif
       else
-        redraw
-        call vorax#utils#SpitWarn('Sorry, VORAXDesc! is supported for TABLEs only!')
-        return
+        let output = vorax#sqlplus#RunVoraxScript('simple_desc.sql', 
+              \ metadata['schema'] . '.' . metadata['object'])
       endif
-    else
-      let output = vorax#sqlplus#RunVoraxScript('simple_desc.sql', 
-            \ metadata['schema'] . '.' . metadata['object'])
+      call vorax#output#SpitAll(output)
     endif
-    call vorax#output#SpitAll(output)
-  endif
+  catch /^VRX-03/
+    call vorax#utils#WarnBusy()
+  endtry
 endfunction "}}}
 
 function! vorax#toolkit#DescUnderCursor(verbose) abort "{{{
@@ -62,20 +66,24 @@ function! vorax#toolkit#DescUnderCursor(verbose) abort "{{{
 endfunction "}}}
 
 function! vorax#toolkit#Explain(statement, bang) abort "{{{
-  call VORAXDebug("vorax#toolkit#Explain " . 
-        \ "statement=" . string(a:statement) . 
-        \ " bang=" . string(a:bang))
-  let stmt = vorax#ruby#PrepareExec(a:statement)
-  let content = split(stmt, '\n')
-  call writefile(content, s:sql_pack)
-  if a:bang == '!'
-    call vorax#sqlplus#RunVoraxScriptBg('xplan.sql', 
-          \ s:sql_pack,
-          \ g:vorax_xplan_format)
-  else
-    call vorax#sqlplus#RunVoraxScriptBg('explain.sql', 
-          \ s:sql_pack)
-  endif
+  try 
+    call VORAXDebug("vorax#toolkit#Explain " . 
+          \ "statement=" . string(a:statement) . 
+          \ " bang=" . string(a:bang))
+    let stmt = vorax#ruby#PrepareExec(a:statement)
+    let content = split(stmt, '\n')
+    call writefile(content, s:sql_pack)
+    if a:bang == '!'
+      call vorax#sqlplus#RunVoraxScriptBg('xplan.sql', 
+            \ s:sql_pack,
+            \ g:vorax_xplan_format)
+    else
+      call vorax#sqlplus#RunVoraxScriptBg('explain.sql', 
+            \ s:sql_pack)
+    endif
+  catch /^VRX-03/
+    call vorax#utils#WarnBusy()
+  endtry
 endfunction "}}}
 
 function! vorax#toolkit#InitCommonBuffers() abort "{{{

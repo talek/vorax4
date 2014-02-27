@@ -33,15 +33,19 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
     endif
     let items = []
     let s:context['prefix'] = a:base
-    if s:context['completion_type'] == 'argument'
-      let items = s:ArgumentItems(a:base)
-    elseif s:context['completion_type'] == 'identifier'
-      let items = s:WordItems(a:base)
-    elseif s:context['completion_type'] == 'dot'
-      let items = s:DotItems(a:base)
-    elseif s:context['completion_type'] == 'dblink'
-      let items = s:DbLinksItems(a:base)
-    endif
+    try
+      if s:context['completion_type'] == 'argument'
+        let items = s:ArgumentItems(a:base)
+      elseif s:context['completion_type'] == 'identifier'
+        let items = s:WordItems(a:base)
+      elseif s:context['completion_type'] == 'dot'
+        let items = s:DotItems(a:base)
+      elseif s:context['completion_type'] == 'dblink'
+        let items = s:DbLinksItems(a:base)
+      endif
+    catch /^VRX-03/
+      call vorax#utils#WarnBusy()
+    endtry
     if g:vorax_omni_sort_items
       call sort(items, "s:CompareOmniItems")
     endif

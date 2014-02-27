@@ -478,7 +478,11 @@ function! vorax#ruby#SqlplusExec(command, ...) abort"{{{
         end
       end
     end
-    sp.exec(VIM::evaluate("a:command"), params)
+    begin
+      sp.exec(VIM::evaluate("a:command"), params)
+    rescue Vorax::AnotherExecRunning
+      VIM::command('throw "VRX-03: Another exec running."')
+    end
   end
 ERC
 endfunction"}}}

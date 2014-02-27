@@ -40,9 +40,13 @@ function! vorax#plsql#CompileCurrentBuffer() abort "{{{
   let prep = join(options, "\n")
   let post = "@" . properties['store_set']
   let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
-  let output = vorax#sqlplus#ExecImmediate('@' . s:sql_pack, hash)
-  call vorax#output#SpitAll(output)
-  call s:ShowErrors(crr_buffer, crr_win)
+  try
+    let output = vorax#sqlplus#ExecImmediate('@' . s:sql_pack, hash)
+    call vorax#output#SpitAll(output)
+    call s:ShowErrors(crr_buffer, crr_win)
+  catch /^VRX-03/
+    call vorax#utils#WarnBusy()
+  endtry
 endfunction "}}}
 
 function! s:ShowErrors(bufnr, winnr) abort "{{{

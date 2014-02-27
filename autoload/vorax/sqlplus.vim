@@ -210,6 +210,8 @@ function! vorax#sqlplus#Exec(command, ...) abort "{{{
     call vorax#utils#SpitWarn("There\'s no SqlPlus process running. Did you connect first?")
   catch /^VRX-02/
     call vorax#sqlplus#WarnCrash()
+  catch /^VRX-03/
+    call vorax#utils#WarnBusy()
   endtry
 endfunction "}}}
 
@@ -255,8 +257,12 @@ function! vorax#sqlplus#Query(command, ...) abort "{{{
   if exists('a:1')
     let hash['message'] = a:1
   endif
-  let output = vorax#sqlplus#ExecImmediate(a:command, hash)
-  return vorax#ruby#ParseResultset(output)
+  try
+    let output = vorax#sqlplus#ExecImmediate(a:command, hash)
+    return vorax#ruby#ParseResultset(output)
+  catch /^VRX-03/
+    call vorax#utils#WarnBusy()
+  endtry
 endfunction "}}}
 
 function! vorax#sqlplus#DefinedVariable(...) abort "{{{
@@ -342,7 +348,6 @@ function! vorax#sqlplus#RunVoraxScript(name, ...) abort "{{{
   call VORAXDebug("vorax#sqlplus#RunVoraxScript name=" . a:name)
   let handler = vorax#sqlplus#PrepareVoraxScript(a:name, a:000)
   let output = vorax#sqlplus#ExecImmediate('@' . handler.script, handler.hash)
-  call VORAXDebug("vorax#sqlplus#RunVoraxScript output=" . output)
   return output
 endfunction "}}}
 
