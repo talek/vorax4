@@ -154,10 +154,14 @@ function! s:PrepareCstr(cstr) abort "{{{
 endfunction "}}}
 
 function! vorax#sqlplus#MergeCstr(parts) "{{{
-    return a:parts["user"] . 
-          \ '/"' . a:parts["password"] . '"' .
-          \ (a:parts["db"] == "" ? "" : "@" . a:parts["db"]) . 
-          \ (a:parts["role"] == "" ? "" : " as " .a:parts["role"])
+  let pwd = a:parts["password"]
+  if !vorax#utils#IsEmpty(pwd)
+    let pwd = '"' . pwd . '"'
+  endif
+  return a:parts["user"] . 
+        \ '/' . pwd .
+        \ (a:parts["db"] == "" ? "" : "@" . a:parts["db"]) . 
+        \ (a:parts["role"] == "" ? "" : " as " .a:parts["role"])
 endfunction "}}}
 
 " }}}
