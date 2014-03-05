@@ -157,6 +157,7 @@ function! s:GetStmtStarterIndent( keyword, curr_lnum )
     exec 'normal! ^'
     let stmts = '^\s*\%('.
           \ '\<begin\>\|' .
+          \ '\<while\>\|' .
           \ '\%(\%(\<end\s\+\)\@<!\<loop\>\)\|' .
           \ '\%(\%(\<end\s\+\)\@<!\<case\>\)\|' .
           \ '\%(\%(\<end\s\+\)\@<!\<for\>\)\|' .
@@ -324,7 +325,7 @@ function! GetVoraxSQLIndent()
     " Move indent in
     let ind = ind + &sw
     " echom 'prevl - SQLBlockStart - indent ' . ind . '  line: ' . prevline
-  elseif prevline =~ '\s\+\(\<as\>\|\<is\>\)'
+  elseif prevline =~ '\s\+\(\<as\>\|\<is\>\)\s*$'
     "functions baby
     let ind = ind + &sw
   elseif prevline =~ '[()]'
