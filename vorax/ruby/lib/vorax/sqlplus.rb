@@ -223,12 +223,10 @@ module Vorax
     private
 
     def br_only(chunk)
+      # remove all invalid UTF-8 chars, if any
+      chunk = chunk.chars.select{ |c| c.valid_encoding? }.join
       # be prepared for chunks with <p> tag broken in the middle
-      chunk.encode('UTF-8', 
-                   'binary', 
-                   invalid: :replace, 
-                   undef: :replace, 
-                   replace: '').gsub(/<p>/, "<br>").gsub(/<p\z/, "<br").gsub(/\Ap>/, "br>")
+      chunk.gsub(/<p>/, "<br>").gsub(/<p\z/, "<br").gsub(/\Ap>/, "br>")
     end
 
     def prepare_funnel(convertor_name)
