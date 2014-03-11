@@ -23,18 +23,14 @@ if g:vorax_folding_enable "{{{
   function! s:SaveOpenFolds()"{{{
     if exists('b:descriptor')
       for element in b:descriptor
-        if !exists('element["open"]') && g:vorax_folding_initial_state ==? 'all_open'
-          let element["open"] = 1
-        else
-          if foldlevel(element["start_pos"]) > 0
-            if foldclosed(element["start_pos"]) != -1
-              let element['open'] = 0
-            else
-              let element['open'] = 1
-            endif
-          else
+        if foldlevel(element["start_pos"]) > 0
+          if foldclosed(element["start_pos"]) != -1
             let element['open'] = 0
+          else
+            let element['open'] = 1
           endif
+        else
+          let element['open'] = 0
         endif
       endfor
     endif
