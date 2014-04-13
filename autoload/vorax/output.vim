@@ -191,7 +191,7 @@ function! vorax#output#FetchAndSpit() abort " {{{
       redraw
     endif
     let s:first_chunk = 0
-    call feedkeys("f\e")
+    call feedkeys("f\e", 'n')
   catch /^VRX-02/
     call vorax#sqlplus#WarnCrash()
     call vorax#output#SpitterStop()
