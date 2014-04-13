@@ -28,6 +28,10 @@ set define '&'
 set verify off
 set pagesize 0
 set linesize 1000
+set heading off
+set feedback off
+set timing off
+set time off
 
 var ddl_def clob
 var ddl_length number
@@ -89,7 +93,7 @@ set longc &clob_len
 set long &clob_len
 
 prompt <table><tr><td>
-print :ddl_def
+select :ddl_def from dual;
 prompt </td></tr></table>
 
 undefine clob_len
