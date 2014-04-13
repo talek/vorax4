@@ -19,4 +19,7 @@ grant select on v_$mystat to vorax_test;
 
 prompt Done.
 
+alter session set current_schema=VORAX_TEST;
+@create_objects.sql
+
 quit

@@ -313,7 +313,7 @@ select *
   from x;
 STRING
     Parser.current_statement(text, 90, :sqlplus_commands => true, :plsql_blocks => true).
-      should eq({:statement=>"begin\n\tdbms_output.put_line('Hello Vorax!');\nend;\n/\n", :range=>69...121})
+      should eq({:statement=>"begin\n  dbms_output.put_line('Hello Vorax!');\nend;\n/\n", :range=>69...122})
 
     text = "exec dbms_crypto.encrypt("
     Parser.current_statement(text, 10, :plslq_blocks => true, :sqlplus_commands => true).
@@ -331,7 +331,7 @@ STRING
     Parser.next_argument(text).should == 0 
   end# }}}
 
-  it 'should split statements' do
+  it 'should split statements' do# {{{
     text = <<STRING
 select /* comment: ; */ 'muci;buci''s yea' from dual; -- interesting ha;ha?
 set serveroutput on
@@ -347,7 +347,7 @@ STRING
         " -- interesting ha;ha?\nset serveroutput on\n",
         "begin\ndbms_output.put_line('xxx');\nend;\n/\n",
         "select * from cat;",
-        "\nselect * from dual"]
-  end
+        "\nselect * from dual\n"]
+  end# }}}
 
 end

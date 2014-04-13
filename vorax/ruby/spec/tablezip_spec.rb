@@ -27,8 +27,8 @@ describe 'tablezip layout' do
 
 SQL> 
 
-DUM
----
+D
+-
 X
 
 SQL> 

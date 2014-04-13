@@ -4,15 +4,15 @@ include Vorax
 
 describe 'profiles_manager' do
 
-  before(:all) do
+  before(:all) do# {{{
     @pm = dummy_pm
-  end
+  end# }}}
 
-  after(:all) do
+  after(:all) do# {{{
     clear_pm
-  end
+  end# }}}
 
-  it 'should list profiles' do
+  it 'should list profiles' do# {{{
     # all profiles
     @pm.profiles.should =~ ['scott@db', 'admin@proddb1', 'admin@pdb2', 'test@tdb']
 
@@ -21,18 +21,18 @@ describe 'profiles_manager' do
 
     # all profiles not assigned to any category
     @pm.profiles('').should =~ ['test@tdb']
-  end
+  end# }}}
 
-  it 'should get the password of a profile' do
+  it 'should get the password of a profile' do# {{{
     @pm = dummy_pm
     @pm.password('admin@proddb1').should == 'secret'
-  end
+  end# }}}
 
-  it 'should get the categories' do
+  it 'should get the categories' do# {{{
     @pm.categories.should == ['Prod', 'Test']
-  end
+  end# }}}
 
-  it 'should edit the repository' do
+  it 'should edit the repository' do# {{{
     pmtemp = dummy_pm
   
     # remove a profile
@@ -47,9 +47,9 @@ describe 'profiles_manager' do
     pmtemp.attribute('ADMIN@PDB2', 'important').should == "true"
     pmtemp.edit('ADMIN@PDB2', 'important', false)
     pmtemp.attribute('ADMIN@PDB2', 'important').should == "false"
-  end
+  end# }}}
 
-  def dummy_pm
+  def dummy_pm# {{{
     # create keys
     ProfilesManager.create('spec/pm', 'xxx')
 
@@ -70,11 +70,11 @@ describe 'profiles_manager' do
     pm.add('test@tdb', :password => 'abc')
 
     pm
-  end
+  end# }}}
 
-  def clear_pm
+  def clear_pm# {{{
     files = Dir.glob('spec/pm/*').each { |f| File.delete(f) if File.file?(f) }
-  end
+  end# }}}
 
 end
 
