@@ -124,7 +124,7 @@ function! vorax#explorer#OpenDbObject(bang, ...) "{{{
       let content = rs[0][0]
       if vorax#utils#IsEmpty(content)
         redraw
-        call vorax#utils#SpitWarn('Sorry, the definition is empty! No such database object?')
+        call vorax#utils#SpitWarn('Sorry, the definition is empty! No such database object or no rights to get the definition?')
         return
       endif
       call s:OpenVoraxBuffer(file_name)

@@ -93,7 +93,7 @@ set longc &clob_len
 set long &clob_len
 
 prompt <table><tr><td>
-select :ddl_def from dual;
+select decode(to_char(:ddl_length), '', '', :ddl_def) from dual;
 prompt </td></tr></table>
 
 undefine clob_len
