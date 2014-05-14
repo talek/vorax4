@@ -139,7 +139,22 @@ function! vorax#explorer#OpenDbObject(bang, ...) "{{{
         endif
       endif
       call append(0, split(content, '\n'))
-      normal! gg
+      if type != 'PROCEDURE' &&
+            \ type != 'FUNCTION' &&
+            \ type != 'PACKAGE' &&
+            \ type != 'PACKAGE_BODY' &&
+            \ type != 'PACKAGE_SPEC' &&
+            \ type != 'TYPE' &&
+            \ type != 'TYPE_BODY' &&
+            \ type != 'TYPE_SPEC' &&
+            \ type != 'JAVA_SOURCE' &&
+            \ type != 'TRIGGER'
+        " format buffer if it's not a procedural module
+        silent! retab
+        silent! normal! =gg
+      else
+        normal! gg
+      endif
     endif
   endif
 endfunction "}}}
