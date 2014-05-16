@@ -5,6 +5,7 @@
 
 command! -n=0 -range -buffer VORAXExecSelection :call vorax#sqlplus#Exec(vorax#utils#CurrentSelection())
 command! -n=0 -range -buffer VORAXExecCurrent :call vorax#sqlplus#Exec(vorax#utils#CurrentStatement(1, 1))
+command! -n=0 -range -buffer VORAXSelectCurrent :call vorax#utils#SelectCurrentStatement()
 
 command! -n=0 -range -buffer VORAXExecSbSelection :call vorax#sqlplus#SandboxExec(vorax#utils#CurrentSelection())
 command! -n=0 -range -buffer VORAXExecSbCurrent :call vorax#sqlplus#SandboxExec(vorax#utils#CurrentStatement(1, 1))
@@ -23,6 +24,7 @@ if g:vorax_map_keys
   nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
 
   nnoremap <buffer> <silent> <Leader>e :VORAXExecCurrent<CR>
+  nnoremap <buffer> <silent> <Space> :VORAXSelectCurrent<CR>
   xnoremap <buffer> <silent> <Leader>e :VORAXExecSelection<CR>
 
   nnoremap <buffer> <silent> <Leader>E :VORAXExecSbCurrent<CR>

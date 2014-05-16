@@ -37,6 +37,16 @@ function! vorax#utils#CurrentStatement(plsql_blocks, sqlplus_commands) abort"{{{
   return stmt['text']
 endfunction"}}}
 
+function! vorax#utils#SelectCurrentStatement() "{{{
+  let stmt = vorax#utils#DescribeCurrentStatement(1, 1)
+  let start = stmt['position'] + 1
+  let end = start + len(stmt['text'])
+  " select the statement
+  exe 'normal! ' . end . 'gov' . start . 'go'
+  " move to the next non-blank character
+  call search('\S', 'cW')
+endfunction "}}}
+
 function! vorax#utils#AbsolutePosition(line, column) abort"{{{
   if g:vorax_parse_min_lines > 0
     let offset = a:line - g:vorax_parse_min_lines
