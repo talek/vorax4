@@ -39,8 +39,12 @@ endfunction"}}}
 
 function! vorax#utils#SelectCurrentStatement() "{{{
   let stmt = vorax#utils#DescribeCurrentStatement(1, 1)
-  let start = stmt['position'] + 1
-  let end = start + len(stmt['text'])
+  let offset = s:ParseOffset(line('.'), col('.'))
+  if offset > 0
+    let offset = line2byte(offset)
+  endif
+  let start = stmt['position'] + offset + 1
+  let end = start + len(stmt['text']) - 1
   " select the statement
   exe 'normal! ' . end . 'gov' . start . 'go'
   " move to the next non-blank character
