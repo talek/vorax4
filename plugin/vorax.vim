@@ -3,7 +3,7 @@
 " Description: An Oracle IDE for Geeks
 " License:     see LICENSE.txt
 
-let g:vorax_version = "4.3.27"
+let g:vorax_version = "4.3.28"
 
 if exists("g:loaded_vorax") || &cp
   finish
