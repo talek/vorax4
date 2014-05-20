@@ -13,6 +13,8 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
     call VORAXDebug("vorax#omni#Complete END => context = " . string(s:context))
     return s:context['start_from']
   else
+    let old_lz = &lz
+    set lz
     if s:context.completion_type ==? 'identifier' || s:context.completion_type ==? 'dot'
       " tell me more about the code structure
       let text_code = vorax#utils#BufferContent(1, line('.')) . a:base
@@ -50,6 +52,7 @@ function! vorax#omni#Complete(findstart, base) abort "{{{
       call sort(items, "s:CompareOmniItems")
     endif
     call VORAXDebug("vorax#omni#Complete END")
+    let &lz=old_lz
     if len(items) > 0
       return items
     else
