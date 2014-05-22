@@ -103,6 +103,8 @@ begin
       :ddl_def := :ddl_def || chr(10) || get_metadata_item('DEFAULT_ROLE', '&2');
       -- get role grants
       :ddl_def := :ddl_def || chr(10) || get_metadata_item('ROLE_GRANT', '&2');
+      -- get system grants
+      :ddl_def := :ddl_def || chr(10) || get_metadata_item('SYSTEM_GRANT', '&2');
       -- get object grants
       :ddl_def := :ddl_def || chr(10) || get_metadata_item('OBJECT_GRANT', '&2');
     elsif '&3'= 'TABLE' then
