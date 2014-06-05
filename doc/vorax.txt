@@ -343,7 +343,7 @@ settings for this window are:
   * g:vorax_output_abort_key: the key mapping for cancelling a running
     statement. By default is <Esc>.
 
-  * g_vorax_output_window_default_funnel: this defines the default layout
+  * g:vorax_output_window_default_funnel: this defines the default layout
     for the spit output (details below, keep reading).
 
   * g:vorax_output_full_heading: whenever or not to display the full column 
