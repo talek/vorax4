@@ -336,6 +336,44 @@ function! vorax#output#StatusLine() abort"{{{
   endif
   let conn_color = (props['privilege'] != '' ? '%1*' : '%2*')
   let session_owner = conn_color . ' ' . vorax#sqlplus#SessionOwner() . ' %*'
+
+  let l:lockout = ""
+  if g:vorax_output_lock_indicator == 1 &&
+        \ vorax#ruby#SqlplusIsInitialized() &&
+        \ vorax#ruby#SqlplusIsAlive() &&
+        \ vorax#ruby#SqlplusBusy() == 0
+    try
+      let l:lock_sql = 
+          \ "select  (select decode( count(*), 0, 0, 1) from v$lock where sid = x.sid and type in ('TM')) tm" .
+          \ "        , (select decode( count(*), 0, 0, 1) from v$lock where sid = x.sid and type in ('TX')) tx" .
+          \ "    from (select sys_context('userenv','sid') sid from dual) x;"
+      let l:lockdata = vorax#sqlplus#Query( l:lock_sql)
+
+      if !empty( l:lockdata.resultset)
+        let l:lockout = ""
+        " TM Locks?
+        if l:lockdata.resultset[0][0][0] == 1
+          let l:lockout .= "%5*TM%*"
+        else
+          let l:lockout .= "%4*tm%*"
+        endif
+        " TX Locks?
+        if l:lockdata.resultset[0][0][1] == 1
+          let l:lockout .= "%5*TX%*"
+        else
+          let l:lockout .= "%4*tx%*"
+        endif
+      else
+        let l:lockout = ""
+      endif
+      let l:lockok = 1
+    finally
+      if ! exists( "l:lockok")
+        let l:lockout = ""
+      endif
+    endtry
+  endif
+
   " current formatting
   if s:funnel == 0
     let format = ''
@@ -357,7 +395,8 @@ function! vorax#output#StatusLine() abort"{{{
   " limit rows
   let limit_rows = (exists('g:vorax_limit_rows') ? ' LIMIT=' . g:vorax_limit_rows : '')
   return throbber .
-        \ session_owner . 
+        \ session_owner .
+        \ l:lockout .
         \ '%= ' . format . 
         \ col_head .
         \ append .
