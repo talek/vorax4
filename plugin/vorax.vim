@@ -59,6 +59,7 @@ call s:initVariable('g:vorax_output_window_hl_error', 'Error')
 call s:initVariable('g:vorax_output_abort_key', '<Esc>')
 call s:initVariable('g:vorax_output_cursor_on_top', 0)
 call s:initVariable('g:vorax_output_full_heading', 0)
+call s:initVariable('g:vorax_output_lock_indicator', 0)
 
 " The type of funnel:
 "   0 = no funnel
@@ -213,6 +214,12 @@ hi User2 term=standout cterm=standout ctermfg=4 gui=reverse guifg=#268bd2
 
 " throbber color
 hi User3 term=standout cterm=standout ctermfg=5 gui=reverse guifg=#d33682
+
+" Lock indicator (no locks)
+hi User4 term=standout cterm=standout ctermfg=10 gui=reverse guifg=#00ff00
+
+" Lock indicator (existing locks)
+hi User5 term=standout cterm=standout ctermfg=9 gui=reverse guifg=#ff0000
 
 "}}}
 
