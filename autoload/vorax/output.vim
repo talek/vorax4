@@ -139,6 +139,7 @@ endfunction " }}}
 
 function! vorax#output#PostSpit() abort "{{{
   call vorax#sqlplus#UpdateSessionOwner()
+  call vorax#sqlplus#UpdateTransaction()
   " update dbexplorer
   call vorax#explorer#RefreshRoot()
   call vorax#output#Open()
@@ -358,7 +359,8 @@ function! vorax#output#StatusLine() abort"{{{
   let limit_rows = (exists('g:vorax_limit_rows') ? ' LIMIT=' . g:vorax_limit_rows : '')
   return throbber .
         \ session_owner . 
-        \ '%= ' . format . 
+        \ '%4*' . props['transaction'] . '%*' .
+        \ '%= ' . format .
         \ col_head .
         \ append .
         \ top .
