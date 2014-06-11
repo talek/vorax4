@@ -130,9 +130,11 @@ function! vorax#sqlplus#UpdateTransaction() "{{{
         \ vorax#ruby#SqlplusIsAlive() &&
         \ vorax#ruby#SqlplusBusy() == 0
     try
-      let l:data = vorax#sqlplus#Query( 'select decode( nvl( length( dbms_transaction.local_transaction_id()), 0), 0, 0, 1) from dual;')
+      let l:data = vorax#sqlplus#Query('select decode(' .
+                                       \ 'nvl(dbms_transaction.local_transaction_id(), 0), ' .
+                                       \ '0, 0, 1) from dual;')
       if len(l:data.resultset) == 1 && l:data.resultset[0][0][0] == 1
-        let s:properties['transaction'] = 'TXN'
+        let s:properties['transaction'] = g:vorax_output_txn_marker 
       endif
     finally
     endtry
