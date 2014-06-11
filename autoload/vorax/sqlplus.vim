@@ -20,6 +20,7 @@ let s:properties = {'store_set'     : tempname() . ".opts",
                   \ 'sql_folder'    : fnamemodify(expand('<sfile>:p:h') . '/../../vorax/sql/', ':p:8'),
                   \ 'db_banner'     : '',
                   \ 'cols_clear'    : '',
+                  \ 'transaction'   : '',
                   \ 'sane_options'  : ['set define "&"',
                   \                    'set pause off',
                   \                    'set termout on']}
@@ -120,6 +121,21 @@ function! vorax#sqlplus#UpdateSessionOwner() "{{{
     call VORAXDebug("vorax#sqlplus#UpdateSessionOwner s:properties=" . string(s:properties))
     " update status bar
     let &ro = &ro
+  endif
+endfunction "}}}
+
+function! vorax#sqlplus#UpdateTransaction() "{{{
+  let s:properties['transaction'] = ''
+  if vorax#ruby#SqlplusIsInitialized() &&
+        \ vorax#ruby#SqlplusIsAlive() &&
+        \ vorax#ruby#SqlplusBusy() == 0
+    try
+      let l:data = vorax#sqlplus#Query( 'select decode( nvl( length( dbms_transaction.local_transaction_id()), 0), 0, 0, 1) from dual;')
+      if len(l:data.resultset) == 1 && l:data.resultset[0][0][0] == 1
+        let s:properties['transaction'] = 'TXN'
+      endif
+    finally
+    endtry
   endif
 endfunction "}}}
 

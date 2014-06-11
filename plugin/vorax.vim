@@ -214,6 +214,9 @@ hi User2 term=standout cterm=standout ctermfg=4 gui=reverse guifg=#268bd2
 " throbber color
 hi User3 term=standout cterm=standout ctermfg=5 gui=reverse guifg=#d33682
 
+" transaction indicator
+hi User4 term=standout cterm=standout ctermfg=9 gui=reverse guifg=#cb4b16
+
 "}}}
 
 " Logging Initialization {{{
