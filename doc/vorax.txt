@@ -349,6 +349,12 @@ settings for this window are:
   * g:vorax_output_full_heading: whenever or not to display the full column 
     name in the output query heading.
 
+  * vorax_output_show_open_txn: whenever or not to display a marker into
+    the status line if Vorax is in an open transaction. The marker
+    can be further customized using the g:vorax_output_txn_marker to specify
+    the text to be displayed and User4 highlight to define the color of this
+    marker.
+
 The output window display may be toggled using:
 
   :VORAXOutputToggle
