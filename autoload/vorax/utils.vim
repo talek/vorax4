@@ -65,9 +65,15 @@ function! vorax#utils#AbsolutePosition(line, column) abort"{{{
   return current_position + a:column - 1
 endfunction"}}}
 
-function! vorax#utils#IsVoraxBuffer() abort"{{{
-  return (&ft == 'sql' || &ft == 'plsql')
-endfunction"}}}
+function! vorax#utils#IsVoraxBuffer() abort "{{{
+  let dialect = ''
+  if exists('b:sql_type_override')
+    let dialect = b:sql_type_override
+  elseif exists('g:sql_type_default')
+    let dialect = g:sql_type_default
+  endif
+  return (dialect == 'sqlvorax' || dialect == 'plsqlvorax')
+endfunction "}}}
 
 function! vorax#utils#Throbber() abort "{{{
   if len(s:throbber['elements']) == 0
