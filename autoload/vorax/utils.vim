@@ -75,6 +75,11 @@ function! vorax#utils#IsVoraxBuffer() abort "{{{
   return (dialect == 'sqlvorax' || dialect == 'plsqlvorax')
 endfunction "}}}
 
+function! vorax#utils#IsOpenTxn() abort "{{{
+  let sp = vorax#sqlplus#Properties()
+  return (sp['transaction'] != '' ? 1 : 0)
+endfunction "}}}
+
 function! vorax#utils#Throbber() abort "{{{
  let props = vorax#sqlplus#Properties()
   if vorax#ruby#SqlplusIsInitialized() &&
