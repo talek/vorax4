@@ -3,7 +3,7 @@
 " Description: An Oracle IDE for Geeks
 " License:     see LICENSE.txt
 
-let g:vorax_version = "4.3.34"
+let g:vorax_version = "4.3.35"
 
 if exists("g:loaded_vorax") || &cp
   finish
@@ -68,6 +68,7 @@ call s:initVariable('g:vorax_output_full_heading', 0)
 call s:initVariable('g:vorax_output_window_default_funnel', 0)
 call s:initVariable('g:vorax_output_show_open_txn', 0)
 call s:initVariable('g:vorax_output_txn_marker', 'TXN')
+call s:initVariable('g:vorax_output_force_overwrite_status_line', 1)
 call s:initVariable('g:vorax_debug', 0)
 call s:initVariable('g:vorax_throbber', ['|', '/', '-', '*', '\'])
 call s:initVariable('g:vorax_sqlplus_options', 

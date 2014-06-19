@@ -409,7 +409,9 @@ function! s:ConfigureBuffer() abort " {{{
   setlocal nobuflisted
   setlocal isk+=$
   setlocal isk+=#
-  exe 'setlocal statusline=' . g:vorax_output_window_statusline
+  if g:vorax_output_force_overwrite_status_line
+    exe 'setlocal statusline=' . g:vorax_output_window_statusline
+  endif
   
 
   " highlight errors
