@@ -76,15 +76,22 @@ function! vorax#utils#IsVoraxBuffer() abort "{{{
 endfunction "}}}
 
 function! vorax#utils#Throbber() abort "{{{
-  if len(s:throbber['elements']) == 0
-    return ""
-  endif
-  if s:throbber['index'] < len(s:throbber['elements']) - 1
-    let s:throbber['index'] += 1
+ let props = vorax#sqlplus#Properties()
+  if vorax#ruby#SqlplusIsInitialized() &&
+        \ vorax#ruby#SqlplusIsAlive() &&
+        \ vorax#ruby#SqlplusBusy()
+    if len(s:throbber['elements']) == 0
+      return ""
+    endif
+    if s:throbber['index'] < len(s:throbber['elements']) - 1
+      let s:throbber['index'] += 1
+    else
+      let s:throbber['index'] = 0
+    end
+    return s:throbber['elements'][s:throbber['index']]
   else
-    let s:throbber['index'] = 0
-  end
-  return s:throbber['elements'][s:throbber['index']]
+    return ''
+  endif
 endfunction "}}}
 
 function! vorax#utils#SpitWarn(str)"{{{
