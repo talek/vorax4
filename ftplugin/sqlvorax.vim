@@ -13,7 +13,7 @@ command! -n=0 -range -buffer VORAXExecSbCurrent :call vorax#sqlplus#SandboxExec(
 command! -n=0 -range -buffer -bang VORAXExplain :call vorax#toolkit#Explain(vorax#utils#CurrentStatement(1, 1), '<bang>')
 command! -n=0 -range -buffer -bang VORAXExplainSelection :call vorax#toolkit#Explain(vorax#utils#CurrentSelection(), '<bang>')
 
-command! -n=0 -buffer VORAXExecBuffer :call vorax#sqlplus#Exec(vorax#utils#BufferContent())
+command! -n=0 -buffer VORAXExecBuffer :call vorax#utils#ExecBuffer()
 
 call vorax#toolkit#InitCommonBuffers()
 

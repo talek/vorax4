@@ -362,3 +362,13 @@ function! vorax#utils#WarnBusy() "{{{
   redraw
   echo ' '
 endfunction "}}}
+
+function! vorax#utils#ExecBuffer()
+  if g:vorax_confirm_exec_buffer
+    let option = confirm("Are you sure you want to execute all SQL statements from the current buffer?", "&Yes\n&No", 2)
+    if option == 2
+      return
+    endif
+  endif
+  call vorax#sqlplus#Exec(vorax#utils#BufferContent())
+endfunction
