@@ -3,7 +3,7 @@
 " Description: An Oracle IDE for Geeks
 " License:     see LICENSE.txt
 
-let g:vorax_version = "4.3.37"
+let g:vorax_version = "4.3.38"
 
 if exists("g:loaded_vorax") || &cp
   finish
@@ -143,6 +143,10 @@ call s:initVariable('g:vorax_dbexplorer_force_edit', 0)
 call s:initVariable('g:vorax_dbexplorer_side', 'left')
 " the size of the db explorer window
 call s:initVariable('g:vorax_dbexplorer_size', 30)
+
+"NERD Tree default mappings: must be overwritten in .vimrc
+call s:initVariable('g:vorax_nerdtree_exec_key', '@')
+call s:initVariable('g:vorax_nerdtree_sbexec_key', '!')
 
 " the hash key is the object_type from DBMS_METADATA
 call s:initVariable('g:vorax_plsql_associations',

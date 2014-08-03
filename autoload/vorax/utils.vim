@@ -363,7 +363,7 @@ function! vorax#utils#WarnBusy() "{{{
   echo ' '
 endfunction "}}}
 
-function! vorax#utils#ExecBuffer()
+function! vorax#utils#ExecBuffer() "{{{
   if g:vorax_confirm_exec_buffer
     let option = confirm("Are you sure you want to execute all SQL statements from the current buffer?", "&Yes\n&No", 2)
     if option == 2
@@ -371,4 +371,8 @@ function! vorax#utils#ExecBuffer()
     endif
   endif
   call vorax#sqlplus#Exec(vorax#utils#BufferContent())
+endfunction "}}}
+
+function vorax#utils#GetSetting(var)
+  return '!'
 endfunction
