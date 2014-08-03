@@ -372,7 +372,3 @@ function! vorax#utils#ExecBuffer() "{{{
   endif
   call vorax#sqlplus#Exec(vorax#utils#BufferContent())
 endfunction "}}}
-
-function vorax#utils#GetSetting(var)
-  return '!'
-endfunction
