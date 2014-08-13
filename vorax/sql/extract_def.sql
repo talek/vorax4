@@ -38,21 +38,37 @@ var ddl_length number
 
 declare
   
-  function get_plsql_source(owner_in varchar2, name_in varchar2, type_in varchar2) return clob as
-    l_text clob;
+  function get_source(owner varchar2, obj_name varchar2, obj_type varchar2) return clob as
+    h number;
+    th number;
+    doc clob;
   begin
-    for l_rec in (select text 
-                    from all_source 
-                   where owner = owner_in
-                     and name = name_in
-                     and type = type_in
-                   order by line) loop
-      l_text := l_text || l_rec.text;
-    end loop;
-    if l_text is not null then
-      l_text := 'create or replace ' || l_text || chr(10) || '/' || chr(10);
+    h := dbms_metadata.open(obj_type);
+
+    if owner is not null then
+      dbms_metadata.set_filter(h, 'SCHEMA', owner);
     end if;
-    return l_text;
+    dbms_metadata.set_filter(h, 'NAME', obj_name);
+
+    th := dbms_metadata.add_transform(h, 'MODIFY');
+
+    if owner = user then
+      -- don't include owner if matches the current connected user
+      dbms_metadata.set_remap_param(th, 'REMAP_SCHEMA', user, '');
+    end if;
+
+    th := dbms_metadata.add_transform(h, 'DDL');
+    if obj_type = 'TABLE' then
+      dbms_metadata.set_transform_param(th, 'SEGMENT_ATTRIBUTES', false);
+      dbms_metadata.set_transform_param(th, 'STORAGE', false);
+    end if;
+    dbms_metadata.set_transform_param(th, 'SQLTERMINATOR', true);
+    dbms_metadata.set_transform_param(th, 'PRETTY', true);
+
+    doc := dbms_metadata.fetch_clob(h);
+
+    dbms_metadata.close(h);
+    return doc;
   end;
 
   function get_metadata_item(item in varchar2, orauser in varchar2) return clob as
@@ -76,56 +92,44 @@ declare
 begin
   dbms_lob.createtemporary (lob_loc => :ddl_def, cache => TRUE);
   :ddl_def := ''; -- just init
-  if '&1' <> user  then
-    -- only if trying to look to a package/type belonging to a diferent user
-    if '&3' = 'TYPE_SPEC' or
-       '&3' = 'PACKAGE_SPEC' then
-      :ddl_def := get_plsql_source('&1', '&2', regexp_substr('&3', '[^_]+', 1, 1));
-    elsif '&3' = 'TYPE' or
-          '&3' = 'PACKAGE' then
-      :ddl_def := get_plsql_source('&1', '&2', '&3');
-      :ddl_def := :ddl_def || get_plsql_source('&1', '&2', '&3. BODY');
-    end if;
+
+  dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'SEGMENT_ATTRIBUTES', FALSE);
+  dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'STORAGE', FALSE);
+  dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'SQLTERMINATOR', TRUE);
+  dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'PRETTY', TRUE);
+
+  -- get and escape the DDL definition. 
+  :ddl_def := get_source('&1', '&2', '&3');
+  -- get grants
+  if '&3' = 'USER' then
+    -- get tablespace quotas
+    :ddl_def := :ddl_def || chr(10) || get_metadata_item('TABLESPACE_QUOTA', '&2');
+    -- get the default role
+    :ddl_def := :ddl_def || chr(10) || get_metadata_item('DEFAULT_ROLE', '&2');
+    -- get role grants
+    :ddl_def := :ddl_def || chr(10) || get_metadata_item('ROLE_GRANT', '&2');
+    -- get system grants
+    :ddl_def := :ddl_def || chr(10) || get_metadata_item('SYSTEM_GRANT', '&2');
+    -- get object grants
+    :ddl_def := :ddl_def || chr(10) || get_metadata_item('OBJECT_GRANT', '&2');
+  elsif '&3'= 'TABLE' then
+    -- indexes not covered by PK and unique constraints
+    for l_rec in (select owner, index_name 
+                    from all_indexes i 
+                    where i.table_owner = '&1' 
+                      and i.table_name = '&2' 
+                      and index_name not in (
+                        select constraint_name 
+                          from all_constraints a 
+                        where a.owner = '&1'
+                          and a.table_name = '&2')) loop
+      :ddl_def := :ddl_def || chr(10) 
+        || dbms_metadata.get_ddl('INDEX', l_rec.index_name, l_rec.owner);
+    end loop;
   end if;
-  if :ddl_def is null or length(:ddl_def) = 0 then
-    -- not populated above
-    dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'SEGMENT_ATTRIBUTES', FALSE);
-    dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'STORAGE', FALSE);
-    dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'SQLTERMINATOR', TRUE);
-    dbms_metadata.set_transform_param(dbms_metadata.session_transform, 'PRETTY', TRUE);
-    -- get and escape the DDL definition. 
-    :ddl_def := dbms_metadata.get_ddl('&3', '&2', '&1');
-    -- get grants
-    if '&3' = 'USER' then
-      -- get tablespace quotas
-      :ddl_def := :ddl_def || chr(10) || get_metadata_item('TABLESPACE_QUOTA', '&2');
-      -- get the default role
-      :ddl_def := :ddl_def || chr(10) || get_metadata_item('DEFAULT_ROLE', '&2');
-      -- get role grants
-      :ddl_def := :ddl_def || chr(10) || get_metadata_item('ROLE_GRANT', '&2');
-      -- get system grants
-      :ddl_def := :ddl_def || chr(10) || get_metadata_item('SYSTEM_GRANT', '&2');
-      -- get object grants
-      :ddl_def := :ddl_def || chr(10) || get_metadata_item('OBJECT_GRANT', '&2');
-    elsif '&3'= 'TABLE' then
-      -- indexes not covered by PK and unique constraints
-      for l_rec in (select owner, index_name 
-                      from all_indexes i 
-                     where i.table_owner = '&1' 
-                       and i.table_name = '&2' 
-                       and index_name not in (
-                         select constraint_name 
-                           from all_constraints a 
-                          where a.owner = '&1'
-                            and a.table_name = '&2')) loop
-        :ddl_def := :ddl_def || chr(10) 
-          || dbms_metadata.get_ddl('INDEX', l_rec.index_name, l_rec.owner);
-      end loop;
-    end if;
-    if '&3' = 'TABLE' or '&3' = 'VIEW' or '&3' = 'SEQUENCE' then
-      -- grants
-      :ddl_def := :ddl_def || chr(10) || get_metadata_dependencies('OBJECT_GRANT', '&2', '&1');
-    end if;
+  if '&3' = 'TABLE' or '&3' = 'VIEW' or '&3' = 'SEQUENCE' then
+    -- grants
+    :ddl_def := :ddl_def || chr(10) || get_metadata_dependencies('OBJECT_GRANT', '&2', '&1');
   end if;
   :ddl_def := dbms_xmlgen.convert(:ddl_def);
   -- don't bother to get the exact size in bytes. Get the length in chars and
