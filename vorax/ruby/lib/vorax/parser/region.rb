@@ -488,6 +488,10 @@ module Vorax
     class IfRegion < Region
     end
 
+    # A CASE code region.
+    class CaseRegion < Region
+    end
+
   end
 
 end
