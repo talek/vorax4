@@ -39,6 +39,7 @@ module Vorax
       IF_STMT = /(?:\bif\b)/i unless defined?(IF_STMT)
       CASE_STMT = /(?:\bcase\b)/i unless defined?(CASE_STMT)
       DECLARE_BLOCK = /(?:\bdeclare\b)/i unless defined?(DECLARE_BLOCK)
+      LANGUAGE = /(?:\blanguage\b)/i unless defined?(LANGUAGE)
 
       # @return [String] the PLSQL code on which the structure was computed
       attr_reader :code
@@ -109,6 +110,7 @@ module Vorax
         register_plsql_spec_spot()
         register_slash_terminator_spot()
         register_subprog_spot()
+        register_language_spot()
         register_declare_spot()
         register_begin_spot()
         register_for_spot()
@@ -192,6 +194,38 @@ module Vorax
               @level += 1
               assign_parent(node)
               scanner.pos += probe_data[:name_pos]
+            end
+          end
+        end
+      end
+
+      def register_language_spot
+        @walker.register_spot(LANGUAGE) do |scanner|
+          if @current_parent.content.instance_of?(SubprogRegion)
+            # check for the next word: it should be JAVA or C
+            text = scanner.rest
+            walker = PlsqlWalker.new(text)
+            head = nil
+            walker.register_spot(/(\bJAVA\b)|(\bC\b)/i) do |s|
+              head = text[0...s.pos-s.matched.length] 
+              s.terminate
+            end
+            walker.walk
+            if head
+              head = Parser::remove_all_comments(head)
+              if head.strip == ""
+                # it's java/c function
+                walker = PlsqlWalker.new(text)
+                head = nil
+                end_pos = scanner.pos
+                walker.register_spot(/;/) do |s|
+                  end_pos += s.pos
+                  s.terminate
+                end
+                walker.walk
+                @current_parent.content.end_pos = end_pos
+                assign_parent(@current_parent.parent)
+              end
             end
           end
         end

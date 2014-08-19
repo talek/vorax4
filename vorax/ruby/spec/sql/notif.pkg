@@ -1,0 +1,1032 @@
+CREATE OR REPLACE PACKAGE "MUCI_REPOSITORY"."NOTIFICATIONS_TOOLKIT"
+  /**
+     #Author  : Alexandru Tica
+     #Created : 1/9/2006 10:54:47 AM
+     #DB Version: 1.6.2.0
+     #Package version: 33
+     #Purpose : Provides the notification database framework.
+  */
+
+ is
+
+ select l.ntfloidn
+                from ntfgauttbl l, nmda m
+               where l.ntfidn = m.ntfidn
+                 and m.ntftyp = 'ANSWERASS'
+                 and l.ntfdon = '0' /**
+    Contains all new panel notifications.
+
+    Removed the logged user condition because the db connections are not kept alive anymore.
+  */
+  cursor gc_new_tf is
+    select ntflogidn,
+           max(ntfidn) ntfidn,
+           max(nisstim) ntftim,
+           max(ntftit) ntftit,
+           ntfmsg ntfmsg,
+           max(ncat) ntfcat,
+           max(ntftyp) ntftyp,
+           max(nfsrc) ntfsrc,
+           (select rolopsusr from rolmda where rolidn=usrnam) usrlst,
+           ntflanidn usrlan
+      from ntfuinb
+     where ntfplflg = '0'
+       --and usrnam in (select distinct client_identifier from gv$session where username='FITS_PDM_PROXY')
+     group by ntflogidn, usrnam, ntflanidn, ntfmsg;
+
+  /**
+    Contains all new emails notifications.
+  */
+  cursor gc_new_mails is
+    select ntflogidn,
+           t5.ntidn ntfidn,
+           ntfisim ntftim,
+           ntftit ntftit,
+           ntfmsg ntfmsg,
+           ntfcat ntfcat,
+           ntftyp ntftyp,
+           ntfsrc ntfsrc,
+           (select prpal from appladdprp where appid ='PDM' and roln=t7.roln and pnam='email') usreml,
+           t5.ntflanidn usrlan,
+           t5.usrnam usrnam
+      from ntinb t5
+      join roda t7 on (t5.usrnam = t7.rolidn)
+     where t5.ntfemg = '0';
+
+  /**
+    Sends a notification.
+
+    #param pi_notification_idn the notification identifier
+    #param pi_source the source of the notification
+    #param pi_text_params the parameters to be sent among with the notification as a "|" delimited string.
+    Each value from the collection is in fact an expression which is resolved when the notification is sent therefore all string literals
+    have to be provided as quoted strings. Other valid expressions can be builtin or custom PL/SQL functions.
+    #param pi_lnc_params the parameters to be sent to the launchers as a "|" delimited string. Each element from this collection
+    is expected to have the following format: i/param where "i" is the launcher number (1, 2, 3...) and
+    the "param" is the actual parameter to be sent.
+  */
+  procedure push_notification(pi_notification_idn varchar2,
+                              pi_source           varchar2,
+                              pi_text_params      varchar2,
+                              pi_lnc_params       varchar2,
+                              pi_misc_params      varchar2,
+                              pi_delimitator      varchar2 := '|');
+
+  /**
+    Dispatches all new notifications to the users' inbox table. Furthermore this procedure identifies
+    all connected PDM users and dispatches notifications to them through a TCP socket.
+  */
+
+  function get_xml_notification_for_AS (pi_ntflogidn in ntflogauttbl.ntflogidn%type) return varchar2;
+
+  procedure dispatch_notifications;
+
+  procedure dispatch_notif_AnsFrmAss;
+
+  /**
+    Replace all the placehoders with the corresponding parameter values.
+
+    #param pi_ntflog_idn the notify log entry identifier
+    #param pi_message the message to be transformed
+
+    #return the effective notification message
+  */
+  function assamble_message(pi_ntflog_idn integer, pi_message varchar2)
+    return varchar2;
+
+  /**
+    Encrypts a text whith a hardcoded key. This function is used to encrypt the notification packet
+    before to send it to the application server.
+
+    #param pi_text the text to be encrypted (max 2000 chars)
+
+    #return the encrypted sequence in hex representation
+  */
+  function get_encrypted_string(pi_text varchar2) return varchar2;
+
+  /**
+    Hash a string using md5 algorithm.
+
+    #param pi_string text to be hashed
+
+    #return the hashed resuld converted to hex representation
+  */
+  function hash_string(pi_string clob) return varchar2;
+
+  /**
+    Send a notification to the application server socket. The notification packet is built by hashing and
+    encrypting the effective xml notification.
+
+    #param pi_xml the notification packet in xml format
+
+    #return the list of users for which the notification was successffully sent
+
+    #raises ORA-23423 when the notification cannot be sent through the soket.
+  */
+  function push_to_socket(pi_xml varchar2, pi_ip varchar, pi_port number)
+    return varchar2;
+
+  /**
+    Build a XML notification.
+
+    #param pi_ntfrec the notification record
+  */
+  function get_notification_packet(pi_ntfrec gc_new_ntf%rowtype)
+    return varchar2;
+
+  /**
+    Build an automatic report XML notification. This procedure is not intended to be
+    called by the AS.
+
+    #param pi_pcrcfgsukidn the configuration idn for the automatic report.
+  */
+  function automatic_report_xml(pi_pcrcfgsukidn integer) return clob;
+
+  /**
+    Push notifications for automatic reports.
+
+    #param pi_freq the frequency for automatic reporting
+  */
+  procedure notify_for_auto_reports(pi_freq varchar2);
+  /**
+    It locks all subscriptions for the provided user. These locks are needed in order to ensure that
+    the same subscriptions cannot be edited in the same time from different sessions. This procedure is
+    intended to be called within the "Subscriptions Management" panel when the user is about to enter
+    into the "edit" mode.
+
+    #param pi_subscriber the username whos the subscriptions has to be locked
+
+    #raises ORA-00054 when the lock cannot be acquired
+  */
+  procedure lock_subscription(pi_subscriber varchar2);
+
+  /**
+    It saves the subscription chosen for the provided user. This procedure is intended to be invoked
+    from the "Subscriptions Management" panel when the user is about to save the configuration for a
+    particular subscriber.
+    <p>This procedure forces a COMMIT at its end.</p>
+    #param pi_subscriber the subscriber username
+    #param pi_ntfidn the notification identifier
+    #param pi_ntf_pnl a flag which points out if the notification will be sent via panel
+    #param pi_ntf_eml a flag which points out if the notification will be sent via email
+    #param pi_lan_idn the user's prefered language for the subscription
+  */
+  procedure save_subscription(pi_subscriber varchar2,
+                              pi_ntf_idn    varchar2,
+                              pi_ntf_pnl    varchar2,
+                              pi_ntf_eml    varchar2,
+                              pi_lanidn     varchar2);
+
+  /**
+    Get the assigned subscriptions for the provided user.
+
+    #param pi_subscriber the username
+    #param po_cursor an out cursor with the ids of the assigned subscriptions for the provided username.
+           The structure of this cursor is the following:
+           <table>
+           <tr><td>NTFIDN</td><td>VARCHAR2(30)</td><td>Notification identifier</td></tr>
+           <tr><td>NTFPNLFLG</td><td>VARCHAR2(1)</td><td>sent via panel: '0' or '1'</td></tr>
+           <tr><td>NTFEMLFLG</td><td>VARCHAR2(1)</td><td>send via email: '0' or '1'</td></tr>
+           <tr><td>NTFLANIDN</td><td>VARCHAR2(5)</td><td>language identifier</td></tr>
+           </table>
+  */
+  procedure get_assigned_subscriptions(pi_subscriber varchar2,
+                                       po_cursor     out sys_refcursor);
+
+  /**
+    Get all available subscriptions. It is intended to be used into the "Subscription panel" and it is invoked
+    from the application server in order to fill in the tree which contains all available subscriptions.
+
+    #param po_cursor an out cursor with the following structure:
+    <br/>
+    <table>
+    <tr><td>NTFIDN</td><td>VARCHAR2(30)</td><td>Notification identifier</td></tr>
+    <tr><td>NTFLBL</td><td>VARCHAR2(200)</td><td>Notification label</td></tr>
+    <tr><td>NTFTYP</td><td>VARCHAR2(20)</td><td>Notification type</td></tr>
+    <tr><td>CATFLG</td><td>VARCHAR2(1)</td><td>Notification category flag. The allowed values: '0' - not a category node; '1' - a category node</td></tr>
+    <tr><td>NTFCAT</td><td>VARCHAR2(1)</td><td>Notification category type. For groups is always null and for notification itmes can be: INFO, WARNING, ERROR.</td></tr>
+    </table>
+  */
+  procedure get_subscriptions(po_cursor out sys_refcursor);
+
+  /**
+    Set a notification as read. This action tipically coresponds to the DELETE action within the
+    notification panel. When a subscriber has read the notification and considers that it is no longer
+    needed will simply delete it, which means: "okey, i have read it, fuck off!". In the database this
+    procedure will set the NTFREDFLG to "1". This procedure forces a COMMIT on its end. Likewise, it
+    tries first of all to aquire a lock on the notification log to be set as read. If it cannot aquire
+    the lock than it will return a "resource bussy" exception.
+
+    #param pi_username the subscriber name
+    #param pi_ntflogidn the notification logidentifier (different than the notification ID from NTFMDA).
+
+    #raises ORA-00054 when it cannot aquire the lock
+  */
+  procedure mark_as_read(pi_username varchar2, pi_ntflogidn integer);
+
+  /**
+    Force the sending of the initial set of notifications to be displayed into the notification panel
+    after the client application has been started. This is required in order to provide the persistent feature to the
+    notifications panel. This procedure has to be called after the client application has started. It
+    simply looks for all notifications with the NTFREDFLG='0'. The notification panel implementation should
+    be aware of the fact that it is possible to get unread notification through this procedure and
+    to already have that notification into the notification panel. The duplicates within the notification
+    panel should be done by taking into account the NTFLOGIDN identifier.
+
+    #param pi_username the username for whom the startup notifications should be loaded.
+    #param po_status a status value: 'SUCCESS' - means successfully fetched; 'FAILED' - not succesfull; should be retried.
+  */
+  procedure force_startup_notifications(pi_username varchar2,
+                                        po_status   out varchar2);
+
+  /**
+    Collects all notifications for the reports to be launched
+
+  */
+  procedure collect_notif_auto_rep;
+
+end NOTIFICATIONS_TOOLKIT;
+
+/
+CREATE OR REPLACE PACKAGE BODY "MUCI_REPOSITORY"."NOTIFICATIONS_TOOLKIT" is
+
+  STANDARD_NTF_SERVER_IP   VARCHAR2(15);
+  STANDARD_NTF_SERVER_PORT INTEGER;
+
+  REPORT_NTF_SERVER_IP     VARCHAR2(15);
+  REPORT_NTF_SERVER_PORT   INTEGER;
+
+  procedure send_txn_notification(pi_notification_idn varchar2,
+                                  pi_source           varchar2,
+                                  pi_text_params      varchar2,
+                                  pi_lnc_params       varchar2,
+                                  pi_misc_params      varchar2,
+                                  pi_delimitator      varchar2 := '|') as
+    l_param_result varchar2(4000);
+    l_log_idn      integer;
+    i              integer := 1;
+  begin
+    for x in (select *
+                from table(misc_utils.split(pi_misc_params, pi_delimitator))) loop
+      insert into ntflogtxnprm
+        (ntflogidn, ntfprmidx, ntfprmtyp, ntfprmval)
+      values
+        (l_log_idn, i, 'M', x.column_value);
+      i := i + 1;
+    end loop;
+  end;
+
+  procedure send_aut_notification(pi_notification_idn varchar2,
+                                  pi_source           varchar2,
+                                  pi_text_params      varchar2,
+                                  pi_lnc_params       varchar2,
+                                  pi_misc_params      varchar2,
+                                  pi_delimitator      varchar2 := '|') as
+    pragma autonomous_transaction;
+    l_param_result varchar2(4000);
+    l_log_idn      integer;
+    i              integer := 1;
+  begin
+    select ntflogtbl_seq.nextval into l_log_idn from dual;
+	ol.debug('l_log_idn: '||l_log_idn);
+    insert into ntflogauttbl
+      (ntflogidn, ntfidn, ntftim, ntfsrc, ntfdon)
+    values
+      (l_log_idn, pi_notification_idn, systimestamp, pi_source, '0');
+	ol.debug('Inserted values in ntflogauttbl');
+    for x in (select *
+                from table(misc_utils.split(pi_text_params, pi_delimitator))) loop
+      i := i + 1;
+    end loop;
+    i := 1;
+    for x in (select *
+                from table(misc_utils.split(pi_lnc_params, pi_delimitator))) loop
+      insert into ntflogautprm
+        (ntflogidn, ntfprmidx, ntfprmtyp, ntfprmval)
+      values
+        (l_log_idn, i, 'L', x.column_value);
+      i := i + 1;
+    end loop;
+	ol.debug('end');
+
+    commit;
+  end;
+
+  procedure push_notification(pi_notification_idn varchar2,
+                              pi_source           varchar2,
+                              pi_text_params      varchar2,
+                              pi_lnc_params       varchar2,
+                              pi_misc_params      varchar2,
+                              pi_delimitator      varchar2 := '|') as
+    l_txn_mod ntfmda.ntftxntyp%type;
+  begin
+    select ntftxntyp
+      into l_txn_mod
+      from ntfmda
+     where ntfidn = pi_notification_idn;
+    if l_txn_mod = 'T' then
+      send_txn_notification(pi_notification_idn,
+                            pi_source,
+                            pi_text_params,
+                            pi_lnc_params,
+                            pi_misc_params,
+                            pi_delimitator);
+    elsif l_txn_mod = 'A' then
+	ol.debug('A');
+      send_aut_notification(pi_notification_idn,
+                            pi_source,
+                            pi_text_params,
+                            pi_lnc_params,
+                            pi_misc_params,
+                            pi_delimitator);
+    end if;
+  end;
+
+ function get_xml_notification_for_AS (pi_ntflogidn in ntflogauttbl.ntflogidn%type) return varchar2 as
+   l_xml        varchar2(4000);
+   l_msc        varchar2(32000);
+   j            integer;
+   type typ_ntfrec is record(
+      ntfidn                  ntflogauttbl.ntfidn%type,
+      ntflogidn               ntflogauttbl.ntflogidn%type,
+      ntftim                  ntflogauttbl.ntftim%type,
+      ntftit                  ntflanlbl.ntftit%type,
+      ntfcat                  ntfmda.ntfcat%type,
+      ntftyp                  ntfmda.ntftyp%type,
+      ntfsrc                  ntflogauttbl.ntfsrc%type);
+    pi_ntfrec typ_ntfrec;
+ begin
+
+   l_xml := '<notification>';
+    l_xml := l_xml || '<idn>' || pi_ntfrec.ntfidn || '</idn>';
+    l_xml := l_xml || '<logidn>' || pi_ntfrec.ntflogidn || '</logidn>';
+    l_xml := l_xml || '<timestamp>' ||
+             to_char(pi_ntfrec.ntftim, 'YYYY-MM-DD"T"hh24:mi:ss') ||
+             '</timestamp>';
+    l_xml := l_xml || '<title>' || pi_ntfrec.ntftit || '</title>';
+	  l_xml := l_xml || '<msg>' || pi_ntfrec.ntftit || '</msg>';
+    l_xml := l_xml || '<cat>' || pi_ntfrec.ntfcat || '</cat>';
+    l_xml := l_xml || '<type>' || pi_ntfrec.ntftyp || '</type>';
+    l_xml := l_xml || '<source>' || pi_ntfrec.ntfsrc || '</source>';
+    l_xml := l_xml || '<recipient>';
+    l_xml := l_xml || '<user>' || 'AS' || '</user>';
+    l_xml := l_xml || '</recipient>';
+    j     := 1;
+    for z in (select ntfprmval, ntfprmidx
+                from ntflogautprm
+               where ntflogidn = pi_ntfrec.ntflogidn
+                 and ntfprmtyp = 'M'
+               order by ntfprmidx) loop
+      l_msc := l_msc || '<data idn="' || j || '">' || z.ntfprmval ||
+               '</data>';
+      j     := j + 1;
+    end loop;
+    if l_msc is not null then
+      l_xml := l_xml || '<misc>' || l_msc || '</misc>';
+    end if;
+    l_xml := l_xml || '</notification>';
+   return l_xml;
+ end get_xml_notification_for_AS;
+
+  procedure dispatch_notifications is
+    l_xml      varchar2(32000);
+    l_rol_ids  varchar2(4000);
+    l_result   varchar2(4000);
+    l_ntfrec   gc_new_ntf%rowtype;
+    l_ntfeml   gc_new_emails%rowtype;
+    l_msg      varchar2(4000);
+    lv_frq varchar2(2);
+    lv_per varchar2(2);
+    lv_BegDat date;
+    lv_EndDat date;
+    l_dbname varchar2(50);
+  begin
+    -- creates a collection with all notifications to be processed
+    execute immediate 'truncate table ntftmp';
+    -- muci
+             case
+               when t2.ntfpnlflg = '0' then
+                '1'
+               else
+                '0'
+             end;
+    dbms_stats.gather_table_stats(user, 'ntftmp');
+    -- transfer all notifications into the user's inbox according to their subscriptions
+    insert into NtfUsrInb
+      select t2.ntfusrnam,
+             ntflogidn,
+             case
+               when t2.ntfpnlflg = '0' then
+                '1'
+               else
+                '0'
+             end,
+             0,
+             t4.ntftit,
+             notifications_toolkit.assamble_message(t1.ntflogidn, t4.ntfmsg),
+             case
+               when t2.ntfemlflg = '0' then
+                '1'
+               else
+                '0'
+             end,
+             case
+               when t2.ntfpnlflg = '0' then
+                '1'
+               else
+                '0'
+             end,
+             t1.ntfidn,
+             t3.ntfcat,
+             t3.ntftyp,
+             t1.ntftim,
+             systimestamp,
+             t2.ntflanidn
+        from (select *
+                from ntflogtxntbl x1
+               where ntfdon = '0' and trunc(x1.ntftim )>= trunc(sysdate) - 3
+              union all
+              select * from ntflogauttbl x2 where x2.ntfdon = '0' and trunc(x2.ntftim )>= trunc(sysdate) - 3
+              ) t1
+       inner join ntfsbsmda t2 on (t1.ntfidn = t2.ntfidn)
+       inner join ntfmda t3 on (t1.ntfidn = t3.ntfidn)
+       inner join ntflanlbl t4 on (t1.ntfidn = t4.ntfidn and
+                                  t4.ntflanidn = t2.ntflanidn)
+       where ntflogidn in (select ntflogidn from ntftmp);
+
+    -- check for report notifications (always authonomous)
+    for z in (select l.ntflogidn, p.ntfprmval
+                from ntflogauttbl l, ntfmda m, ntflogautprm p
+               where l.ntfidn = m.ntfidn
+                 and p.ntfprmtyp = 'M'
+                 and l.ntflogidn = p.ntflogidn
+                 and m.ntftyp = 'REPO'
+                 and l.ntfdon = '0') loop
+      --ol.debug('REPO NOTIF - Notified server and port: '||STANDARD_NTF_SERVER_IP || ' '||STANDARD_NTF_SERVER_PORT);
+      --ol.debug('REPO NOTIF - ntflogidn: '||z.ntflogidn);
+      --ol.debug('REPO NOTIF - XML content: '||automatic_report_xml(z.ntfprmval));
+      l_result := push_to_socket(automatic_report_xml(z.ntfprmval),
+                                 REPORT_NTF_SERVER_IP,
+                                 REPORT_NTF_SERVER_PORT);
+      --ol.debug('REPO NOTIF - notification result from app server: '||l_result);
+      --/* debug */ begin plog.debug('result' || l_result); exception when others then null; end;
+      if l_result != '$error$' or nvl(l_result, 'ok') = 'ok' then
+          update ntflogauttbl set ntfdon = '1' where ntflogidn = z.ntflogidn;
+
+         -- change the StartDate and EndDate of the currently successfully generated schedule
+          select t.rptcrefrq, t.rptcreper into lv_frq, lv_per from Pcrcfgtbl t where t.pcrcfgsukidn = z.ntfprmval;
+          if sql%rowcount > 0 then
+                 --ol.debug('lv_frq '||lv_frq);
+                 --ol.debug('lv_per '||lv_per);
+                 lv_BegDat := Reports_Config_Toolkit.Get_IntervalConfig(lv_frq, lv_per).re_BegDat;
+                 lv_EndDat := Reports_Config_Toolkit.Get_IntervalConfig(lv_frq, lv_per).re_EndDat;
+                 UPDATE PcrCfgTbl SET rptlstdat = sysdate, rptbegdat  = lv_BegDat, rptenddat = lv_EndDat where pcrcfgsukidn = z.ntfprmval;
+          end if;
+          commit;
+      end if;
+    end loop;
+
+    -- update the status for the processed aut fields
+    update NtfLogAutTbl
+       set NtfDon = '1'
+     where NtfLogIdn in (select ntflogidn from ntftmp);
+    -- update the status for the processed txn fields
+    update NtfLogTxnTbl
+       set NtfDon = '1'
+     where NtfLogIdn in (select ntflogidn from ntftmp);
+    -- send email notifications
+    open gc_new_emails;
+    loop
+      fetch gc_new_emails
+        into l_ntfeml;
+      exit when gc_new_emails%notfound;
+      --/* debug */ begin plog.debug('send email to ' || l_ntfeml.usreml); exception when others then null; end;
+      l_msg := l_msg || l_ntfeml.ntfmsg || chr(13) || chr(10) || chr(13) ||
+               chr(10) ||
+               'The following attributes were issued among whith the notification itself:' ||
+               chr(13) || chr(10) ||
+               '   - the timestamp when the notification was issued: ' ||
+               to_char(l_ntfeml.ntftim, 'YYYY-MM-DD hh24:mi:ss') || chr(13) ||
+               chr(10) ||
+               '   - notification category:                          ' ||
+               l_ntfeml.ntfcat || chr(13) || chr(10) ||
+               '   - notification type:                              ' ||
+               l_ntfeml.ntftyp || chr(13) || chr(10) ||
+               '   - notification source:                            ' ||
+               l_ntfeml.ntfsrc || chr(13) || chr(10);
+      begin
+        if l_ntfeml.usreml is not null then
+          select decode(sys_context('USERENV', 'DB_NAME'),
+                        'fits',
+                        'PDMPROD',
+                        'prodf',
+                        'PDMPROD',
+                        'fitstest',
+                        'PDMTEST',
+                        'testf',
+                        'PDMTEST',
+                        'rfd',
+                        'PDMDEV',
+                        'PDM')
+            into l_dbname
+            from dual;
+          email_toolkit.send_email(pi_from_name => 'notification.system@fits.ro',
+                                   pi_to_names  => l_ntfeml.usreml,
+                                   pi_subject   => l_dbname || ': ' || l_ntfeml.ntftit,
+                                   pi_message   => l_msg);
+          update ntfusrinb t
+             set t.ntfemlflg = '1'
+           where t.usrnam = l_ntfeml.usrnam
+             and t.ntflogidn = l_ntfeml.ntflogidn;
+          commit;
+        end if;
+      exception
+        when others then
+          null;
+      end;
+      l_msg := '';
+    end loop;
+    close gc_new_emails;
+-- send panel notifications
+    open gc_new_ntf;
+    loop
+      fetch gc_new_ntf
+        into l_ntfrec;
+      exit when gc_new_ntf%NOTFOUND;
+      l_xml := get_notification_packet(l_ntfrec);
+      ol.debug('NOTIF - Panel notifications: '||l_xml);
+      l_result := push_to_socket(l_xml,
+                                 STANDARD_NTF_SERVER_IP,
+                                 STANDARD_NTF_SERVER_PORT);
+      ol.debug('NOTIF - Result: '||l_result);
+      --/* debug */ begin plog.debug('result=' || l_result); exception when others then null; end;
+      select wm_concat(rolidn) into l_rol_ids from rolmda where rolopsusr in (select * from table(misc_utils.split(l_result,',','')));
+      update ntfusrinb t
+         set t.ntfpnlflg = case when regexp_like(l_rol_ids, t.usrnam || '(,|$)') then '1' else '2' end
+       where t.ntflogidn = l_ntfrec.ntflogidn
+         and t.ntfpnlflg = '0';
+      commit;
+    end loop;
+    close gc_new_ntf;
+
+  exception
+    when others then
+      if gc_new_ntf%isopen then
+        close gc_new_ntf;
+      end if;
+      if gc_new_emails%isopen then
+        close gc_new_emails;
+      end if;
+      dbms_output.put_line(dbms_utility.format_error_backtrace);
+      raise;
+  end;
+
+  procedure dispatch_notif_AnsFrmAss is
+    l_result   varchar2(4000);
+    --l_seqnxtval number(10);
+  begin
+    --select notif_grpidn.nextval into l_seqnxtval from dual;
+    --insert into notification_logs values (l_seqnxtval,1,systimestamp);
+
+    -- check for AnswerFromAssentis notifications (always authonomous)
+    for z in (select l.ntflogidn
+                from ntflogauttbl l, ntfmda m
+               where l.ntfidn = m.ntfidn
+                 and m.ntftyp = 'ANSWERASS'
+                 and l.ntfdon = '0') loop
+      ol.debug('REPO NOTIF - Notified server and port: '||STANDARD_NTF_SERVER_IP || ' '||STANDARD_NTF_SERVER_PORT);
+      ol.debug('REPO NOTIF - ntflogidn: '||z.ntflogidn);
+      ol.debug('REPO NOTIF - XML content: '||get_xml_notification_for_AS(z.ntflogidn));
+      l_result := push_to_socket(get_xml_notification_for_AS(z.ntflogidn),
+                                 STANDARD_NTF_SERVER_IP,
+                                 STANDARD_NTF_SERVER_PORT);
+      ol.debug('REPO NOTIF - notification result from app server: '||l_result);
+      if l_result != '$error$' or nvl(l_result, 'ok') = 'ok' then
+          update ntflogauttbl set ntfdon = '1' where ntflogidn = z.ntflogidn;
+          commit;
+      end if;
+    end loop;
+
+    --insert into notification_logs values (l_seqnxtval,8,systimestamp);
+    --commit;
+  exception
+    when others then
+      dbms_output.put_line(dbms_utility.format_error_backtrace);
+      raise;
+  end dispatch_notif_AnsFrmAss;
+
+  function assamble_message(pi_ntflog_idn integer, pi_message varchar2)
+    return varchar2 as
+    l_msg varchar2(4000);
+  begin
+    l_msg := pi_message;
+    for x in (select *
+                from (select *
+                        from ntflogtxnprm
+                      union all
+                      select * from ntflogautprm)
+               where ntflogidn = pi_ntflog_idn
+                 and ntfprmtyp = 'T'
+               order by ntfprmidx) loop
+      l_msg := REGEXP_REPLACE(l_msg, '~%', x.ntfprmval, 1, 1);
+    end loop;
+    return l_msg;
+  end;
+
+  function get_encrypted_string(pi_text varchar2) return varchar2 is
+    l_key1            raw(128);
+    l_key2            raw(128);
+    l_key3            raw(128);
+    l_IV              raw(128);
+    l_encrypted_chunk raw(128);
+    l_source          varchar2(8000);
+    l_result          raw(4000);
+    l_index           integer := 1;
+    l_chunk           raw(16);
+    CHUNK_SIZE CONSTANT INTEGER := 16;
+    l_size integer;
+  begin
+    l_size   := ceil(length(pi_text) / CHUNK_SIZE) * CHUNK_SIZE;
+    --dbms_output.put_line('Length of the text: '||length (pi_text));
+    --dbms_output.put_line('Text: '||substr(pi_text,1,1000));
+    l_source := rpad(pi_text, l_size, '0');
+    -- build the ecryption key for the session id
+    l_key1 := hextoraw('123' || '1234567890' || '321');
+    l_key2 := hextoraw('456' || '1234567890' || '654');
+    l_key3 := hextoraw('78' || '123456789012' || '87');
+    l_IV   := utl_raw.cast_to_raw('mucibuci');
+    loop
+      l_chunk := substr(l_source, l_index, CHUNK_SIZE);
+      exit when l_chunk is null;
+      l_index           := l_index + CHUNK_SIZE;
+      l_encrypted_chunk := ums_toolkit.des3encrypt(l_chunk,
+                                                   l_IV,
+                                                   l_key1,
+                                                   l_key2,
+                                                   l_key3);
+      l_result          := l_result || l_encrypted_chunk;
+    end loop;
+    return rawtohex(l_result);
+  end;
+
+  function hash_string(pi_string clob) return varchar2 is
+  begin
+    return dbms_crypto.Hash(pi_string, dbms_crypto.HASH_MD5);
+  end;
+
+  function push_to_socket(pi_xml varchar2, pi_ip varchar, pi_port number)
+    return varchar2 as
+    language java name 'Notification.sendNotification(java.lang.String, java.lang.String, int) return java.lang.String';
+
+  function get_dtd_header return varchar2 as
+  begin
+    return '<!DOCTYPE notification [' || '<!ELEMENT notification (idn,title,msg,cat,type, launcher?,source,recipient?,misc?)>' || '<!ELEMENT idn (#PCDATA)>' || '<!ELEMENT title (#PCDATA)>' || '<!ELEMENT msg (#PCDATA)>' || '<!ELEMENT cat (#PCDATA)>' || '<!ELEMENT type (#PCDATA)>' || '<!ELEMENT launcher (dll, class, params)>' || '<!ELEMENT source (#PCDATA)>' || '<!ELEMENT recipient (user+)>' || '<!ELEMENT misc (data+)>' || '<!ELEMENT dll (#PCDATA)>' || '<!ELEMENT class (#PCDATA)>' || '<!ELEMENT params (#PCDATA)>' || '<!ELEMENT user (#PCDATA)>' || '<!ELEMENT data (#PCDATA)>' || ']>';
+  end;
+
+  function get_notification_packet(pi_ntfrec gc_new_ntf%rowtype)
+    return varchar2 as
+    l_xml   varchar2(32000) := '<?xml version="1.0" encoding="UTF-8"?>';
+    l_lnc   varchar2(2000);
+    l_prm   varchar2(2000);
+    l_msc   varchar2(2000);
+    l_label varchar2(500);
+    i       integer;
+    j       integer;
+	l_msg   clob;
+  begin
+    --l_xml := l_xml || get_dtd_header || '<notification>';
+    l_xml := '<notification>';
+    l_xml := l_xml || '<idn>' || pi_ntfrec.ntfidn || '</idn>';
+    l_xml := l_xml || '<logidn>' || pi_ntfrec.ntflogidn || '</logidn>';
+    l_xml := l_xml || '<timestamp>' ||
+             to_char(pi_ntfrec.ntftim, 'YYYY-MM-DD"T"hh24:mi:ss') ||
+             '</timestamp>';
+    l_xml := l_xml || '<title>' || pi_ntfrec.ntftit || '</title>';
+	select XMLForest(pi_ntfrec.ntfmsg as "msg").getClobVal() into l_msg from dual;
+    l_xml := l_xml || l_msg;
+    l_xml := l_xml || '<cat>' || pi_ntfrec.ntfcat || '</cat>';
+    l_xml := l_xml || '<type>' || pi_ntfrec.ntftyp || '</type>';
+    l_xml := l_xml || '<source>' || pi_ntfrec.ntfsrc || '</source>';
+    -- get the launchers
+    i := 1;
+    for y in (select *
+                from ntflnc t1
+               inner join oprmda t2 on t1.ntflncopr = t2.opridn
+               where t1.ntfidn = pi_ntfrec.ntfidn
+                 and t1.ntflnclan = pi_ntfrec.usrlan) loop
+      select ntflnclbl
+        into l_label
+        from ntflnc t
+       where t.ntfidn = y.ntfidn
+         and t.ntflnclan = pi_ntfrec.usrlan
+         and t.ntflncidx = i;
+      l_lnc := l_lnc || '<launcher idn="' || i || '" label="' || l_label || '">';
+      l_lnc := l_lnc || '<dll>' || 'Fits.PDM.Presentation.WinUI.Common' ||
+               '</dll>';
+      l_lnc := l_lnc || '<class>' ||
+               'Fits.PDM.Presentation.WinUI.Common.CustomControls.Notifications.StandardOperationLauncher' ||
+               '</class>';
+      -- find parameters
+      j := 1;
+      for z in (select ntfprmval
+                  from (select ntfprmval, ntfprmidx
+                          from ntflogtxnprm t1
+                         where ntflogidn = pi_ntfrec.ntflogidn
+                           and ntfprmtyp = 'L'
+                           and ntfprmval like i || '/%'
+                        union all
+                        select ntfprmval, ntfprmidx
+                          from ntflogautprm t1
+                         where ntflogidn = pi_ntfrec.ntflogidn
+                           and ntfprmtyp = 'L'
+                           and ntfprmval like i || '/%'
+                         order by ntfprmidx)) loop
+        l_prm := l_prm || '<data idn="' || j || '">' ||
+                 regexp_substr(z.ntfprmval, '[^/]+', 1, 2) || '</data>';
+        j     := j + 1;
+      end loop;
+      l_lnc := l_lnc || '<misc>';
+      l_lnc := l_lnc || '<data idn="DLL">' || y.oprdll || '</data>';
+      l_lnc := l_lnc || '<data idn="Class">' || y.oprcls || '</data>';
+      if l_prm is not null then
+        l_lnc := l_lnc || l_prm;
+        l_prm := '';
+      end if;
+      l_lnc := l_lnc || '</misc>';
+      l_lnc := l_lnc || '</launcher>';
+      i     := i + 1;
+    end loop;
+    if l_lnc is not null then
+      l_xml := l_xml || '<launchers>' || l_lnc || '</launchers>';
+    end if;
+    l_xml := l_xml || '<recipient>';
+    for x in (select * from table(misc_utils.split(pi_ntfrec.usrlst, ','))) loop
+      l_xml := l_xml || '<user>' || x.column_value || '</user>';
+    end loop;
+    l_xml := l_xml || '</recipient>';
+    j     := 1;
+    for z in (select ntfprmval, ntfprmidx
+                from ntflogtxnprm
+               where ntflogidn = pi_ntfrec.ntflogidn
+                 and ntfprmtyp = 'M'
+              union all
+              select ntfprmval, ntfprmidx
+                from ntflogautprm
+               where ntflogidn = pi_ntfrec.ntflogidn
+                 and ntfprmtyp = 'M'
+               order by ntfprmidx) loop
+      l_msc := l_msc || '<data idn="' || j || '">' || z.ntfprmval ||
+               '</data>';
+      j     := j + 1;
+    end loop;
+    if l_msc is not null then
+      l_xml := l_xml || '<misc>' || l_msc || '</misc>';
+    end if;
+    l_xml := l_xml || '</notification>';
+    return l_xml;
+  end;
+
+  function automatic_report_xml(pi_pcrcfgsukidn integer) return clob as
+    l_xml        clob;
+    l_map_schema varchar2(30);
+    l_sess_idn   varchar2(100);
+    l_msc        varchar2(2000);
+  begin
+    for x in (select c.*,
+                     force_automreports.f_getBegDat(trunc(sysdate),c.rptcrefrq,c.rptcreper) as CalcBegDat,
+                     force_automreports.f_getEndDat(trunc(sysdate),c.rptcrefrq,c.rptcreper) as CalcEndDat
+                from pcrcfgtbl c
+               where c.pcrcfgsukidn = pi_pcrcfgsukidn) loop
+    /*
+      ums_toolkit.usr_impersonate_request(pi_usrnam      => x.rptprfown,
+                                          pi_lanidn      => x.rptlanidn,
+                                          po_schema_name => l_map_schema,
+                                          po_sess_id     => l_sess_idn);*/
+      l_xml := '<notification>';
+      l_xml := l_xml || '<idn>' || x.pcrcfgsukidn || '</idn>';
+      l_xml := l_xml || '<timestamp>' ||
+               to_char(systimestamp, 'YYYY-MM-DD"T"hh24:mi:ss') ||
+               '</timestamp>';
+      l_xml := l_xml || '<title>' || 'Automatic Report Request' ||
+               '</title>';
+      l_xml := l_xml || '<msg>' || '' || '</msg>';
+      l_xml := l_xml || '<cat>' || 'REPORT' || '</cat>';
+      l_xml := l_xml || '<type>' || 'REPORT' || '</type>';
+      l_xml := l_xml || '<source>' || 'Automatic Report Engine' || '</source>';
+      l_xml := l_xml || '<recipient>';
+      l_xml := l_xml || '<user>' || 'AS' || '</user>';
+      l_xml := l_xml || '</recipient>';
+      l_msc := l_msc || '<data idn="' || 1 || '">' || x.rptprfown || '</data>';
+      l_msc := l_msc || '<data idn="' || 2 || '">' || l_map_schema || '</data>';
+      l_msc := l_msc || '<data idn="' || 3 || '">' || l_sess_idn || '</data>';
+      l_msc := l_msc || '<data idn="' || 4 || '">' || x.bskidn || '</data>';
+      l_msc := l_msc || '<data idn="' || 5 || '">' || x.rptccy || '</data>';
+      l_msc := l_msc || '<data idn="' || 6 || '">' || x.rptlanidn ||  '</data>';
+      l_msc := l_msc || '<data idn="' || 7 || '">' || x.rptdst || '</data>';
+      l_msc := l_msc || '<data idn="' || 9 || '">' || x.prfsukidn || '</data>';
+      l_msc := l_msc || '<data idn="' || 10 || '">' || x.rptpagcfg || '</data>';
+      l_msc := l_msc || '<data idn="' || 11 || '">' || x.rptmetflg ||'</data>';
+      l_msc := l_msc || '<data idn="' || 12 || '">' || x.prfnam ||'</data>';
+      l_msc := l_msc || '<data idn="' || 13 || '">' || x.rptcrefrq ||'</data>';
+      l_msc := l_msc || '<data idn="' || 14 || '">' || to_char(x.CalcBegDat,'dd/mm/yyyy') ||'</data>';
+      l_msc := l_msc || '<data idn="' || 15 || '">' || to_char(x.CalcEndDat,'dd/mm/yyyy') ||'</data>';
+      l_msc := l_msc || '<data idn="' || 16 || '">' || x.RptAnoFlg ||'</data>';
+      l_msc := l_msc || '<data idn="' || 17 || '">' || x.mfdflg ||'</data>';
+      l_msc := l_msc || '<data idn="' || 18 || '">' || x.pfsdatusg ||'</data>';
+      l_xml := l_xml || '<misc>' || l_msc || '</misc>';
+      l_xml := l_xml || '</notification>';
+    end loop;
+    --/* debug */ begin plog.debug(l_xml); exception when others then null; end;
+    return l_xml;
+  end;
+
+ procedure notify_for_auto_reports(pi_freq varchar2) as
+  begin
+    for x in (select t.pcrcfgsukidn
+                from pcrcfgtbl t
+               where t.rptcrefrq = pi_freq) loop
+      notifications_toolkit.push_notification(pi_notification_idn => 'AutoRep',
+                                              pi_source           => 'Automatic Reports Job Engine',
+                                              pi_text_params      => null,
+                                              pi_lnc_params       => null,
+                                              pi_misc_params      => x.pcrcfgsukidn);
+    end loop;
+  end;
+
+ procedure lock_subscription(pi_subscriber varchar2) as
+  begin
+    execute immediate 'select 1 from ntfsbsmda where ntfusrnam=:1 for update nowait'
+      using pi_subscriber;
+  end;
+
+  procedure save_subscription(pi_subscriber varchar2,
+                              pi_ntf_idn    varchar2,
+                              pi_ntf_pnl    varchar2,
+                              pi_ntf_eml    varchar2,
+                              pi_lanidn     varchar2) as
+  begin
+    -- clean up the subscriber's configuration
+    delete from ntfsbsmda
+     where ntfusrnam = pi_subscriber
+       and ntfidn = pi_ntf_idn;
+    insert into ntfsbsmda
+      (ntfusrnam, ntfidn, ntfemlflg, ntfpnlflg, ntflanidn)
+    values
+      (pi_subscriber, pi_ntf_idn, pi_ntf_eml, pi_ntf_pnl, pi_lanidn);
+    --commit;
+  end;
+
+  procedure get_assigned_subscriptions(pi_subscriber varchar2,
+                                       po_cursor     out sys_refcursor) as
+  begin
+    open po_cursor for
+      select ntfidn, ntfpnlflg, ntfemlflg, ntflanidn
+        from ntfsbsmda
+       where ntfusrnam = pi_subscriber;
+  end;
+
+  procedure get_subscriptions(po_cursor out sys_refcursor) as
+  begin
+    open po_cursor for
+      select t.*
+        from (select ntfcat ntfidn,
+                     ntfcat ntflbl,
+                     '$category$' ntftyp,
+                     '1' catflg,
+                     null ntfcat
+                from ntfmda
+               where ntftyp not in 'REPO'
+               group by ntfcat
+              union
+              select n.ntfidn, l.ntftit, ntfcat, '0', n.ntftyp ntfcat
+                from ntfmda n, ntflanlbl l
+               where n.ntfidn = l.ntfidn
+                 and l.ntflanidn = context_management.get_lang) t
+       start with catflg = '1'
+      connect by prior ntfidn = ntftyp;
+  end;
+
+  procedure mark_as_read(pi_username varchar2, pi_ntflogidn integer) as
+  begin
+    -- try to lock first of all
+    execute immediate 'select 1 from ntfusrinb where usrnam = :1 and ntflogidn = :2 for update nowait'
+      using pi_username, pi_ntflogidn;
+    update ntfusrinb
+       set ntfredflg = '1'
+     where usrnam = pi_username
+       and ntflogidn = pi_ntflogidn;
+    commit;
+  end;
+
+  procedure force_startup_notifications(pi_username varchar2,
+                                        po_status   out varchar2) as
+    l_xml    varchar2(2000);
+    l_result varchar2(300);
+  begin
+    for x in (select ntflogidn,
+                     max(ntfidn) ntfidn,
+                     max(ntfisstim) ntftim,
+                     max(ntftit) ntftit,
+                     ntfmsg ntfmsg,
+                     max(ntfcat) ntfcat,
+                     max(ntftyp) ntftyp,
+                     max(ntfsrc) ntfsrc,
+                     usrnam usrlst,
+                     ntflanidn usrlan
+                from ntfusrinb
+               where ntfpnlflg = '1'
+                 and ntfredflg = '0'
+                 and ntfisstim > sysdate - 1
+                 and usrnam = pi_username
+               group by ntflogidn, usrnam, ntflanidn, ntfmsg) loop
+      l_xml    := get_notification_packet(x);
+      l_result := push_to_socket(l_xml,
+                                 STANDARD_NTF_SERVER_IP,
+                                 STANDARD_NTF_SERVER_PORT);
+      if l_result is null or l_result != pi_username then
+        po_status := 'FAILED';
+        return;
+      end if;
+    end loop;
+    po_status := 'SUCCESS';
+  end;
+
+procedure collect_notif_auto_rep as
+
+  lv_Wednesday     varchar2(12);
+  lv_crtWeekDay    varchar2(12);
+  lv_PartDateDay   varchar2(15);
+  lv_PartDateMonth varchar2(15);
+  lv_crtDate       date;
+
+begin
+  lv_crtDate    := trunc(sysdate);
+  lv_Wednesday  := lower(to_char(to_date('04.10.2000', 'dd.mm.yyyy'), 'Day'));
+  lv_crtWeekDay := lower(to_char(lv_crtDate, 'DAY'));
+
+  for x in (select distinct t.RptCreFrq
+              from pcrcfgtbl t
+             where t.RptCreFrq <> 1
+             order by to_number(t.RptCreFrq)) loop
+    --             if    x.RptCreFrq = 1 then
+    --                   dbms_output.put_line('Frequency: Daily');
+    --                   notify_for_auto_reports(1);
+    if x.RptCreFrq = 2 then
+      if lv_crtWeekDay = lv_Wednesday then
+        --                     dbms_output.put_line('Frequency: Weekly');
+        notify_for_auto_reports(2);
+      end if;
+    elsif x.RptCreFrq = 3 then
+      --                     dbms_output.put_line('Frequency: Monthly');
+      lv_PartDateDay := to_char(lv_crtDate, 'dd');
+      if lv_PartDateDay = '04' then
+        notify_for_auto_reports(3);
+      end if;
+    elsif x.RptCreFrq = 4 then
+      --                     dbms_output.put_line('Frequency: Quarterly');
+      lv_PartDateDay   := to_char(lv_crtDate, 'dd');
+      lv_PartDateMonth := to_char(lv_crtDate, 'mm');
+      if lv_PartDateMonth = '01' or lv_PartDateMonth = '04' or
+         lv_PartDateMonth = '07' or lv_PartDateMonth = '10' then
+        if lv_PartDateDay = '04' then
+          notify_for_auto_reports(4);
+        end if;
+      end if;
+    elsif x.RptCreFrq = 5 then
+      --                     dbms_output.put_line('Frequency: Half-Anually');
+      lv_PartDateDay   := to_char(lv_crtDate, 'dd');
+      lv_PartDateMonth := to_char(lv_crtDate, 'mm');
+      if lv_PartDateMonth = '01' or lv_PartDateMonth = '07' then
+        if lv_PartDateDay = '04' then
+          notify_for_auto_reports(5);
+        end if;
+      end if;
+    elsif x.RptCreFrq = 6 then
+      --                     dbms_output.put_line('Frequency: Anually');
+      lv_PartDateDay   := to_char(lv_crtDate, 'dd');
+      lv_PartDateMonth := to_char(lv_crtDate, 'mm');
+      if lv_PartDateMonth = '01' then
+        if lv_PartDateDay = '04' then
+          notify_for_auto_reports(6);
+        end if;
+      end if;
+    end if;
+  end loop;
+end;
+
+begin
+
+  select prpval into STANDARD_NTF_SERVER_IP
+    from appaddprp where appidn='PDM' and prpnam='STANDARD_NTF_SERVER_IP';
+  select prpval into STANDARD_NTF_SERVER_PORT
+    from appaddprp where appidn='PDM' and prpnam='STANDARD_NTF_SERVER_PORT';
+
+  select prpval into REPORT_NTF_SERVER_IP
+    from appaddprp where appidn='PDM' and prpnam='REPORT_NTF_SERVER_IP';
+  select prpval into REPORT_NTF_SERVER_PORT
+    from appaddprp where appidn='PDM' and prpnam='REPORT_NTF_SERVER_PORT';
+
+end NOTIFICATIONS_TOOLKIT;
+
+/
+
