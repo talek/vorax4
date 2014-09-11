@@ -21,6 +21,8 @@ let s:properties = {'store_set'     : tempname() . ".opts",
                   \ 'db_banner'     : '',
                   \ 'cols_clear'    : '',
                   \ 'transaction'   : '',
+                  \ 'connecting'    : 0,
+                  \ 'old_echo'      : '',
                   \ 'sane_options'  : ['set define "&"',
                   \                    'set pause off',
                   \                    'set termout on']}
@@ -48,38 +50,14 @@ function! vorax#sqlplus#Connect(cstr) abort "{{{
   " good idea to recreate it here, as a last resort just in case that
   " sqlplus process is hung or other nasty things had happen with it
   call vorax#sqlplus#Initialize()
-  let prep = extend(['set echo off', 'set sqlprompt ""', 'set time off'],
-              \ s:properties['sane_options'])
-  let post = vorax#sqlplus#GatherStoreSetOption('echo', 'sqlprompt', 
-        \ 'time', 'pause', 'define', 'termout')
   let s:properties['connstr'] = vorax#sqlplus#MergeCstr(parts)
-  call vorax#ruby#SqlplusExec("connect " . s:properties['connstr'],
-        \ {'prep': join(prep, "\n"), 'post' : post})
-  let output = ""
-  call vorax#output#PrepareSpit()
-  while vorax#ruby#SqlplusBusy()
-    let output .= vorax#ruby#SqlplusReadOutput()
-    " visual feedback to the user please
-    echo 'Connecting...' . vorax#utils#Throbber()
-    redraw
-    sleep 50m
-  endwhile
-  call vorax#output#Spit(vorax#utils#Strip(output))
-  call vorax#sqlplus#UpdateSessionOwner()
-  call s:PrintWelcomeBanner()
-  call vorax#output#PostSpit()
-  " clear the throbber message
-  echom ""
+  let s:properties['connecting'] = 1
   " reset the omni cache
   call vorax#omni#ResetCache()
-  " refresh dbexplorer
-  call vorax#explorer#RefreshRoot()
-  redraw
-  " run AfterConnect hook
-  if exists('*VORAXAfterConnect')
-    " Execute hook
-    call VORAXAfterConnect(s:properties['user'], s:properties['db'], s:properties['privilege'])
-  endif
+  " don't reveal the password, so set echo off
+  let s:properties['old_echo'] = vorax#sqlplus#GatherStoreSetOption('echo')
+  call vorax#sqlplus#ExecImmediate('set echo off')
+  call vorax#sqlplus#Exec("connect " . s:properties['connstr'])
 endfunction "}}}
 
 function! vorax#sqlplus#Initialize() abort "{{{
@@ -138,19 +116,6 @@ function! vorax#sqlplus#UpdateTransaction() "{{{
       endif
     finally
     endtry
-  endif
-endfunction "}}}
-
-function! s:PrintWelcomeBanner() abort "{{{
-  if s:properties['user'] != ""
-    let banner = s:properties['db_banner'] .
-          \ "\n\n" .
-          \ "Logged in as: " . 
-          \ s:properties['user'] . 
-          \ '@' . 
-          \ s:properties['db'] .
-          \ (s:properties['privilege'] != '' ? " " . s:properties['privilege'] : "")
-    call vorax#output#Spit("\n\n" . banner . "\n")
   endif
 endfunction "}}}
 
