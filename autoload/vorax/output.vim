@@ -145,7 +145,10 @@ function! vorax#output#PostSpit() abort "{{{
   endif
   if splus_props['connecting'] == 1
     let splus_props['connecting'] = 0
-    " restore the old 'set echo' sqlplus setting
+    " restore the old 'set echo' sqlplus setting. Unfortunatelly this
+    " overwrites the 'set echo' setting which might be setup in the
+    " login.sql file sqlplus is executing after connect. The fix is to rely
+    " on the settings made in g:vorax_sqlplus_options
     call vorax#sqlplus#ExecImmediate(splus_props['old_echo'])
     call s:PrintWelcomeBanner(splus_props)
     " run AfterConnect hook
@@ -337,7 +340,11 @@ function! vorax#output#AskUser() abort"{{{
         \ vorax#ruby#SqlplusIsAlive() &&
         \ vorax#ruby#SqlplusBusy()
     let prompt = getline('$')
-    let answer = input(prompt)
+    if prompt =~ g:vorax_secure_prompt
+      let answer = inputsecret(prompt)
+    else
+      let answer = input(prompt)
+    endif
     call vorax#output#Spit("\n")
     call vorax#ruby#SqlplusSendText(answer . "\n")
   endif
