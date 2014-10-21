@@ -24,7 +24,7 @@ module Vorax
       # @param text [String] a chunk of HTML text
       def write(text)
         if text && !text.empty?
-          @parser.write text
+          @parser.write Utils::strip_xml(text)
           if @parser.document.should_spit_text?
             @tail << text
             # just to be sure we don't have stale text after
