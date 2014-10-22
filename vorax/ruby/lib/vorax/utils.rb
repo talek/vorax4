@@ -30,7 +30,7 @@ module Vorax
             ((c >= 0x10000) && (c <= 0x10FFFF)))
           ret << char
         else
-          ret << 191.ord
+          ret << ' '
         end
       end
       ret
