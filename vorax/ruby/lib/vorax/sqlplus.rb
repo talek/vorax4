@@ -5,6 +5,8 @@ module Vorax
   # Provides integration with Oracle SqlPlus CLI tool.
   class Sqlplus
 
+    EOF = "___vorax_end___"
+
     attr_reader :bin_file, :default_funnel_name, :process
     
     # Creates a new sqlplus instance.
@@ -14,6 +16,7 @@ module Vorax
     #   in $PATH.
     def initialize(bin_file = "sqlplus")
       @bin_file = bin_file
+      @tail = ""
       @busy = false
       @start_marker, @end_marker, @cancel_marker = [2.chr, 3.chr, 4.chr]
       @process = ChildProcess.build(@bin_file, "/nolog")
@@ -86,6 +89,7 @@ module Vorax
     def exec(command, params = {})
       Vorax.debug("exec: command=[\n#{command}\n]\nparams=#{params.inspect}")
       raise AnotherExecRunning if busy?
+      @tail = ""
       opts = {
         :prep => nil,
         :post => nil,
@@ -143,11 +147,16 @@ module Vorax
     def read_output(bytes=4086)
       output = ""
       raw_output = nil
-      begin
-        raw_output = @io_read.read_nonblock(bytes)
-      rescue Errno::EAGAIN
+      if @tail != ""
+        raw_output = @tail
+      else
+        begin
+          raw_output = @io_read.read_nonblock(bytes)
+        rescue Errno::EAGAIN
+        end
       end
       if raw_output
+        @tail = ""
         raw_output.gsub!(/\r/, '')
         scanner = StringScanner.new(raw_output)
         while not scanner.eos?
@@ -169,9 +178,24 @@ module Vorax
           if @look_for == @end_marker
             output = scanner.scan(/[^#{@look_for}]*/)
             if scanner.scan(/#{@look_for}/)
-              # end of output reached
+              # end of output reached?
+              # There's no perfect method to figure out, but we can
+              # employ some heuristics: 
+              #   1) if "set echo on", expected tail is:
+              #
+              #      \n<SQL_PROMPT>#pro .EOF
+              #      .EOF
+              #
+              #   2) if "set echo off", expected tail is:
+              #
+              #      EOF
+              #
+              @tail = scanner.rest
+              if @tail =~ /^#{EOF}/ || @tail =~ /^\n[^\n]*?#{EOF}/
+                @busy = false
+                @tail = ""
+              end
               scanner.terminate
-              @busy = false
             end
           end
         end
@@ -242,12 +266,12 @@ module Vorax
       send_text("#pro #{@start_marker}\n")
       yield
       send_text("#{@end_marker}\n")
-      send_text("#pro #{@end_marker}\n")
+      send_text("#pro #{@end_marker}#{EOF}\n")
 
       # Once again with termout enforced
       send_text("set termout on\n")
       send_text("#{@end_marker}\n")
-      send_text("#pro #{@end_marker}\n")
+      send_text("#pro #{@end_marker}#{EOF}\n")
     end
 
     def mark_cancel
@@ -269,12 +293,12 @@ module Vorax
           # block terminator command will be echoed. Otherwise,
           # the next prompt statement will do the job.
           f.puts "#{@end_marker}"
-          f.puts "#pro #@end_marker"
+          f.puts "#pro #@end_marker#{EOF}"
           
           # once again with termout enforced
           f.puts("set termout on")
           f.puts "#{@end_marker}"
-          f.puts "#pro #@end_marker"
+          f.puts "#pro #@end_marker#{EOF}"
           f.puts opts[:post]
         end
       end
