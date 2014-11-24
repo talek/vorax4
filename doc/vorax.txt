@@ -505,10 +505,10 @@ The database explorer may be configured using the following global variables:
   * g:vorax_dbexplorer_exclude: a Vim style regular expression which may be 
     used to filter the categories some might not be interested in.
 
-  * g:vorax_db_explorer_side: where to layout the database explorer window: 
+  * g:vorax_dbexplorer_side: where to layout the database explorer window: 
     left or right. By default it's left.
   
-  * g:vorax_db_explorer_size: the size of the explorer window. The default 
+  * g:vorax_dbexplorer_size: the size of the explorer window. The default 
     value is 30.
 
 The contextual menu of the database explorer can be extended using custom 
