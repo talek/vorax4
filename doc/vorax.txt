@@ -251,9 +251,9 @@ You have the following options to run each of the above statements:
   * visual select the statement(s) to be executed and run the selection with
     the same "<Leader>e" mapping.
 
-  * if you want to execute the entire SQL buffer you may also use the 
-    VORAXExecBuffer command or the <Leader>be or @ key mapping. be stands for 
-    Buffer Exec.
+  * if you want to execute the entire SQL buffer you may also use the
+    VORAXExecBuffer command or the <Leader>be or <Leader>@ key mapping. be
+    stands for Buffer Exec.
 
 Note: The default mapping, of course, is configurable.
 
@@ -706,8 +706,9 @@ like: packages, types, functions, procedures etc. The code source of these
 database objects are usually loaded into special vorax PLSQL buffers which, 
 unlike the SQL ones, allow to compile the corresponding PLSQL source.
 
-The default key mapping for compiling is <Leader>c. "C" stands, obviously, for 
-"C"ompile. Two things happen when a PLSQL object is compiled:
+The default key mapping for compiling is <Leader>c. "C" stands, obviously, for
+"C"ompile. For convenience, you may also use <Leader>@. Two things happen when
+a PLSQL object is compiled:
 
   * the buffer content is sent as it is to the server.
   * as soon as the buffer content is executed, Vorax will check the ALL_ERRORS 
