@@ -320,7 +320,7 @@ function! vorax#ruby#PlsqlRegions(source_text) abort"{{{
   ruby <<ERC
 # encoding: UTF-8
   vim_regions = []
-  structure = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text'))
+  structure = Vorax::Parser::PlsqlStructure.new(VIM::evaluate('a:source_text').force_encoding('utf-8'))
   structure.regions.breadth_each do |node|
     region = node.content
     if region
