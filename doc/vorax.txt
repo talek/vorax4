@@ -594,13 +594,42 @@ stands for 'profile'.
 You may navigate through the hierarchical structure of the connection profiles 
 using the following key maps:
 
-  j: move down
-  k: move up
-  Enter or o: expand category or connect using the profile under cursor
-  m: invoke the contextual menu for the node under cursor to add new profiles, 
-     edit the existing ones or simply to remove them. Other options may be 
-     available since the contextual menu supports custom plugins, as it is 
-     described later within this chapter.
+  j: moving down
+  k: moving up
+  Enter or o: expanding category or connecting using the profile under cursor
+  m: invoking the contextual menu for the node under cursor.
+
+Contextual menu for the "CONNECTION PROFILES" title include options:
+
+  a: adding a new profile
+
+Contextual menu for profile include options:
+
+  o: opening connection for selected profile
+  a: adding a new profile. After pressing Vorax would ask your to enter
+     connection string in an ordinary plsql format like scott/tiger@ORCL. 
+     Vorax would see your password and ask for a master password for the 
+     encryption. Also here you can assign the created profile for a some
+     category. Just enter existing name or a new one
+  e: editing of the profile
+  r: removing of the profile
+  s: showing of the connection string for the given profile
+
+Contextual menu for category group include options:
+
+  a: adding a new profile to selected category
+  m: renaming of the category
+  r: removing of the category
+
+Also all items in the connection profiles window include these common options:
+
+  u: unlocking connection profiles window (it's showing before entering 
+     of a master password)
+  x: changing of the master password (available after entering your password 
+     for connection to database)
+
+Other options may be available since the contextual menu supports custom
+plugins, as it is described later within this chapter.
 
 The look of the connection profiles window is controlled by the following 
 Vorax global variables:
