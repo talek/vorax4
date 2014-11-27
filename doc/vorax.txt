@@ -599,36 +599,39 @@ using the following key maps:
   Enter or o: expanding category or connecting using the profile under cursor
   m: invoking the contextual menu for the node under cursor.
 
-Contextual menu for the "CONNECTION PROFILES" title include options:
+The contextual menu for the "CONNECTION PROFILES" item includes the following
+options:
 
   a: adding a new profile
 
-Contextual menu for profile include options:
+The contextual menu for the actual profiles includes the following options:
 
   o: opening connection for selected profile
   a: adding a new profile
-  e: editing of the profile
-  r: removing of the profile
-  s: showing of the connection string for the given profile
+  e: editing of the selected profile
+  r: removing of the selected profile
+  s: display of the connection string for the given profile
 
-Contextual menu for category group include options:
+The contextual menu for a category group includes the following options:
 
-  a: adding a new profile to selected category
-  m: renaming of the category
-  r: removing of the category
+  a: adding a new profile to the selected category
+  m: renaming of the selected category
+  r: removing of the selected category
 
-Also all items in the connection profiles window include these common options:
+Also, all items in the connection profiles window include the below common
+options:
 
   u: unlocking connection profiles window (it's showing before entering 
      of a master password)
   x: changing of the master password (available after entering your password 
-     for connection to database)
+     for connection to the database)
 
-When you add a new profile after pressing "a" key Vorax would ask your to enter
-connection string in an ordinary plsql format like scott/tiger@ORCL.  Vorax 
-would see your password and ask for a master password for the encryption. Also 
-here you can assign the created profile for a some category. Just enter existing
-name or a new one.
+When you add a new profile, after pressing "a" key, Vorax will ask you to enter
+a connection string using an ordinary SqlPlus format like "scott/tiger@ORCL".
+Vorax will also see that your connection profile contains a password, so it's
+subject to be put in the Vorax passwords store, protected by a master password
+you need to provide at the time this store is initialized. Here you can also
+assign the newly created profile to an existing or a new category. 
 
 Other options may be available since the contextual menu supports custom
 plugins, as it is described later within this chapter.
