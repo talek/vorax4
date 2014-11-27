@@ -606,11 +606,7 @@ Contextual menu for the "CONNECTION PROFILES" title include options:
 Contextual menu for profile include options:
 
   o: opening connection for selected profile
-  a: adding a new profile. After pressing Vorax would ask your to enter
-     connection string in an ordinary plsql format like scott/tiger@ORCL. 
-     Vorax would see your password and ask for a master password for the 
-     encryption. Also here you can assign the created profile for a some
-     category. Just enter existing name or a new one
+  a: adding a new profile
   e: editing of the profile
   r: removing of the profile
   s: showing of the connection string for the given profile
@@ -627,6 +623,12 @@ Also all items in the connection profiles window include these common options:
      of a master password)
   x: changing of the master password (available after entering your password 
      for connection to database)
+
+When you add a new profile after pressing "a" key Vorax would ask your to enter
+connection string in an ordinary plsql format like scott/tiger@ORCL.  Vorax 
+would see your password and ask for a master password for the encryption. Also 
+here you can assign the created profile for a some category. Just enter existing
+name or a new one.
 
 Other options may be available since the contextual menu supports custom
 plugins, as it is described later within this chapter.
