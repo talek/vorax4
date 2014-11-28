@@ -158,6 +158,7 @@ module Vorax
       if raw_output
         @tail = ""
         raw_output.gsub!(/\r/, '')
+        Vorax.debug("read_output: #{raw_output.inspect}")
         scanner = StringScanner.new(raw_output)
         while not scanner.eos?
           if @look_for == @start_marker
@@ -190,10 +191,15 @@ module Vorax
               #
               #      EOF
               #
+              Vorax.debug("read_output: end_marker detected")
               @tail = scanner.rest
+              Vorax.debug("read_output: @tail=#{@tail.inspect}")
               if @tail =~ /^#{EOF}/ || @tail =~ /^\n[^\n]*?#{EOF}/
+                Vorax.debug("read_output: end_marker confirmed")
                 @busy = false
                 @tail = ""
+              else
+                Vorax.debug("read_output: end_marker NOT confirmed")
               end
               scanner.terminate
             end
