@@ -194,7 +194,7 @@ module Vorax
               Vorax.debug("read_output: end_marker detected")
               @tail = scanner.rest
               Vorax.debug("read_output: @tail=#{@tail.inspect}")
-              if @tail =~ /^#{EOF}/ || @tail =~ /^\n[^\n]*?#{EOF}/
+              if @tail =~ /^#{EOF}/ || @tail =~ /^\n[^\n]*?#{EOF}/ || @tail =~ /^\n<br>\n[^\n]*?#{EOF}/
                 Vorax.debug("read_output: end_marker confirmed")
                 @busy = false
                 @tail = ""
