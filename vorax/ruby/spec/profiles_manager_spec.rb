@@ -1,4 +1,5 @@
 # encoding: UTF-8
+require 'fileutils'
 
 include Vorax
 
@@ -50,14 +51,21 @@ describe 'profiles_manager' do
   end# }}}
 
   def dummy_pm# {{{
+
+    keys_folder = 'spec/pm'
+
+    dirname = File.dirname(keys_folder)
+    unless File.directory?(keys_folder)
+      FileUtils.mkdir_p(keys_folder)
+    end
     # create keys
-    ProfilesManager.create('spec/pm', 'xxx')
+    ProfilesManager.create(keys_folder, 'MuciXXX')
 
     # init pm
-    pm = ProfilesManager.new('spec/pm')
+    pm = ProfilesManager.new(keys_folder)
     
     # set the master password
-    pm.master_password = 'xxx'
+    pm.master_password = 'MuciXXX'
 
     # add some profiles
     pm.add('scott@db', :category => 'Test')
