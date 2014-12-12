@@ -21,7 +21,7 @@ describe 'tablezip layout' do
   end# }}}
 
   it 'should work with multiple statements' do# {{{
-    @sp.exec("select * from dual;\nselect * from departments where id <= 2;", :prep => @prep)
+    @sp.exec("select dummy d from dual;\nselect * from departments where id <= 2;", :prep => @prep)
     @result << @sp.read_output(32767) while @sp.busy?
     expected = <<OUTPUT
 

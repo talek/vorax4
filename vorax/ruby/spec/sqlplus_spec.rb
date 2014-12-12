@@ -9,13 +9,27 @@ describe 'sqlplus' do
     @prep = [VORAX_CSTR, 
              "set tab off", 
              "set linesize 10000", 
-             "set echo off",
+             "set echo on",
              "set pause off",
-             "set define &",
+             "set define \"&\"",
              "set termout on",
              "set verify off",
              "set pagesize 4"].join("\n")
     @result = ""
+  end# }}}
+
+  it 'check EOF with magic chars' do# {{{
+    begin
+      pack_file = Tempfile.new(['vorax', '.sql'])
+      @sp.exec("select rownum, chr(2) || chr(3) || chr(4) from all_objects where rownum < 3;", :prep => @prep, :pack_file => pack_file.path)
+      Timeout::timeout(10) {
+        @result << @sp.read_output while @sp.busy?
+      }
+      expected = "\nSQL> select rownum, chr(2) || chr(3) || chr(4) from all_objects where rownum < 3;\n\n    ROWNUM CHR(2)||C\n---------- ---------\n         1 \u0002\u0004\n\n    ROWNUM CHR(2)||C\n---------- ---------\n         2 \u0002\u0004\n\nSQL> "
+      @result.should eq(expected)
+    ensure
+      pack_file.unlink
+    end
   end# }}}
 
   it 'should work with utf8' do# {{{
@@ -35,10 +49,14 @@ SQL> SQL> "
     begin
       pack_file = Tempfile.new(['vorax', '.sql'])
       @sp.exec("accept var prompt \"Enter var: \"\nprompt &var", :prep => @prep, :pack_file => pack_file.path)
-      Timeout::timeout(10) {
+      Timeout::timeout(3) {
         @result << @sp.read_output(32767) while @result !~ /Enter var: \z/
+        sleep 0.5
         @sp.send_text("muci\n")
-        @result << @sp.read_output(32767) while @result !~ /muci\n\z/
+        sleep 0.5
+        while @result !~ /\nmuci\n/
+          @result << @sp.read_output(32767) while @sp.busy?
+        end
       }
     ensure
       pack_file.unlink
