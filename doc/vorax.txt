@@ -157,6 +157,8 @@ However, you need to take care of some dependencies VoraX relies on:
 
    6. Ensure you have "filetype plugin on" set in your .vimrc file.
 
+Note: Cygwin is not yet supported.
+
 ==============================================================================
 CONNECTING TO A DATABASE                                       *vorax-connect* 
 
