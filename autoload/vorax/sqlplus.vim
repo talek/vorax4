@@ -390,7 +390,7 @@ function! s:LimitRows(script, limit) "{{{
   let new_stmts = []
   for stmt in stmts
     let query = vorax#ruby#RemoveAllComments(stmt)
-    if query =~ '\m\c^\_s*\(SELECT\|WITH\)'
+    if query =~ '\m\c^[\r\n\t]*\(SELECT\|WITH\)'
       " get rid of the last terminator
       let query = substitute(query, '\m\_s*\(;\|\/\)\_s*$', '', 'g')
       " remove leading CRs
