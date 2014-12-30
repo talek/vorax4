@@ -140,6 +140,7 @@ end;
 
 -- we need the size of the clob and set it as a longchunksize in order
 -- to avoid splitting the content.
+define clob_len=0
 column clob_len new_value clob_len
 select :ddl_length clob_len from dual;
 set longc &clob_len
