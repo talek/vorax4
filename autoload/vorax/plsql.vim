@@ -36,7 +36,7 @@ function! vorax#plsql#CompileCurrentBuffer() abort "{{{
         \ 'set echo off',
         \ 'set timing off',
         \ 'set linesize 10000']
-  let options = extend(properties['sane_options'], options)
+  let options = properties['sane_options'] + options
   let prep = join(options, "\n")
   let post = "@" . properties['store_set']
   let hash = {'prep' : prep, 'post' : post, 'funnel' : 0}
