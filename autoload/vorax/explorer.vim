@@ -307,8 +307,12 @@ function! s:tree.ConfigureOptions() "{{{
 endfunction "}}}
 
 function! s:tree.ConfigureKeys() "{{{
-  noremap <silent> <buffer> R :call vorax#explorer#Refresh()<CR>
-  noremap <silent> <buffer> m :call vorax#explorer#OpenContextMenu()<CR>
+  if g:vorax_key_refresh_explorer != ""
+    exe 'noremap <silent> <buffer> ' . g:vorax_key_refresh_explorer . ' :call vorax#explorer#Refresh()<CR>'
+  endif
+  if g:vorax_key_contextual_menu != ""
+    exe 'noremap <silent> <buffer> ' . g:vorax_key_contextual_menu . ' :call vorax#explorer#OpenContextMenu()<CR>'
+  endif
 endfunction "}}}
 
 function! s:tree.GetSubNodes(path) "{{{

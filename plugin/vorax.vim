@@ -3,7 +3,7 @@
 " Description: An Oracle IDE for Geeks
 " License:     see LICENSE.txt
 
-let g:vorax_version = "4.3.50"
+let g:vorax_version = "4.3.51"
 
 if exists("g:loaded_vorax") || &cp
   finish
@@ -180,6 +180,49 @@ call s:initVariable('g:vorax_oradoc_max_results', 30)
 call s:initVariable('g:vorax_oradoc_win_style', 'horizontal')
 call s:initVariable('g:vorax_oradoc_win_side', 'top')
 call s:initVariable('g:vorax_oradoc_win_size', 5)
+
+" Default global keys
+call s:initVariable('g:vorax_key_output_toggle', '<Leader>o')
+call s:initVariable('g:vorax_key_connections_toggle', '<Leader>pr')
+call s:initVariable('g:vorax_key_explorer_toggle', '<Leader>ve')
+call s:initVariable('g:vorax_key_sql_scratch', '<Leader>ss')
+call s:initVariable('g:vorax_key_doc_search', '<Leader>k')
+
+" Default keys for the output buffer
+call s:initVariable('g:vorax_key_output_clear', '<Leader>cl')
+call s:initVariable('g:vorax_key_output_vertical', '<Leader>v')
+call s:initVariable('g:vorax_key_output_pagezip', '<Leader>p')
+call s:initVariable('g:vorax_key_output_tablezip', '<Leader>t')
+call s:initVariable('g:vorax_key_output_append', '<Leader>a')
+call s:initVariable('g:vorax_key_output_toggle_full_heading', '<Leader>h')
+call s:initVariable('g:vorax_key_output_toggle_limit_rows', '<Leader>lr')
+call s:initVariable('g:vorax_key_output_toggle_sticky', '<Leader>s')
+call s:initVariable('g:vorax_key_output_toggle_top', '<Leader>T')
+call s:initVariable('g:vorax_key_output_ask_user', '<CR>')
+
+" Default keys for plsql buffers
+call s:initVariable('g:vorax_key_plsql_goto_def', 'gd')
+call s:initVariable('g:vorax_key_plsql_compile', '<Leader>c')
+call s:initVariable('g:vorax_key_plsql_compile2', '<Leader>@') "for backward compatibility
+
+" Default keys for SQL buffers
+call s:initVariable('g:vorax_key_sql_buffer_exec', '<Leader>be')
+call s:initVariable('g:vorax_key_sql_buffer_exec2', '<Leader>@') "for backward compatibility
+call s:initVariable('g:vorax_key_sql_exec', '<Leader>e')
+call s:initVariable('g:vorax_key_sql_select_current', '<Space>')
+call s:initVariable('g:vorax_key_sql_exec_sandbox', '<Leader>e')
+call s:initVariable('g:vorax_key_sql_explain_real', '<Leader>x')
+call s:initVariable('g:vorax_key_sql_explain', '<Leader>X')
+
+" Default keys for both, sql and plsql buffers
+call s:initVariable('g:vorax_key_doc_search_current_word', 'K')
+call s:initVariable('g:vorax_key_describe', '<Leader>d')
+call s:initVariable('g:vorax_key_describe_verbose', '<Leader>D')
+
+" Default misc keys
+call s:initVariable('g:vorax_key_contextual_menu', 'm')
+call s:initVariable('g:vorax_key_refresh_explorer', 'R')
+
 " }}}
 
 " Commands {{{
@@ -203,11 +246,21 @@ command! -n=+ -complete=customlist,vorax#explorer#NewDbComplete VORAXNew :call v
 
 if g:vorax_map_keys
   " global mappings
-  nnoremap <silent> <Leader>o :VORAXOutputToggle<CR>
-  nnoremap <silent> <Leader>pr :VORAXConnectionsToggle<CR>
-  nnoremap <silent> <Leader>ve :VORAXExplorerToggle<CR>
-  nnoremap <silent> <Leader>ss :VORAXScratch<CR>
-  nnoremap <silent> <Leader>k :VORAXDocSearch<CR>
+  if g:vorax_key_output_toggle != ""
+    exe 'nnoremap <silent> ' . g:vorax_key_output_toggle . ' :VORAXOutputToggle<CR>'
+  endif
+  if g:vorax_key_connections_toggle != ""
+    exe 'nnoremap <silent> ' . g:vorax_key_connections_toggle . ' :VORAXConnectionsToggle<CR>'
+  endif
+  if g:vorax_key_explorer_toggle != ""
+    exe 'nnoremap <silent> ' . g:vorax_key_explorer_toggle . ' :VORAXExplorerToggle<CR>'
+  endif
+  if g:vorax_key_sql_scratch != ""
+    exe 'nnoremap <silent> ' . g:vorax_key_sql_scratch . ' :VORAXScratch<CR>'
+  endif
+  if g:vorax_key_doc_search != ""
+    exe 'nnoremap <silent> ' . g:vorax_key_doc_search . ' :VORAXDocSearch<CR>'
+  endif
 endif
 
 "}}}

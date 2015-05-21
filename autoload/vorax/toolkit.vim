@@ -91,8 +91,15 @@ function! vorax#toolkit#InitCommonBuffers() abort "{{{
   setlocal isk+=#
   command! -n=0 -buffer -bang VORAXDescUnderCursor :call vorax#toolkit#DescUnderCursor('<bang>')
   if g:vorax_map_keys
-    nnoremap <buffer> <silent> <Leader>d :VORAXDescUnderCursor<CR>
-    nnoremap <buffer> <silent> <Leader>D :VORAXDescUnderCursor!<CR>
+    if g:vorax_key_describe != ""
+      exe 'nnoremap <buffer> <silent> ' . g:vorax_key_describe . ' :VORAXDescUnderCursor<CR>'
+    endif
+    if g:vorax_key_describe_verbose != ""
+      exe 'nnoremap <buffer> <silent> ' . g:vorax_key_describe_verbose . ' :VORAXDescUnderCursor!<CR>'
+    endif
+    if g:vorax_key_doc_search_current_word != ""
+      exe 'nnoremap <buffer> <silent> ' . g:vorax_key_doc_search_current_word . ' :call vorax#oradoc#Search(expand(''<cWORD>''))<CR>'
+    endif
   endif
 endfunction "}}}
 

@@ -25,16 +25,36 @@ command! -n=0 -bar VORAXOutputAbort :call vorax#output#Abort()
 call vorax#toolkit#InitCommonBuffers()
 
 if g:vorax_map_keys
-  nnoremap <buffer> <silent> <Leader>cl :VORAXOutputClear<CR>
-  nnoremap <buffer> <silent> <Leader>v :VORAXOutputVertical<CR>
-  nnoremap <buffer> <silent> <Leader>p :VORAXOutputPagezip<CR>
-  nnoremap <buffer> <silent> <Leader>t :VORAXOutputTablezip<CR>
-  nnoremap <buffer> <silent> <Leader>a :VORAXOutputToggleAppend<CR>
-  nnoremap <buffer> <silent> <Leader>h :VORAXOutputToggleFullHeading<CR>
-  nnoremap <buffer> <silent> <Leader>lr :VORAXOutputToggleLimitRows<CR>
-  nnoremap <buffer> <silent> <Leader>s :VORAXOutputToggleSticky<CR>
-  nnoremap <buffer> <silent> <Leader>T :VORAXOutputToggleTop<CR>
-  nnoremap <buffer> <silent> <CR> :VORAXOutputAskUser<CR>
+  if g:vorax_key_output_clear != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_clear . ' :VORAXOutputClear<CR>'
+  endif
+  if g:vorax_key_output_vertical != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_vertical . ' :VORAXOutputVertical<CR>'
+  endif
+  if g:vorax_key_output_pagezip != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_pagezip . ' :VORAXOutputPagezip<CR>'
+  endif
+  if g:vorax_key_output_tablezip != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_tablezip . ' :VORAXOutputTablezip<CR>'
+  endif
+  if g:vorax_key_output_append != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_append . ' :VORAXOutputToggleAppend<CR>'
+  endif
+  if g:vorax_key_output_toggle_full_heading != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_toggle_full_heading . ' :VORAXOutputToggleFullHeading<CR>'
+  endif
+  if g:vorax_key_output_toggle_limit_rows != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_toggle_limit_rows . ' :VORAXOutputToggleLimitRows<CR>'
+  endif
+  if g:vorax_key_output_toggle_sticky != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_toggle_sticky . ' :VORAXOutputToggleSticky<CR>'
+  endif
+  if g:vorax_key_output_toggle_top != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_toggle_top . ' :VORAXOutputToggleTop<CR>'
+  endif
+  if g:vorax_key_output_ask_user != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_output_ask_user . ' :VORAXOutputAskUser<CR>'
+  endif
 endif
 
 augroup VoraxOutputWin

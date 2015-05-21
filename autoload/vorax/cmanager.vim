@@ -262,7 +262,9 @@ function! s:tree.ConfigureOptions() "{{{
 endfunction "}}}
 
 function! s:tree.ConfigureKeys() "{{{
-  noremap <silent> <buffer> m :call vorax#cmanager#OpenContextMenu()<CR>
+  if g:vorax_key_contextual_menu != ""
+    exe 'noremap <silent> <buffer> ' . g:vorax_key_contextual_menu . ' :call vorax#cmanager#OpenContextMenu()<CR>'
+  endif
 endfunction "}}}
 
 function! s:tree.GetSubNodes(path) "{{{

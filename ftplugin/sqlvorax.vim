@@ -19,21 +19,42 @@ call vorax#toolkit#InitCommonBuffers()
 
 if g:vorax_map_keys
   " mappings for SQL file
-  nnoremap <buffer> <silent> <leader>be :VORAXExecBuffer<CR>
-  nnoremap <buffer> <silent> <leader>@ :VORAXExecBuffer<CR>
-  nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
+  if g:vorax_key_sql_buffer_exec != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_sql_buffer_exec . ' :VORAXExecBuffer<CR>'
+  endif
+  if g:vorax_key_sql_buffer_exec2 != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_sql_buffer_exec2 . ' :VORAXExecBuffer<CR>'
+  endif
 
-  nnoremap <buffer> <silent> <Leader>e :VORAXExecCurrent<CR>
-  nnoremap <buffer> <silent> <Space> :VORAXSelectCurrent<CR>
-  xnoremap <buffer> <silent> <Leader>e :VORAXExecSelection<CR>
+  if g:vorax_key_sql_exec != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_sql_exec . ' :VORAXExecCurrent<CR>'
+  endif
+  if g:vorax_key_sql_exec != ""
+    exe 'xnoremap <buffer> <silent> ' . g:vorax_key_sql_exec . ' :VORAXExecSelection<CR>'
+  endif
+  if g:vorax_key_sql_select_current != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_sql_select_current . ' :VORAXSelectCurrent<CR>'
+  endif
 
-  nnoremap <buffer> <silent> <Leader>E :VORAXExecSbCurrent<CR>
-  xnoremap <buffer> <silent> <Leader>E :VORAXExecSbSelection<CR>
+  if g:vorax_key_sql_exec_sandbox != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_sql_exec_sandbox . ' :VORAXExecSbCurrent<CR>'
+  endif
+  if g:vorax_key_sql_exec_sandbox != ""
+    exe 'xnoremap <buffer> <silent> ' . g:vorax_key_sql_exec_sandbox . ' :VORAXExecSbSelection<CR>'
+  endif
 
-  nnoremap <buffer> <silent> <Leader>x :VORAXExplain!<CR>
-  xnoremap <buffer> <silent> <Leader>x :VORAXExplainSelection!<CR>
-  nnoremap <buffer> <silent> <Leader>X :VORAXExplain<CR>
-  xnoremap <buffer> <silent> <Leader>X :VORAXExplainSelection<CR>
+  if g:vorax_key_sql_explain_real != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_sql_explain_real . ' :VORAXExplain!<CR>'
+  endif
+  if g:vorax_key_sql_explain_real != ""
+    exe 'xnoremap <buffer> <silent> ' . g:vorax_key_sql_explain_real . ' :VORAXExplainSelection!<CR>'
+  endif
+  if g:vorax_key_sql_explain != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_sql_explain . ' :VORAXExplain<CR>'
+  endif
+  if g:vorax_key_sql_explain != ""
+    exe 'xnoremap <buffer> <silent> ' . g:vorax_key_sql_explain . ' :VORAXExplainSelection<CR>'
+  endif
 endif
 
 " set Vorax completion function

@@ -11,10 +11,15 @@ call vorax#toolkit#InitCommonBuffers()
 
 " key mappings
 if g:vorax_map_keys
-  nnoremap <buffer> <silent> K :call vorax#oradoc#Search(expand('<cWORD>'))<CR>
-  nnoremap <buffer> <silent> gd :call vorax#plsql#GotoDef()<CR>
-  nnoremap <buffer> <silent> <Leader>c :VORAXCompile<CR>
-  nnoremap <buffer> <silent> <Leader>@ :VORAXCompile<CR>
+  if g:vorax_key_plsql_goto_def != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_plsql_goto_def . ' :call vorax#plsql#GotoDef()<CR>'
+  endif
+  if g:vorax_key_plsql_compile != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_plsql_compile . ' :VORAXCompile<CR>'
+  endif
+  if g:vorax_key_plsql_compile2 != ""
+    exe 'nnoremap <buffer> <silent> ' . g:vorax_key_plsql_compile2 . ' :VORAXCompile<CR>'
+  endif
 endif
 
 
