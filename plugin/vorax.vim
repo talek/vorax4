@@ -3,7 +3,7 @@
 " Description: An Oracle IDE for Geeks
 " License:     see LICENSE.txt
 
-let g:vorax_version = "4.3.51"
+let g:vorax_version = "4.3.52"
 
 if exists("g:loaded_vorax") || &cp
   finish
@@ -210,7 +210,7 @@ call s:initVariable('g:vorax_key_sql_buffer_exec', '<Leader>be')
 call s:initVariable('g:vorax_key_sql_buffer_exec2', '<Leader>@') "for backward compatibility
 call s:initVariable('g:vorax_key_sql_exec', '<Leader>e')
 call s:initVariable('g:vorax_key_sql_select_current', '<Space>')
-call s:initVariable('g:vorax_key_sql_exec_sandbox', '<Leader>e')
+call s:initVariable('g:vorax_key_sql_exec_sandbox', '<Leader>E')
 call s:initVariable('g:vorax_key_sql_explain_real', '<Leader>x')
 call s:initVariable('g:vorax_key_sql_explain', '<Leader>X')
 
