@@ -331,7 +331,13 @@ function! vorax#sqlplus#PrepareVoraxScript(name, params) "{{{
   for param in a:params
     let params .= vorax#sqlplus#QuoteScriptParam(param) . ' '
   endfor
-  let script = s:properties['sql_folder'] . a:name . ' ' . params
+  if a:name =~ '^\s*\/'
+    " absolute path
+    let script = a:name . ' ' . params
+  else
+    " relative to vorax/sql folder
+    let script = s:properties['sql_folder'] . a:name . ' ' . params
+  endif
   return {'script': script, 'hash': hash}
 endfunction "}}}
 
