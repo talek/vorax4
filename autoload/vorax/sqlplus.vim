@@ -226,6 +226,7 @@ function! vorax#sqlplus#ExecImmediate(command, ...) abort "{{{
         echo message . ' ' . vorax#utils#Throbber()
         redraw
       endif
+      sleep 50m
     endwhile
     if &lz == 0
       echo 'Done.'
