@@ -1,3 +1,7 @@
+" Author:      Alexandru Tică
+" Description: Provides the Vorax airline extension.
+" License:     see LICENSE.txt
+
 let s:spc = g:airline_symbols.space
 
 function! airline#extensions#vorax#output_flags() "{{{{

@@ -15,7 +15,7 @@ let g:loaded_vorax = 1
 let s:old_cpo = &cpo
 set cpo&vim
 
-if v:version < 703 
+if v:version < 703
   echo("Vorax needs Vim 7.3 or above!")
   finish
 elseif v:version == 703 && !has('patch501')
