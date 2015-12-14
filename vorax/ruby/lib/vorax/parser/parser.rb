@@ -260,7 +260,8 @@ module Vorax
     # @param statement [String] the statement to be prepared
     # @return [String] the statement with the proper end separator appended
     def self.prepare_exec(statement)
-      stmt = Parser.remove_trailing_comments(statement)
+      #stmt = Parser.remove_trailing_comments(statement)
+      stmt = statement
       type = Parser.statement_type(stmt)
       if type == 'SQLPLUS'
         # do nothing
