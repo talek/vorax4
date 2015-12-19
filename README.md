@@ -3,6 +3,8 @@
 Vorax is a simple yet powerful IDE for Oracle databases, built 
 on top of the widely known Vim editor and Oracle SqlPLUS.
 
+![Vorax, an Oracle IDE for Geeks](https://github.com/myshov/vorax4/raw/master/screenshot.png)
+
 Features:
 
 * Advanced code completion
