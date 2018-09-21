@@ -1,3 +1,6 @@
+
+## !! THIS PROJECT IS NO LONGER MAINTAINED !!
+
 # Vorax, an Oracle IDE for Geeks
 
 Vorax is a simple yet powerful IDE for Oracle databases, built 
